@@ -1,0 +1,25 @@
+\Memory\Available MBytes
+\Processor(*)\% Processor Time
+\GPU Local Adapter Memory(*)\Local Usage
+\GPU Engine(*)\Utilization Percentage
+\GPU Engine(*)\Running Time
+\GPU Adapter Memory(*)\Shared Usage
+\GPU Adapter Memory(*)\Dedicated Usage
+\GPU Adapter Memory(*)\Total Committed
+\GPU Process Memory(*)\Shared Usage
+\GPU Process Memory(*)\Dedicated Usage
+\GPU Process Memory(*)\Non Local Usage
+\GPU Process Memory(*)\Local Usage
+\GPU Process Memory(*)\Total Committed
+\GPU Non Local Adapter Memory(*)\Non Local Usage
+\PhysicalDisk(*)\Disk Read Bytes/sec
+\PhysicalDisk(*)\Disk Write Bytes/sec
+\FileSystem Disk Activity(*)\FileSystem Bytes Written
+\FileSystem Disk Activity(*)\FileSystem Bytes Read
+\Network Interface(*)\Bytes Total/sec
+\Network Adapter(*)\Bytes Total/sec
+\.NET CLR Networking\Connections Established
+\.NET CLR Networking\Bytes Received
+\.NET CLR Networking\Bytes Sent
+\.NET CLR Networking\Datagrams Received
+\.NET CLR Networking\Datagrams Sent

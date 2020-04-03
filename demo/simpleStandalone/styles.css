@@ -1,0 +1,94 @@
+* {
+  box-sizing: border-box !important;
+}
+
+html,
+body {
+  background-color: black;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
+}
+
+h1 {
+  color: white;
+  margin: 0 auto;
+}
+
+h3 {
+  color: white;
+  margin: 0 auto;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 50%;
+  align-items: center;
+  justify-content: space-around;
+  margin: 0 auto;
+  margin-top: 2rem;
+}
+
+.container > * {
+  width: 100%;
+}
+
+.stream-container {
+  display: flex;
+}
+
+.stream-container input {
+  flex-grow: 1;
+  flex-shrink: 0;
+  padding: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+.video-container {
+  display: flex;
+  border: solid 2px white;
+  border-radius: 1rem;
+  padding: 1rem;
+  margin: 1rem;
+  flex-grow: 1;
+  flex-shrink: 0;
+}
+
+.clsp-video {
+  padding: 0.5rem;
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+#browser-not-supported {
+  display: none;
+  background-color: white;
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.controls {
+  display: flex;
+  margin: 1rem auto;
+  justify-content: space-around;
+}
+
+.controls button {
+  padding: 1rem 2rem;
+  font-size: 1.5rem;
+  border-radius: 1rem;
+}

@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Simple CLSP Standalone Demo</title>
+    <link
+      rel="shortcut icon"
+      href="../favicon.ico"
+    >
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.8.2/css/all.css"
+      integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay"
+      crossorigin="anonymous"
+    >
+    <link
+      rel="stylesheet"
+      href="../../dist/videojs-mse-over-clsp.css"
+    >
+    <link
+      rel="stylesheet"
+      href="./styles.css"
+    >
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/@babel/polyfill@7.7.0/dist/polyfill.min.js"
+    ></script>
+  </head>
+  <body>
+    <h1>Simple CLSP Standalone Demo</h1>
+    <h3 id="version">v</h3>
+    <div class="container">
+      <div class="stream-container">
+        <input
+          id="stream-src"
+          name="stream-src"
+          value="clsp://172.28.12.57/FairfaxVideo0520"
+        />
+        <button
+          onclick="clspControls.changeSrc()"
+          title="Change Stream"
+        >Change Stream</button>
+      </div>
+      <div class="video-container">
+        <span id="browser-not-supported">This browser is not supported</span>
+        <div>
+          <video
+            id="my-video"
+            muted
+          >
+            <source
+              src="clsp://172.28.12.57/FairfaxVideo0520"
+              type="video/mp4; codecs='avc1.42E01E'"
+            />
+          </video>
+        </div>
+      </div>
+      <div class="controls">
+        <button
+          onclick="clspControls.play()"
+          title="play"
+        >
+          <i class="fas fa-play"></i>
+        </button>
+        <button
+          onclick="clspControls.stop()"
+          title="stop"
+        >
+          <i class="fas fa-stop"></i>
+        </button>
+        <button
+          onclick="clspControls.fullscreen()"
+          title="fullscreen"
+        >
+          <i class="fas fa-expand"></i>
+        </button>
+        <button
+          onclick="clspControls.destroy()"
+          title="destroy"
+        >
+          <i class="fas fa-bomb"></i>
+        </button>
+      </div>
+    </div>
+
+    <script src="../../dist/iovPlayer.min.js"></script>
+    <script src="./index.js"></script>
+
+    <script>
+      clspControls.initialize();
+    </script>
+  </body>
+</html>
