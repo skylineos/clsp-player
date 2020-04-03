@@ -1,7 +1,11 @@
 
-# CLSP Changelog
+# CLSP Player Changelog
 
-## v0.17.0 - 2020-02-11 - Critical
+## 2020-04-03 - CLSP Player
+
+* CLSP Player was split into its own project
+
+## v0.17.0-1 - 2020-02-11 - Critical
 
 * change the videojs element class from `vjs-mse-over-mqtt` to `vjs-clsp`
 * update vulnerable dependencies
