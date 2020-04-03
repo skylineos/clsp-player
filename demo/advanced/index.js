@@ -1,17 +1,18 @@
-'use strict';
-
-import './styles.scss';
-
 import '@babel/polyfill';
 
 import $ from 'jquery';
 
+import IovCollection from '~root/src/js/iov/IovCollection';
+import TourController from '~root/src/js/iov/TourController';
+
 import packageJson from '~root/package.json';
+
 import {
   onLoad,
   initializeWall,
 } from './shared';
-import TourController from '../../src/js/iov/TourController';
+
+import './styles.scss';
 
 window.CLSP_DEMO_VERSION = packageJson.version;
 
@@ -28,7 +29,7 @@ function destroyAllPlayers () {
 }
 
 async function createPlayer(index, playerOptions) {
-  const iovCollection = window.IovCollection.asSingleton();
+  const iovCollection = IovCollection.asSingleton();
 
   const videoId = `wall-video-${index}`;
 
