@@ -28,9 +28,6 @@ const proConfig = (webpackConfig) => {
         'process.env': {
           NODE_ENV: JSON.stringify('production'),
         },
-        // Needed to prevent minification breaking video-contrib-hls
-        // @see - https://github.com/videojs/videojs-contrib-hls/issues/600#issuecomment-321281442
-        'typeof global': JSON.stringify('undefined'),
       }),
     ],
   };
