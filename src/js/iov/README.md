@@ -7,7 +7,7 @@
 
 ### `index.js`
 
-The entrypoint file for using the CLSP Player without VideoJS.  Only exposes the IovCollection
+The entrypoint file for using the CLSP Player.  Only exposes the IovCollection
 
 ### `IovCollection.js`
 

@@ -3,7 +3,7 @@
 import Paho from 'paho-mqtt';
 
 import Conduit from './Conduit';
-import utils from '../utils/';
+import utils from '../utils/utils';
 
 import Logger from '../utils/logger';
 

@@ -3,7 +3,7 @@
 import uuidv4 from 'uuid/v4';
 
 import Logger from '../utils/logger';
-import utils from '../utils/';
+import utils from '../utils/utils';
 
 import IovPlayer from './IovPlayer';
 import StreamConfiguration from './StreamConfiguration';
