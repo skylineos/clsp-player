@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>CLSP Standalone Tour Demo</title>
+    <link
+      rel="shortcut icon"
+      href="../favicon.ico"
+    >
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.8.2/css/all.css"
+      integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay"
+      crossorigin="anonymous"
+    >
+    <link
+      rel="stylesheet"
+      href="../../dist/videojs-mse-over-clsp.css"
+    >
+    <link
+      rel="stylesheet"
+      href="./styles.css"
+    >
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/@babel/polyfill@7.7.0/dist/polyfill.min.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/humanize@0.0.9/humanize.js"
+    ></script>
+  </head>
+  <body>
+    <h1>CLSP Standalone Tour Demo</h1>
+    <h3 id="version">v</h3>
+    <div class="container">
+      <div id="tourSummary" class="summary">
+        <span>Time Elapsed:</span>
+        <h2 id="tourDuration">0 hours 0 minutes 0 seconds</h2>
+        <span>Time Started:</span>
+        <span id="tourStartTime">N/A</span>
+        <span>Heap Size Limit:</span>
+        <span id="tourHeapSizeLimit">N/A</span>
+        <span>Total Heap Size:</span>
+        <span id="tourTotalHeapSize">N/A</span>
+        <span>Used Heap Size:</span>
+        <h2 id="tourUsedHeapSize">N/A</h2>
+      </div>
+      <div class="tour-container">
+        <div class="stream-container">
+          <textarea
+            id="stream-src"
+            name="stream-src"
+          ></textarea>
+          <button
+            onclick="window.tour.reset()"
+            title="reset tour"
+          >Reset Tour</button>
+        </div>
+        <div class="video-section">
+          <h2 id="current-stream-url"></h2>
+          <span id="browser-not-supported">This browser is not supported</span>
+          <div class="video-container">
+            <div>
+              <video
+                id="my-video"
+                muted
+              ></video>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="controls">
+        <button
+          onclick="window.tour.resume(true, true)"
+          title="resume tour"
+          disabled
+        >
+          <i class="fas fa-play"></i>
+        </button>
+        <button
+          onclick="window.tour.pause()"
+          title="pause tour"
+          disabled
+        >
+          <i class="fas fa-pause"></i>
+        </button>
+        <button
+          onclick="window.tour.previous()"
+          title="previous"
+          disabled
+        >
+          <i class="fas fa-step-backward"></i>
+        </button>
+        <button
+          onclick="window.tour.next(true)"
+          title="next"
+          disabled
+        >
+          <i class="fas fa-step-forward"></i>
+        </button>
+        <button
+          onclick="window.tour.destroy()"
+          title="destroy"
+        >
+          <i class="fas fa-bomb"></i>
+        </button>
+        <button
+          onclick="window.tour.fullscreen()"
+          title="fullscreen"
+        >
+          <i class="fas fa-expand"></i>
+        </button>
+      </div>
+    </div>
+
+    <script src="../../dist/iovPlayer.min.js"></script>
+    <script src="./index.js"></script>
+
+    <script>
+      window.clspControls.initialize();
+    </script>
+  </body>
+</html>

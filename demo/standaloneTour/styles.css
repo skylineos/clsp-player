@@ -1,0 +1,138 @@
+* {
+  box-sizing: border-box !important;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  background-color: black;
+  color: white;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
+}
+
+h1 {
+  color: white;
+  margin: 0 auto;
+}
+
+h2 {
+  color: white;
+  margin: 0 auto;
+}
+
+h3 {
+  color: white;
+  margin: 0 auto;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: space-around;
+  margin: 0 auto;
+  margin-top: 2rem;
+}
+
+.container > * {
+  width: 100%;
+}
+
+#tourSummary {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+}
+
+#tourSummary > * {
+  padding: 0;
+  margin: 0 auto;
+}
+
+#tourSummary {
+  width: 100%;
+  display: grid;
+  grid-template-rows: repeat(2, 1fr);
+  grid-auto-flow: column;
+}
+
+.tour-container {
+  display: flex;
+  flex-grow: 1;
+  flex-shrink: 0;
+}
+
+.tour-container > * {
+  width: 50%;
+}
+
+.stream-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.stream-container textarea {
+  flex-grow: 1;
+  flex-shrink: 0;
+}
+
+.stream-container button {
+  padding: 0.5rem;
+}
+
+.video-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.video-container {
+  display: flex;
+  flex-grow: 1;
+  flex-shrink: 0;
+  border: solid 2px white;
+  border-radius: 1rem;
+}
+
+.clsp-video-container {
+}
+
+.clsp-video {
+  padding: 0.5rem;
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+#browser-not-supported {
+  display: none;
+  background-color: white;
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.controls {
+  display: flex;
+  margin: 1rem auto;
+  justify-content: space-around;
+}
+
+.controls button {
+  padding: 1rem 2rem;
+  font-size: 1.5rem;
+  border-radius: 1rem;
+}

@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Advanced CLSP with VideoJs Plugin Demo</title>
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link href="../../dist/videojs-mse-over-clsp.css" rel="stylesheet">
+    <link href="../../dist/advancedWithVideoJs.css" rel="stylesheet">
+    <script src="../../dist/advancedWithVideoJs.js"></script>
+  </head>
+  <body>
+    <div class="page-header">
+      <img src="../skyline_logo.png" />
+      <h1>Advanced CLSP with VideoJs Plugin Demo</h1>
+      <h1 id="page-title-version">--version not yet loaded--</h1>
+      <div class="dependency-versions">
+        <span>video.js:</span>
+        <span id="page-title-videojs-version">--version not yet loaded--</span>
+        <span>videojs-errors:</span>
+        <span id="page-title-videojs-error-version">--version not yet loaded--</span>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <section class="wall">
+        <div class="monitor">
+          <button id="wall-controls-toggle" data-state="shown">Hide Controls</button>
+          <div id="wallSummary" class="summary">
+            <span>Total videos playing:</span>
+            <h2 id="wallTotalVideos">N/A</h2>
+            <span>Time Elapsed:</span>
+            <h2 id="wallDuration">N/A</h2>
+            <span>Time Started:</span>
+            <span id="wallStartTime">N/A</span>
+            <span>Heap Size Limit:</span>
+            <span id="wallHeapSizeLimit">N/A</span>
+            <span>Total Heap Size:</span>
+            <span id="wallTotalHeapSize">N/A</span>
+            <span>Used Heap Size:</span>
+            <h2 id="wallUsedHeapSize">N/A</h2>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="stream-configs">
+            <div class="stream-config wall-stream-config">
+              <div class="title">
+                <span>Urls:</span>
+              </div>
+              <textarea
+                id="wall-streams"
+                rows="25"
+              ></textarea>
+              <div class="stream-options">
+                <div>
+                  <label for="wall-enabled">
+                    <input
+                      id="wall-enabled"
+                      type="checkbox"
+                    />
+                    <span>Enable</span>
+                  </label>
+                </div>
+                <div>
+                  <span>Times to Replicate</span>
+                  <input
+                    id="wall-times-to-replicate"
+                    value="1"
+                    type="number"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="stream-config tours-stream-config">
+              <div class="title">
+                <span>Tour Urls:</span>
+              </div>
+              <textarea
+                id="tour-streams"
+                rows="25"
+              ></textarea>
+              <div class="stream-options">
+                <div>
+                  <label for="tours-enabled">
+                    <input
+                      id="tours-enabled"
+                      type="checkbox"
+                    />
+                    <span>Enable</span>
+                  </label>
+                </div>
+                <div>
+                  <span>Times to Replicate</span>
+                  <input
+                    id="tour-times-to-replicate"
+                    value="1"
+                    type="number"
+                  />
+                </div>
+                <div>
+                  <span>Times to Repeat Within Tour</span>
+                  <input
+                    id="tour-times-to-repeat"
+                    value="1"
+                    type="number"
+                  />
+                </div>
+                <div>
+                  <span>Tour Interval (seconds):</span>
+                  <input
+                    id="tour-interval"
+                    value="10"
+                    type="number"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="options-actions-container">
+            <div class="options">
+              <label for="enable-metrics">
+                <input
+                  id="enable-metrics"
+                  type="checkbox"
+                  disabled
+                />
+                <span>Enable Metrics</span>
+              </label>
+              <label for="show-metrics">
+                <input
+                  id="show-metrics"
+                  type="checkbox"
+                  disabled
+                />
+                <span>Show Metrics</span>
+              </label>
+            </div>
+            <div class="actions">
+              <button id="wallCreate">Create Video Wall</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="videowall"></div>
+      </section>
+    </div>
+
+    <template id="wall-video-template">
+      <div
+        id="wall-container-null"
+        class="player-container"
+      >
+        <div class="video-stream">
+          <span class="index"></span>
+          <span class="url"></span>
+          <button class="close">&times;</button>
+        </div>
+        <div class="video-container">
+          <video class="video-js vjs-default-skin"></video>
+        </div>
+        <div class="wall-video-metrics video-metrics"></div>
+      </div>
+    </template>
+
+    <script src="../../dist/videojs-mse-over-clsp.min.js"></script>
+  </body>
+</html>

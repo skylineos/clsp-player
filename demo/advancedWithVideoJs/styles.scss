@@ -1,0 +1,15 @@
+$icon-font-path: '~videojs-font/fonts';
+@import 'node_modules/video.js/src/css/video-js.scss';
+
+@import 'src/styles/videojs-mse-over-clsp.scss';
+
+@import 'demo/advancedStandalone/styles.scss';
+
+.dependency-versions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.tours-stream-config {
+  display: none !important;
+}
