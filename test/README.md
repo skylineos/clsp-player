@@ -1,4 +1,4 @@
-# CLSP Plugin Tests
+# CLSP Player Tests
 
 ## Soak Test
 
@@ -13,7 +13,7 @@ Steps:
 1. Open the windows start menu, type `cmd`
 1. Right-click on the `cmd` application, and choose `Run as Administrator`
 1. Accept the UAC prompt
-1. `cd` into the directory that contains these files, e.g. `cd C:\Users\skyline\Desktop\clsp-videojs-plugin\test\soak`
+1. `cd` into the directory that contains these files, e.g. `cd C:\Users\skyline\Desktop\clsp-player\test\soak`
 1. Run the script - `soak_monitor.bat [url]`
 1. Follow the prompts to start the script.
     1. When you see the message `Starting Monitor` and an ascii spinner `[\]`, the monitoring script is running
