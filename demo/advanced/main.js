@@ -131,7 +131,7 @@ async function createPlayer(index, playerOptions) {
 }
 
 $(() => {
-  const name = 'clspStandalone';
+  const name = 'clsp-player';
 
   onLoad();
 
