@@ -192,10 +192,10 @@ export default class Iov {
       throw new Error('There is no iframe container element to attach the iframe to!');
     }
 
-    this.videoElementParent.classList.add('clsp-video-container');
+    this.videoElementParent.classList.add('clsp-player-container');
 
     const clspVideoElement = window.document.createElement('video');
-    clspVideoElement.classList.add('clsp-video');
+    clspVideoElement.classList.add('clsp-player');
     clspVideoElement.muted = true;
 
     const insertBefore = this.iovPlayer && this.iovPlayer.videoElement

@@ -1,4 +1,4 @@
-@import 'src/styles/videojs-mse-over-clsp.scss';
+@import 'src/styles/clsp-player.scss';
 
 * {
   box-sizing: border-box !important;
@@ -185,7 +185,7 @@ html, body {
         flex-grow: 1;
         flex-shrink: 0;
 
-        .clsp-video-container {
+        .clsp-player-container {
           height: 100%;
           width: 100%;
           // min-height: 150px;
