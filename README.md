@@ -1,6 +1,6 @@
 # Skyline CLSP Player <!-- omit in toc -->
 
-A standalone html5 CLSP video player.  CLSP is a proprietary near-real-time video streaming protocol only available via Skyline's SFS solutions.
+An html5 CLSP video player.  CLSP is a proprietary near-real-time video streaming protocol only available via Skyline's SFS solutions.
 
 The highest h.264 keyframe/iframe segment frequency this player currently supports is 2 per second (this is different from frames per second).
 

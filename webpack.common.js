@@ -143,58 +143,12 @@ function generateClspConfig () {
   };
 }
 
-function generateAdvancedWithVideoJsDemoConfig () {
-  const name = 'advancedWithVideoJs';
+function generateAdvancedDemoConfig () {
+  const name = 'advanced';
   const srcPath = path.resolve(
     __dirname,
     'demo',
-    'advancedWithVideoJs'
-  );
-
-  const extractSass = generateExtractSassPlugin();
-
-  return {
-    name,
-    entry: {
-      // @see - https://github.com/webpack-contrib/webpack-serve/issues/27
-      [name]: [
-        path.resolve(srcPath, 'main.js'),
-      ],
-    },
-    output: {
-      filename: '[name].js',
-      path: DESTINATION_PATH,
-    },
-    module: {
-      rules: [
-        generateJsRule(srcPath),
-        ...generateStyleRules(extractSass),
-      ],
-    },
-    resolve: {
-      alias: {
-        '~root': __dirname,
-        'video.js$': path.resolve(
-          __dirname,
-          'node_modules',
-          'video.js'
-        ),
-      },
-    },
-    plugins: [
-      generateProgressBarPlugin(name),
-      extractSass,
-      generateWriteFilePlugin(),
-    ],
-  };
-}
-
-function generateAdvancedStandaloneDemoConfig () {
-  const name = 'advancedStandalone';
-  const srcPath = path.resolve(
-    __dirname,
-    'demo',
-    'advancedStandalone'
+    'advanced'
   );
 
   const extractSass = generateExtractSassPlugin();
@@ -233,7 +187,6 @@ function generateAdvancedStandaloneDemoConfig () {
 module.exports = function () {
   return [
     generateClspConfig(),
-    generateAdvancedWithVideoJsDemoConfig(),
-    generateAdvancedStandaloneDemoConfig(),
+    generateAdvancedDemoConfig(),
   ];
 };
