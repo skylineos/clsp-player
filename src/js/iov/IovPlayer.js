@@ -6,7 +6,7 @@ import ConduitCollection from '../conduit/ConduitCollection';
 import MSEWrapper from './MSEWrapper';
 import Logger from '../utils/logger';
 import StreamConfiguration from './StreamConfiguration';
-import utils from '../utils';
+import utils from '../utils/utils';
 
 const DEFAULT_ENABLE_METRICS = false;
 const DEFAULT_SEGMENT_INTERVAL_SAMPLE_SIZE = 5;

@@ -11,7 +11,7 @@
 
 import uuidv4 from 'uuid/v4';
 
-import utils from '../utils/';
+import utils from '../utils/utils';
 import Router from './Router';
 import Logger from '../utils/logger';
 import StreamConfiguration from '../iov/StreamConfiguration';
