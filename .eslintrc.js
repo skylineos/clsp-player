@@ -94,12 +94,12 @@ const rules = {
   ],
   // @todo - waiting on this rule:
   // @see - https://github.com/eslint/eslint/issues/10323
-  'function-paren-newline': [
-    'error',
-    {
-      minItems: 3,
-    },
-  ],
+  // 'function-paren-newline': [
+  //   'error',
+  //   {
+  //     minItems: 3,
+  //   },
+  // ],
   'no-async-promise-executor': 'warn',
 };
 

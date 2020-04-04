@@ -8,15 +8,21 @@ const DEFAULT_TOUR_PRELOAD_DURATION = 9;
 
 export default class TourController {
   static factory (
-    iovCollection, videoElementId, options,
+    iovCollection,
+    videoElementId,
+    options,
   ) {
     return new TourController(
-      iovCollection, videoElementId, options,
+      iovCollection,
+      videoElementId,
+      options,
     );
   }
 
   constructor (
-    iovCollection, videoElementId, options = {},
+    iovCollection,
+    videoElementId,
+    options = {},
   ) {
     this.logger = Logger().factory('Tour Controller');
 
@@ -72,7 +78,6 @@ export default class TourController {
   _cancelAllChangeSrcs () {
     for (const [
       changeSrcId,
-      pendingChangeSrc,
     ] of Object.entries(this.pendingChangeSrcs)) {
       this._cancelChangeSrc(changeSrcId);
     }

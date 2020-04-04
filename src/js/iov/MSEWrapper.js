@@ -14,7 +14,8 @@ const silly = Debug(`silly:${DEBUG_PREFIX}:MSEWrapper`);
 // This is the original error text, but it is subject to change by chrome,
 // and we are only checking the part of the error text that contains no
 // punctuation (and is all lower case).
-// "Failed to execute 'appendBuffer' on 'SourceBuffer': The SourceBuffer is full, and cannot free space to append additional buffers.";
+// "Failed to execute 'appendBuffer' on 'SourceBuffer': The SourceBuffer is full,
+// and cannot free space to append additional buffers.";
 const FULL_BUFFER_ERROR = 'and cannot free space to append additional buffers';
 
 export default class MSEWrapper {

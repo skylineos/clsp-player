@@ -28,7 +28,7 @@ function destroyAllPlayers () {
   wallPlayers = [];
 }
 
-async function createPlayer(index, playerOptions) {
+async function createPlayer (index, playerOptions) {
   const iovCollection = IovCollection.asSingleton();
 
   const videoId = `wall-video-${index}`;
@@ -80,14 +80,15 @@ async function createPlayer(index, playerOptions) {
 
     const $videoMetrics = $container.find('.wall-video-metrics');
 
-    const metricTypes = [
-      // ClspPlugin().METRIC_TYPES,
-      // IOV.METRIC_TYPES,
-      // Conduit.METRIC_TYPES,
-      // IOVPlayer.METRIC_TYPES,
-      // MediaSourceWrapper.METRIC_TYPES,
-      // SourceBufferWrapper.METRIC_TYPES,
-    ];
+    const metricTypes = [];
+    // const metricTypes = [
+    //   ClspPlugin().METRIC_TYPES,
+    //   IOV.METRIC_TYPES,
+    //   Conduit.METRIC_TYPES,
+    //   IOVPlayer.METRIC_TYPES,
+    //   MediaSourceWrapper.METRIC_TYPES,
+    //   SourceBufferWrapper.METRIC_TYPES,
+    // ];
 
     for (let i = 0; i < metricTypes.length; i++) {
       const metricType = metricTypes[i];
