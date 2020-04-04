@@ -116,7 +116,7 @@ function getNodePackageVersion () {
 }
 
 function getApplicationName () {
-  echo $(node -e 'console.log(require("./package.json").name)')
+  echo $(node -e 'console.log(require("./package.json").name.split('/').pop())')
 }
 
 function getApplicationTitle () {

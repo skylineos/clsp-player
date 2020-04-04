@@ -2,7 +2,7 @@
 
 import {
   version,
-} from '../../../package.json';
+} from '~root/package.json';
 import Logger from '../utils/logger';
 
 const PLUGIN_NAME = 'clsp';
