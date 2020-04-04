@@ -15,6 +15,7 @@
   "files": [
     "dist"
   ],
+  "main": "dist/clsp-player.min.js",
   "scripts": {
     "build": "./scripts/build.sh",
     "serve": "./scripts/serve.sh",
