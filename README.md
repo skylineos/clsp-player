@@ -131,43 +131,42 @@ video/mp4; codecs='avc1.42E01E'
 
 This tells the browser exactly what codec to use to decode and play the video.  H.264 baseline 3.0 is a least common denominator codec supported on all browsers (according to the MSE development page).
 
-Here is a sample video element that defines a CLSP and an HLS stream:
-
-<!-- @todo - this example needs to be updated -->
+Here is a sample video element that defines a CLSP stream:
 
 ```html
-<div>
-  <video
-    id="my-video"
-    class="video-js vjs-default-skin"
-    controls
-  >
-    <!-- CLSP Stream -->
-    <source
-      src="clsp://8.15.251.53/FairfaxVideo0510"
-      type="video/mp4; codecs='avc1.42E01E'"
-    />
-  </video>
+<div class="video-container">
+  <div>
+    <video
+      id="my-video"
+      muted
+    >
+      <source
+        src="clsp://172.28.12.57/FairfaxVideo0520"
+        type="video/mp4; codecs='avc1.42E01E'"
+      />
+    </video>
+  </div>
 </div>
 ```
 
 ### `<script>` Tag
-
-<!-- @todo - this example needs to be updated -->
 
 ```html
 <!-- CLSP Player -->
 <script src="../dist/clsp-player.min.js"></script>
 
 <script>
-  // construct the player
-  var player = videojs('my-video');
+  // Construct the player collection
+  window.iovCollection = window.IovCollection.asSingleton();
 
-  // Only use CLSP if in a supported browser
-  if (window.clspUtils.supported()) {
-    // Note - This must be executed prior to playing the video for CLSP streams
-    player.clsp();
-  }
+  // Instantiate the iov instance for this video element id
+  window.iovCollection.create('my-video')
+    .then(function (iov) {
+      // do something with the iov instance
+    })
+    .catch(function (error) {
+      // do something with the error
+    });
 </script>
 ```
 
