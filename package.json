@@ -12,11 +12,16 @@
   ],
   "license": "MIT",
   "repository": "https://github.com/skylineos/clsp-player.git",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "./scripts/build.sh",
     "serve": "./scripts/serve.sh",
     "lint": "./scripts/lint.sh",
     "lint-fix": "./scripts/lint.sh --fix",
+    "prepublish": "yarn run build",
+    "postpublish": "rm -rf dist",
     "preversion": "./scripts/version.sh --pre",
     "version": "./scripts/version.sh",
     "postversion": "./scripts/version.sh --post"
