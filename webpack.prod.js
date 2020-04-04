@@ -13,6 +13,7 @@ const proConfig = (webpackConfig) => {
     cache: true,
     devtool: 'cheap-source-map',
     optimization: {
+      minimize: true,
       minimizer: [
         new TerserPlugin({
           exclude: /\.min\.js$/i,
