@@ -307,7 +307,7 @@ export default class Iov {
       this.generatePlayerLogId(),
       clspVideoElement,
       () => this.changeSrc(this.streamConfiguration),
-      this.onPlayerError
+      this.onPlayerError,
     );
 
     this.pendingChangeSrcId = changeSrcId;

@@ -40,9 +40,9 @@ export default class StreamConfiguration {
     const parser = document.createElement('a');
 
     let useSSL;
-    let default_port;
+    let defaultPort;
     let hashUrl;
-    let b64_hash_access_url = '';
+    let b64HashAccessUrl = '';
     let hash = '';
 
     // Chrome is the only browser that allows non-http protocols in
@@ -51,25 +51,25 @@ export default class StreamConfiguration {
     if (url.substring(0, 10).toLowerCase() === 'clsps-hash') {
       useSSL = true;
       parser.href = url.replace('clsps-hash', 'https');
-      default_port = 443;
+      defaultPort = 443;
       hashUrl = true;
     }
     else if (url.substring(0, 9).toLowerCase() === 'clsp-hash') {
       useSSL = false;
       parser.href = url.replace('clsp-hash', 'http');
-      default_port = 9001;
+      defaultPort = 9001;
       hashUrl = true;
     }
     else if (url.substring(0, 5).toLowerCase() === 'clsps') {
       useSSL = true;
       parser.href = url.replace('clsps', 'https');
-      default_port = 443;
+      defaultPort = 443;
       hashUrl = false;
     }
     else if (url.substring(0, 4).toLowerCase() === 'clsp') {
       useSSL = false;
       parser.href = url.replace('clsp', 'http');
-      default_port = 9001;
+      defaultPort = 9001;
       hashUrl = false;
     }
     else {
@@ -83,7 +83,7 @@ export default class StreamConfiguration {
     let port = parser.port;
 
     if (port.length === 0) {
-      port = default_port;
+      port = defaultPort;
     }
 
     port = parseInt(port);
@@ -95,12 +95,12 @@ export default class StreamConfiguration {
 
     if (hashUrl === true) {
       // URL: clsp[s]-hash://<sfs-addr>[:9001]/<stream>?start=...&end=...&token=...
-      const qp_offset = url.indexOf(parser.pathname) + parser.pathname.length;
+      const qpOffset = url.indexOf(parser.pathname) + parser.pathname.length;
 
-      const qr_args = url.substr(qp_offset).split('?')[1];
+      const qrArgs = url.substr(qpOffset).split('?')[1];
       const query = {};
 
-      const pairs = qr_args.split('&');
+      const pairs = qrArgs.split('&');
       for (let i = 0; i < pairs.length; i++) {
         const pair = pairs[i].split('=');
         query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
@@ -124,7 +124,7 @@ export default class StreamConfiguration {
 
       const hashUrl = `${protocol}://${host}:${port}/${streamName}?start=${query.start}&end=${query.end}&token=${query.token}`;
 
-      b64_hash_access_url = window.btoa(hashUrl);
+      b64HashAccessUrl = window.btoa(hashUrl);
       hash = query.token;
     }
 
@@ -134,7 +134,7 @@ export default class StreamConfiguration {
       port,
       useSSL,
       tokenConfig: {
-        b64_hash_access_url,
+        b64HashAccessUrl,
         hash,
       },
     };
@@ -147,7 +147,11 @@ export default class StreamConfiguration {
   }
 
   constructor (
-    streamName, host, port, useSSL, tokenConfig = {},
+    streamName,
+    host,
+    port,
+    useSSL,
+    tokenConfig = {},
   ) {
     if (!streamName) {
       throw new Error('streamName is required to create a stream configuration.');

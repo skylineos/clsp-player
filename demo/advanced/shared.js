@@ -102,9 +102,9 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
   const $controlsToggle = $('#wall-controls-toggle');
 
   function toggleControls () {
-    $controlsToggle.attr('data-state') === 'hidden' ?
-      showControls() :
-      hideControls();
+    $controlsToggle.attr('data-state') === 'hidden'
+      ? showControls()
+      : hideControls();
   }
 
   function showControls () {
@@ -122,7 +122,8 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
   function setMetricsVisibility () {
     if ($('#show-metrics').prop('checked')) {
       $('.wall-video-metrics').show();
-    } else {
+    }
+    else {
       $('.wall-video-metrics').hide();
     }
   }
@@ -184,10 +185,12 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
             preload: 'auto',
             poster: '../skyline_logo.png',
             controls: true,
-            sources: [{
-              src: urlList[j],
-              type: "video/mp4; codecs='avc1.42E01E'",
-            }, ],
+            sources: [
+              {
+                src: urlList[j],
+                type: "video/mp4; codecs='avc1.42E01E'",
+              },
+            ],
             clsp: {
               enableMetrics: $('#enable-metrics').prop('checked'),
             },
@@ -215,7 +218,8 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
     wallInterval = setInterval(() => {
       const hoursFromStart = Math.floor(moment.duration(Date.now() - now).asHours());
       const minutesFromStart = Math.floor(moment.duration(Date.now() - now).asMinutes()) - (hoursFromStart * 60);
-      const secondsFromStart = Math.floor(moment.duration(Date.now() - now).asSeconds()) - (hoursFromStart * 60 * 60) - (minutesFromStart * 60);
+      const secondsFromStart = Math.floor(moment.duration(Date.now() - now).asSeconds()) - (hoursFromStart * 60 * 60) -
+        (minutesFromStart * 60);
 
       $('#wallDuration').text(`${hoursFromStart} hours ${minutesFromStart} minutes ${secondsFromStart} seconds`);
 

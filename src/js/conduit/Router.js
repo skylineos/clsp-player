@@ -54,7 +54,7 @@ export default function () {
     host,
     port,
     useSSL,
-    options
+    options,
   ) {
     try {
       this.logId = logId;
@@ -158,7 +158,7 @@ export default function () {
     host,
     port,
     useSSL,
-    options
+    options,
   ) {
     return new Router(
       logId,
@@ -166,7 +166,7 @@ export default function () {
       host,
       port,
       useSSL,
-      options
+      options,
     );
   };
 
@@ -818,7 +818,7 @@ export default function () {
             CONNECTION_TIMEOUT: window.clspRouterConfig.CONNECTION_TIMEOUT,
             KEEP_ALIVE_INTERVAL: window.clspRouterConfig.KEEP_ALIVE_INTERVAL,
             PUBLISH_TIMEOUT: window.clspRouterConfig.PUBLISH_TIMEOUT,
-          }
+          },
         );
 
         window.router._sendToParentWindow({

@@ -55,7 +55,7 @@ export default class Conduit {
     streamConfiguration,
     containerElement,
     onReconnect,
-    onMessageError
+    onMessageError,
   ) {
     return new Conduit(
       logId,
@@ -63,7 +63,7 @@ export default class Conduit {
       streamConfiguration,
       containerElement,
       onReconnect,
-      onMessageError
+      onMessageError,
     );
   }
 
@@ -91,7 +91,7 @@ export default class Conduit {
     streamConfiguration,
     containerElement,
     onReconnect = () => {},
-    onMessageError = () => {}
+    onMessageError = () => {},
   ) {
     if (!logId) {
       throw new Error('logId is required to construct a new Conduit instance.');
@@ -405,7 +405,7 @@ export default class Conduit {
     this.logger.debug('Stopping stream...');
 
     for (const [
-      id,
+      , // id, which we aren't using
       pendingTransaction,
     ] of Object.entries(this.pendingTransactions)) {
       if (pendingTransaction.timeout) {
@@ -519,7 +519,8 @@ export default class Conduit {
     const {
       payloadString: response,
     } = await this.transaction('iov/hashValidate', {
-      b64HashURL: this.streamConfiguration.b64_hash_access_url,
+      // @todo - does this work?  these properties are on `tokenConfig`...
+      b64HashURL: this.streamConfiguration.b64HashAccessUrl,
       token: this.streamConfiguration.hash,
     });
 
@@ -1155,7 +1156,7 @@ export default class Conduit {
 
       const reconnectionDelay = (Date.now() - reconnectionStartedAt > (this.IMMEDIATE_RECONNECTION_DURATION * 1000))
         ? this.RECONNECTION_DELAY
-        : this.IMMEDIATE_RECONNECTION_DELAY
+        : this.IMMEDIATE_RECONNECTION_DELAY;
 
       setTimeout(() => {
         // @todo - do we need to worry about recursion overflowing the stack?
@@ -1163,7 +1164,7 @@ export default class Conduit {
           reconnectionStartedAt,
           stopTryingToReconnectAt,
           onSuccess,
-          onFailure
+          onFailure,
         );
       }, reconnectionDelay * 1000);
     }
@@ -1195,7 +1196,7 @@ export default class Conduit {
         reconnectionStartedAt,
         stopTryingToReconnectAt,
         () => {
-          this.logger.info('reconnected!')
+          this.logger.info('reconnected!');
 
           // After successfully connecting, clear the reconnectionInProgress
           this.reconnectionInProgress = null;
@@ -1206,7 +1207,7 @@ export default class Conduit {
         (error) => {
           this._onReconnect(error);
           reject(error);
-        }
+        },
       );
     });
 

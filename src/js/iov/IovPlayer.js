@@ -243,7 +243,7 @@ export default class IovPlayer {
       this.streamConfiguration,
       this.videoElement.parentNode,
       this.onConduitReconnect,
-      this.onConduitMessageError
+      this.onConduitMessageError,
     );
 
     await this.conduit.initialize();
