@@ -174,4 +174,4 @@ Here is a sample video element that defines a CLSP and an HLS stream:
 
 ## Dependencies
 
-`@babel/polyfill` `7.7.0` is required.
+`@babel/polyfill` `7.8.7` is required.

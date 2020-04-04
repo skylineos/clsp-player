@@ -119,7 +119,7 @@ function generateConfig (name, entry) {
 module.exports = function () {
   return [
     generateConfig(
-      packageJson.name,
+      packageJson.name.split('/').pop(),
       path.resolve(
         __dirname,
         'src',
