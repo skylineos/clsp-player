@@ -3,10 +3,12 @@
 const path = require('path');
 const chalk = require('chalk');
 const ProgressBarPlugin = require('progress-bar-webpack-plugin');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const WriteFilePlugin = require('write-file-webpack-plugin');
 
 const packageJson = require('./package.json');
+
+const devMode = process.env.NODE_ENV !== 'production';
 
 function generateProgressBarPlugin (name) {
   const building = chalk.bold(`Building ${name} page...`);
@@ -21,11 +23,6 @@ function generateProgressBarPlugin (name) {
 }
 
 function generateConfig (name, entry) {
-  // @see - https://github.com/webpack-contrib/sass-loader
-  const extractSass = new ExtractTextPlugin({
-    filename: '[name].css',
-  });
-
   return {
     name,
     entry: {
@@ -81,25 +78,27 @@ function generateConfig (name, entry) {
             ),
           ],
         },
-        // @todo - postcss?
         // @see - https://github.com/bensmithett/webpack-css-example/blob/master/webpack.config.js
         {
           test: /\.(eot|svg|ttf|woff|woff2)$/,
           loader: 'url-loader',
         },
         {
-          test: /\.s?css$/,
-          use: extractSass.extract({
-            fallback: 'style-loader',
-            use: [
-              {
-                loader: 'css-loader',
+          // @see - https://github.com/webpack-contrib/mini-css-extract-plugin
+          // @see - https://github.com/webpack-contrib/sass-loader
+          test: /\.(sa|sc|c)ss$/,
+          use: [
+            {
+              loader: MiniCssExtractPlugin.loader,
+              options: {
+                hmr: devMode,
               },
-              {
-                loader: 'sass-loader',
-              },
-            ],
-          }),
+            },
+            'css-loader',
+            // @todo
+            // 'postcss-loader',
+            'sass-loader',
+          ],
         },
       ],
     },
@@ -110,7 +109,14 @@ function generateConfig (name, entry) {
     },
     plugins: [
       generateProgressBarPlugin(name),
-      extractSass,
+      new MiniCssExtractPlugin({
+        filename: devMode
+          ? '[name].css'
+          : '[name].[hash].css',
+        chunkFilename: devMode
+          ? '[id].css'
+          : '[id].[hash].css',
+      }),
       new WriteFilePlugin(),
     ],
   };
