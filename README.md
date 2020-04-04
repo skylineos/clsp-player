@@ -14,8 +14,8 @@ The highest h.264 keyframe/iframe segment frequency this player currently suppor
   - [Tokenization](#tokenization)
     - [Hash](#hash)
 - [Installation](#installation)
-  - [Via NPM](#via-npm)
   - [Via Yarn](#via-yarn)
+  - [Via NPM](#via-npm)
 - [Usage](#usage)
   - [`<head>` Tag](#head-tag)
   - [`<video>` tag](#video-tag)
@@ -81,16 +81,16 @@ clsp-hash://<host>[:port]/stream?start={epoch_seconds}&end={epoch_seconds}&token
 
 ## Installation
 
-### Via NPM
-
-```
-npm i @skylineos/clsp-player
-```
-
 ### Via Yarn
 
 ```
 yarn add @skylineos/clsp-player
+```
+
+### Via NPM
+
+```
+npm i @skylineos/clsp-player
 ```
 
 
