@@ -109,7 +109,7 @@ In the `<head>` of your page, include a line for the CLSP Player styles:
   <!-- CLSP styles -->
   <link
     rel="stylesheet"
-    href="../dist/clsp-player.css"
+    href="/path/to/dist/clsp-player.css"
   >
   <!-- Babel Polyfill -->
   <script
@@ -153,7 +153,7 @@ Here is a sample video element that defines a CLSP stream:
 
 ```html
 <!-- CLSP Player -->
-<script src="../dist/clsp-player.min.js"></script>
+<script src="/path/to/dist/clsp-player.min.js"></script>
 
 <script>
   // Construct the player collection
