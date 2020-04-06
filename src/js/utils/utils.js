@@ -6,7 +6,7 @@ import {
 import Logger from '../utils/logger';
 
 const PLUGIN_NAME = 'clsp';
-const MINIMUM_CHROME_VERSION = 52;
+const MINIMUM_CHROME_VERSION = 53;
 
 // @todo - this mime type, though used in the videojs plugin, and
 // seemingly enforced, is not actually enforced.  The only enforcement
