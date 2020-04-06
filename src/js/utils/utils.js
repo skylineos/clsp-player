@@ -1,11 +1,14 @@
 'use strict';
 
-import {
-  version,
-} from '~root/package.json';
-import Logger from '../utils/logger';
+// This file needs to use `require` rather than `import` to be able to be used
+// by webpack.
 
-const PLUGIN_NAME = 'clsp';
+const {
+  version,
+  name,
+} = require('../../../package.json');
+const Logger = require('./logger');
+
 const MINIMUM_CHROME_VERSION = 53;
 
 // @todo - this mime type, though used in the videojs plugin, and
@@ -100,6 +103,10 @@ function isSupportedMimeType (mimeType) {
 function _getWindowStateNames () {
   logger.debug('Determining Page_Visibility_API property names.');
 
+  if (typeof document === 'undefined') {
+    return {};
+  }
+
   // @see - https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API
   if (typeof document.hidden !== 'undefined') {
     logger.debug('Using standard Page_Visibility_API property names.');
@@ -133,9 +140,9 @@ function _getWindowStateNames () {
   };
 }
 
-export default {
+module.exports = {
   version,
-  name: PLUGIN_NAME,
+  name: name.split('/').pop(),
   supported: browserIsCompatable,
   mediaSourceExtensionsCheck,
   isSupportedMimeType,

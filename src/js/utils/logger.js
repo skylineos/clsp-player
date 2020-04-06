@@ -2,13 +2,16 @@
 
 /* eslint no-console: off */
 
+// This file needs to use `require` rather than `import` to be able to be used
+// by webpack.
+
 /**
  * We use this in the router as well, so keep it light and ES5!
  */
 
-export default function (logLevel) {
+module.exports = function (logLevel) {
   function Logger (prefix) {
-    if (logLevel === undefined) {
+    if (logLevel === undefined && typeof window !== 'undefined') {
       // The logLevel may be set in localstorage
       // e.g. localStorage.setItem('skyline.clspPlugin.logLevel', 3), then refresh
       logLevel = isNaN(Number(window.localStorage.getItem('skyline.clspPlugin.logLevel')))
