@@ -114,7 +114,7 @@ In the `<head>` of your page, include a line for the CLSP Player styles:
   <!-- Babel Polyfill -->
   <script
     type="text/javascript"
-    src="//cdn.jsdelivr.net/npm/@babel/polyfill@7.7.0/dist/polyfill.min.js"
+    src="//cdn.jsdelivr.net/npm/@babel/polyfill@7.8.7/dist/polyfill.min.js"
   ></script>
 <head>
 ```
