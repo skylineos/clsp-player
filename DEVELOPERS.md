@@ -45,6 +45,7 @@ yarn version --new-version 1.2.3+4
 
 ## Publishing
 
+1. It is best to do this immediately after cutting a release tag
 1. You MUST be on an unmodified checkout of the `git` tag you intend to publish.  i.e, `git status` should show:
     1. You have a tag checked out
     1. There are no changes staged for commit
