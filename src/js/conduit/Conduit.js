@@ -9,7 +9,9 @@
  * controller of the iframe that contains the router.
  */
 
-import uuidv4 from 'uuid/v4';
+import {
+  v4 as uuidv4,
+} from 'uuid';
 
 import utils from '../utils/utils';
 import Router from './Router';
@@ -1223,6 +1225,13 @@ export default class Conduit {
    */
   _command (message) {
     this.logger.debug('Sending a message to the iframe...');
+
+    // @todo - this MUST be temporary - it is hiding the error resulting from
+    // improper async logic handling!
+    if (this.destroyed) {
+      console.warn('Cannot send message via destroyed iframe');
+      return;
+    }
 
     try {
       // @todo - we should not be dispatching to '*' - we should provide the SFS

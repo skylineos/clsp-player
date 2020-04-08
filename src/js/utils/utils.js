@@ -1,7 +1,9 @@
 'use strict';
 
-// This file needs to use `require` rather than `import` to be able to be used
-// by webpack.
+/**
+ * This file needs to use `require` rather than `import` to be able to be used
+ * by webpack.
+ */
 
 const {
   version,
@@ -148,4 +150,6 @@ module.exports = {
   isSupportedMimeType,
   windowStateNames: _getWindowStateNames(),
   DEFAULT_STREAM_TIMEOUT,
+  MINIMUM_CHROME_VERSION,
+  SUPPORTED_MIME_TYPE,
 };
