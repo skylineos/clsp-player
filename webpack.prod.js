@@ -10,7 +10,7 @@ const proConfig = (webpackConfig) => {
     ...webpackConfig,
     mode: 'production',
     cache: true,
-    // @todo - minimization breaks the plugin or player!
+    // @todo - minimization breaks the plugin and player!
     optimization: {
       minimize: false,
     },
