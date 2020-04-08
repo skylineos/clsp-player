@@ -5,17 +5,17 @@ import '@babel/polyfill';
 // @todo - import fontawesome
 import $ from 'jquery';
 
-import utils from '../../src/js/utils/utils';
+import clspUtils from '~root/src/js/utils/utils';
 import IovCollection from '~root/src/js/iov/IovCollection';
 
 let iovCollection;
 let iov;
 
 function displayVersions () {
-  document.title = `v${utils.version} ${document.title}`;
+  document.title = `v${clspUtils.version} ${document.title}`;
 
   const pageTitle = $('#page-title').html();
-  $('#page-title').html(`${pageTitle} <br /> v${utils.version}`);
+  $('#page-title').html(`${pageTitle} <br /> v${clspUtils.version}`);
 }
 
 function registerHandlers () {

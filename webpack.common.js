@@ -128,6 +128,18 @@ function generateConfig (name, entry) {
   };
 }
 
+const advancedDemoDistConfig = generateConfig(
+  'advanced-dist',
+  path.resolve(
+    __dirname,
+    'demos',
+    'advanced-dist',
+    'index.js',
+  ),
+);
+
+advancedDemoDistConfig.output.path = demoOutputPath;
+
 const advancedDemoSrcConfig = generateConfig(
   'advanced-src',
   path.resolve(
@@ -164,7 +176,8 @@ const clspPlayerConfig = generateConfig(
 
 module.exports = function () {
   return [
-    // advancedDemoSrcConfig,
+    advancedDemoDistConfig,
+    advancedDemoSrcConfig,
     simpleDemoSrcConfig,
     clspPlayerConfig,
   ];
