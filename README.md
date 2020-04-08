@@ -16,10 +16,14 @@ The highest h.264 keyframe/iframe segment frequency this player currently suppor
 - [Installation](#installation)
   - [Via Yarn](#via-yarn)
   - [Via NPM](#via-npm)
-- [Usage](#usage)
+- [Using with `dist` assets](#using-with-dist-assets)
   - [`<head>` Tag](#head-tag)
-  - [`<video>` tag](#video-tag)
   - [`<script>` Tag](#script-tag)
+  - [`<video>` tag](#video-tag)
+- [Using with `src` assets](#using-with-src-assets)
+  - [JS](#js)
+  - [Styles (SASS)](#styles-sass)
+  - [Webpack](#webpack)
 - [Dependencies](#dependencies)
 
 ## Supported Browsers
@@ -94,19 +98,17 @@ npm i @skylineos/clsp-player
 ```
 
 
-## Usage
+## Using with `dist` assets
+
+NOTE: See `demos/simple-dist/` and `demos/advanced-dist/` for full examples.
 
 `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
 
-See `demo/simple.html` for a full example.
-
 ### `<head>` Tag
-
-In the `<head>` of your page, include a line for the CLSP Player styles:
 
 ```html
 <head>
-  <!-- CLSP styles -->
+  <!-- CLSP Player styles -->
   <link
     rel="stylesheet"
     href="/path/to/dist/clsp-player.css"
@@ -119,23 +121,39 @@ In the `<head>` of your page, include a line for the CLSP Player styles:
 <head>
 ```
 
+### `<script>` Tag
+
+```html
+<!-- CLSP Player -->
+<script src="/path/to/dist/clsp-player.min.js"></script>
+
+<script>
+  // Construct the player collection
+  var iovCollection = window.IovCollection.asSingleton();
+
+  // Instantiate the iov instance for this video element id
+  iovCollection.create('my-video')
+    .then(function (iov) {
+      // do something with the iov instance
+      iov.changeSrc('clsp://172.28.12.57/FairfaxVideo0520');
+    })
+    .catch(function (error) {
+      // do something with the error
+    });
+</script>
+```
+
 ### `<video>` tag
 
 We recommend wrapping the `video` tag in a container element (e.g. `div`) that the CLSP Player can mutate as needed.  The CLSP Player needs to perform some actions on the `video` element as well as its container.
 
-On the HTML `video` tag, the `type` attribute must be the following:
-
-```
-video/mp4; codecs='avc1.42E01E'
-```
+Note that for `clsp` streams, the `src` tag must have a `type` attribute with a value of `video/mp4; codecs='avc1.42E01E'`.
 
 This tells the browser exactly what codec to use to decode and play the video.  H.264 baseline 3.0 is a least common denominator codec supported on all browsers (according to the MSE development page).
 
-Here is a sample video element that defines a CLSP stream:
-
 ```html
 <div class="video-container">
-  <div>
+  <div class="clsp-container-fit">
     <video
       id="my-video"
       muted
@@ -149,27 +167,59 @@ Here is a sample video element that defines a CLSP stream:
 </div>
 ```
 
-### `<script>` Tag
 
-```html
-<!-- CLSP Player -->
-<script src="/path/to/dist/clsp-player.min.js"></script>
+## Using with `src` assets
 
-<script>
-  // Construct the player collection
-  window.iovCollection = window.IovCollection.asSingleton();
+NOTE: See `demos/simple-src/` and `demos/advanced-src/` for full examples.
 
-  // Instantiate the iov instance for this video element id
-  window.iovCollection.create('my-video')
-    .then(function (iov) {
-      // do something with the iov instance
-    })
-    .catch(function (error) {
-      // do something with the error
-    });
-</script>
+### JS
+
+@todo
+
+```js
+import '@babel/polyfill';
 ```
 
+### Styles (SASS)
+
+```scss
+@import '/path/to/node_modules/@skylineos/clsp-player/src/styles/clsp-player.scss';
+```
+
+### Webpack
+
+Create a specific module rule for the CLSP Player in your common webpack config.  This is necessary since the CLSP Player source uses modern ES6+ features and webpack will ignore files in node_modules by default.
+
+```js
+{
+  module: {
+    rules: [
+      {
+        test: /.*clsp-player\/(src|demos).*\.js$/,
+        loader: 'babel-loader?cacheDirectory=true',
+        options: {
+          presets: [
+            [
+              '@babel/preset-env',
+              {
+                // Prevents "ReferenceError: _typeof is not defined" error
+                exclude: [
+                  '@babel/plugin-transform-typeof-symbol',
+                ],
+              },
+            ],
+          ],
+          plugins: [
+            '@babel/plugin-syntax-dynamic-import',
+            '@babel/plugin-proposal-object-rest-spread',
+            '@babel/plugin-proposal-class-properties',
+          ],
+        },
+      },
+    ],
+  },
+}
+```
 
 ## Dependencies
 
