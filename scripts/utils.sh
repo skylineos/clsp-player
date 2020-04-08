@@ -135,12 +135,12 @@ jsFilesToLint=(\
   "src/js/**/*.js" \
   "scripts/*.js" \
   "scripts/**/*.js" \
-  "demo/**/*.js" \
+  "demos/**/*.js" \
 )
 
 scssFilesToLint=(\
   "src/styles/*.scss" \
   "src/styles/**/*.scss" \
-  "demo/src/styles/*.scss" \
-  "demo/src/styles/**/*.scss" \
+  "demos/src/styles/*.scss" \
+  "demos/src/styles/**/*.scss" \
 )
