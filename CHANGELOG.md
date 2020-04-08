@@ -4,6 +4,7 @@
 ## Table of Contents <!-- omit in toc -->
 
 - [CLSP Player](#clsp-player)
+    - [v0.19.0-1 - 2020-04-04 - Critical](#v0190-1---2020-04-04---critical)
     - [v0.18.0-1 - 2020-04-04 - Critical](#v0180-1---2020-04-04---critical)
 - [Pre CLSP Player](#pre-clsp-player)
     - [v0.17.0-1 - 2020-02-11 - Critical](#v0170-1---2020-02-11---critical)
@@ -28,8 +29,20 @@
 
 ## CLSP Player
 
+### v0.19.0-1 - 2020-04-04 - Critical
+
+* move `demo` to `demos`
+* create advanced and simple demos that use `dist` assets
+* create advanced and simple demos that use `src` assets
+* move demo `dist` assets to `dist/demos` folder
+* include `README` examples for both `dist` and `src` approaches
+* refactor build and serve scripts
+* only generate prod dist assets for CLSP VideoJS Plugin
+* only generate dev dist assets for demos
+
 ### v0.18.0-1 - 2020-04-04 - Critical
 
+* Update minimum supported Chrome version to 53
 * publish to NPM registry!
 * dist files are no longer part of source control
 * dist files get generated during publish
