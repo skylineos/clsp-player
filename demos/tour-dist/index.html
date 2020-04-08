@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>CLSP Player Tour Demo</title>
+    <title>CLSP Player Tour Demo ~ DIST ~</title>
     <link
       rel="shortcut icon"
       href="../favicon.ico"
@@ -31,23 +31,29 @@
     ></script>
   </head>
   <body>
-    <h1>CLSP Player Tour Demo</h1>
-    <h3 id="version">v</h3>
-    <div class="container">
-      <div id="tourSummary" class="summary">
-        <span>Time Elapsed:</span>
-        <h2 id="tourDuration">0 hours 0 minutes 0 seconds</h2>
-        <span>Time Started:</span>
-        <span id="tourStartTime">N/A</span>
-        <span>Heap Size Limit:</span>
-        <span id="tourHeapSizeLimit">N/A</span>
-        <span>Total Heap Size:</span>
-        <span id="tourTotalHeapSize">N/A</span>
-        <span>Used Heap Size:</span>
-        <h2 id="tourUsedHeapSize">N/A</h2>
-      </div>
-      <div class="tour-container">
-        <div class="stream-container">
+    <div class="header">
+      <img src="../skyline_logo.png" />
+      <h1 id="page-title">CLSP Player Tour Demo <br /> ~ DIST ~</h1>
+    </div>
+    <div
+      id="tourSummary"
+      class="summary"
+    >
+      <span>Time Elapsed:</span>
+      <h2 id="tourDuration">0 hours 0 minutes 0 seconds</h2>
+      <span>Time Started:</span>
+      <span id="tourStartTime">N/A</span>
+      <span>Heap Size Limit:</span>
+      <span id="tourHeapSizeLimit">N/A</span>
+      <span>Total Heap Size:</span>
+      <span id="tourTotalHeapSize">N/A</span>
+      <span>Used Heap Size:</span>
+      <h2 id="tourUsedHeapSize">N/A</h2>
+    </div>
+
+    <div class="content container-fit">
+      <div class="tour-container container-fit">
+        <div class="stream-container container-fit">
           <textarea
             id="stream-src"
             name="stream-src"
@@ -57,11 +63,11 @@
             title="reset tour"
           >Reset Tour</button>
         </div>
-        <div class="video-section">
+        <div class="video-section container-fit">
           <h2 id="current-stream-url"></h2>
           <span id="browser-not-supported">This browser is not supported</span>
-          <div class="video-container">
-            <div>
+          <div class="video-container container-fit">
+            <div class="clsp-container-fit">
               <video
                 id="my-video"
                 muted
@@ -118,6 +124,11 @@
     <script src="./index.js"></script>
 
     <script>
+      document.title = `v${window.clspUtils.version} ${document.title}`;
+
+      const pageTitle = document.getElementById('page-title').innerHTML;
+      document.getElementById('page-title').innerHTML = `${pageTitle} <br /> v${window.clspUtils.version}`;
+
       window.clspPlayerControls.initialize();
     </script>
   </body>
