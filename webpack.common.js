@@ -164,6 +164,18 @@ const simpleDemoSrcConfig = generateConfig(
 
 simpleDemoSrcConfig.output.path = demoOutputPath;
 
+const tourDemoSrcConfig = generateConfig(
+  'tour-src',
+  path.resolve(
+    __dirname,
+    'demos',
+    'tour-src',
+    'index.js',
+  ),
+);
+
+tourDemoSrcConfig.output.path = demoOutputPath;
+
 const clspPlayerConfig = generateConfig(
   utils.name,
   path.resolve(
@@ -179,6 +191,7 @@ module.exports = function () {
     advancedDemoDistConfig,
     advancedDemoSrcConfig,
     simpleDemoSrcConfig,
+    tourDemoSrcConfig,
     clspPlayerConfig,
   ];
 };
