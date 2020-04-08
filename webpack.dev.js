@@ -24,5 +24,11 @@ function devConfig (webpackConfig) {
 }
 
 module.exports = function () {
-  return webpackConfigs().map((webpackConfig) => devConfig(webpackConfig)).reverse();
+  const configs = webpackConfigs().map((webpackConfig) => devConfig(webpackConfig));
+
+  // Remove the CLSP Player config
+  // We ONLY want the demo pages to be built in dev mode
+  configs.pop();
+
+  return configs;
 };

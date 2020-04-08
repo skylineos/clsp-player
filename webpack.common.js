@@ -6,7 +6,7 @@ const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const WriteFilePlugin = require('write-file-webpack-plugin');
 
-const packageJson = require('./package.json');
+const utils = require('./src/js/utils/utils');
 
 const devMode = process.env.NODE_ENV !== 'production';
 
@@ -22,6 +22,15 @@ function generateProgressBarPlugin (name) {
   });
 }
 
+const outputPath = path.resolve(
+  __dirname,
+  'dist',
+);
+const demoOutputPath = path.resolve(
+  outputPath,
+  'demos',
+);
+
 function generateConfig (name, entry) {
   return {
     name,
@@ -32,10 +41,7 @@ function generateConfig (name, entry) {
       ],
     },
     output: {
-      path: path.resolve(
-        __dirname,
-        'dist'
-      ),
+      path: outputPath,
       filename: '[name].js',
     },
     module: {
@@ -68,7 +74,7 @@ function generateConfig (name, entry) {
             ),
             path.resolve(
               __dirname,
-              'demo'
+              'demos'
             ),
             // @see - https://github.com/visionmedia/debug/issues/668
             path.resolve(
@@ -122,25 +128,44 @@ function generateConfig (name, entry) {
   };
 }
 
+const advancedDemoSrcConfig = generateConfig(
+  'advanced-src',
+  path.resolve(
+    __dirname,
+    'demos',
+    'advanced-src',
+    'index.js',
+  ),
+);
+
+advancedDemoSrcConfig.output.path = demoOutputPath;
+
+const simpleDemoSrcConfig = generateConfig(
+  'simple-src',
+  path.resolve(
+    __dirname,
+    'demos',
+    'simple-src',
+    'index.js',
+  ),
+);
+
+simpleDemoSrcConfig.output.path = demoOutputPath;
+
+const clspPlayerConfig = generateConfig(
+  utils.name,
+  path.resolve(
+    __dirname,
+    'src',
+    'js',
+    'index.js',
+  ),
+);
+
 module.exports = function () {
   return [
-    generateConfig(
-      packageJson.name.split('/').pop(),
-      path.resolve(
-        __dirname,
-        'src',
-        'js',
-        'index.js'
-      )
-    ),
-    generateConfig(
-      'demo-advanced',
-      path.resolve(
-        __dirname,
-        'demo',
-        'advanced',
-        'index.js'
-      )
-    ),
+    // advancedDemoSrcConfig,
+    simpleDemoSrcConfig,
+    clspPlayerConfig,
   ];
 };
