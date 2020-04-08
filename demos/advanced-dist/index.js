@@ -1,16 +1,10 @@
 import './styles.scss';
 
-import '@babel/polyfill';
-
 import $ from 'jquery';
-
-import clspUtils from '~root/src/js/utils/utils';
-import IovCollection from '~root/src/js/iov/IovCollection';
-import TourController from '~root/src/js/iov/TourController';
 
 import {
   initializeWall,
-} from './shared';
+} from '../advanced-src/shared';
 
 let wallPlayers = [];
 
@@ -25,7 +19,7 @@ function destroyAllPlayers () {
 }
 
 async function createPlayer (index, playerOptions) {
-  const iovCollection = IovCollection.asSingleton();
+  const iovCollection = window.IovCollection.asSingleton();
 
   const videoId = `wall-video-${index}`;
 
@@ -42,7 +36,7 @@ async function createPlayer (index, playerOptions) {
   $container.find('.video-stream .index').text(index);
 
   if (playerOptions.tour && playerOptions.tour.enabled) {
-    const tour = TourController.factory(
+    const tour = window.TourController.factory(
       iovCollection, videoElementId, {
         intervalDuration: 10,
         onShown: (
@@ -129,12 +123,12 @@ async function createPlayer (index, playerOptions) {
 }
 
 $(() => {
-  const localStorageName = 'clsp-player-advanced-demo-src';
+  const localStorageName = 'clsp-player-advanced-demo-dist';
 
-  document.title = `v${clspUtils.version} ${document.title}`;
+  document.title = `v${window.clspUtils.version} ${document.title}`;
 
   const pageTitle = $('#page-title').html();
-  $('#page-title').html(`${pageTitle} <br /> v${clspUtils.version}`);
+  $('#page-title').html(`${pageTitle} <br /> v${window.clspUtils.version}`);
 
   initializeWall(
     localStorageName,

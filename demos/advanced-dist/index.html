@@ -2,24 +2,28 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>CLSP Player Advanced Demo ~ SRC ~</title>
+    <title>CLSP Player Advanced Demo ~ DIST ~</title>
     <link
       rel="shortcut icon"
       href="../favicon.ico"
     >
     <link
       rel="stylesheet"
-      href="../../dist/demos/advanced-src.css"
+      href="../../dist/clsp-player.css"
+    >
+    <link
+      rel="stylesheet"
+      href="../../dist/demos/advanced-dist.css"
     >
     <script
       type="text/javascript"
-      src="../../dist/demos/advanced-src.js"
+      src="//cdn.jsdelivr.net/npm/@babel/polyfill@7.8.7/dist/polyfill.min.js"
     ></script>
   </head>
   <body>
     <div class="header">
       <img src="../skyline_logo.png" />
-      <h1 id="page-title">CLSP Player Advanced Demo <br /> ~ SRC ~</h1>
+      <h1 id="page-title">CLSP Player Advanced Demo <br /> ~ DIST ~</h1>
     </div>
 
     <div class="page-body">
@@ -170,5 +174,14 @@
         <div class="wall-video-metrics video-metrics"></div>
       </div>
     </template>
+
+    <script
+      type="text/javascript"
+      src="../../dist/clsp-player.min.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="../../dist/demos/advanced-dist.js"
+    ></script>
   </body>
 </html>

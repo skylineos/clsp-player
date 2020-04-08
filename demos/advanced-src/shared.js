@@ -12,14 +12,6 @@ const defaultClspUrls = [
   'clsp://172.28.12.57/40004',
 ];
 
-// Run this when the demo page loads
-export function onLoad () {
-  const pageTitle = `CLSP ${window.CLSP_DEMO_VERSION} Demo Page`;
-  document.title = pageTitle;
-
-  $('#page-title-version').html(window.CLSP_DEMO_VERSION);
-}
-
 // Get a demo local storage value
 export function getLocalStorage (name, elementId) {
   const localStorageKey = `skylineos.clsp-player.${name}.${elementId}`;
@@ -266,7 +258,6 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
 }
 
 export default {
-  onLoad,
   getLocalStorage,
   initLocalStorage,
   initializeWall,
