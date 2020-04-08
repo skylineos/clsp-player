@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>CLSP Player Demos</title>
+    <link
+      rel="shortcut icon"
+      href="./favicon.ico"
+    >
+    <link
+      rel="stylesheet"
+      href="./styles.css"
+    >
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/@babel/polyfill@7.8.7/dist/polyfill.min.js"
+    >
+    </script>
+    <script
+      type="text/javascript"
+      src="../../dist/clsp-player.min.js"
+    ></script>
+  </head>
+  <body>
+    <div class="header">
+      <img src="./skyline_logo.png" />
+      <h1 id="page-title">CLSP Player Demos</h1>
+    </div>
+
+    <div class="content container-fit">
+      <div class="buttons-container">
+        <div class="buttons">
+          <button
+            onclick="location.href = 'advanced-dist/';"
+          >Advanced Demo <br /> ~ DIST ~</button>
+          <button
+            onclick="location.href = 'advanced-src/';"
+          >Advanced Demo <br /> ~ SRC ~</button>
+          <button
+            onclick="location.href = 'simple-dist/';"
+          >Simple Demo <br /> ~ DIST ~</button>
+          <button
+            onclick="location.href = 'simple-src/';"
+          >Simple Demo <br /> ~ SRC ~</button>
+          <button
+            onclick="location.href = 'tours-dist/';"
+          >Tour Demo <br /> ~ DIST ~</button>
+          <button
+            onclick="location.href = 'tours-src/';"
+          >Tour Demo <br /> ~ SRC ~</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+      document.title = `v${window.clspUtils.version} ${document.title}`;
+
+      const pageTitle = document.getElementById('page-title').innerHTML;
+      document.getElementById('page-title').innerHTML = `${pageTitle} <br /> v${window.clspUtils.version}`;
+    </script>
+  </body>
+</html>
