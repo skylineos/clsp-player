@@ -1,12 +1,30 @@
-.clsp-player-container {
-  position: relative;
+// A utility class for filling the parent element.
+.clsp-container-fit {
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
+  padding: 0;
+  margin: 0;
+  // if you see scroll bars, you probably styled something incorrectly
+  overflow: auto;
+}
 
+// This class is automatically added to the element that contains the clsp
+// video element.  It is meant to take up the entirety of its parent.
+.clsp-player-container {
+  @extend .clsp-container-fit;
+  position: relative;
+
+  // When dealing with tours, we must ensure that the first video element is on
+  // top.
   video:first-of-type {
     z-index: 2 !important;
   }
 
+  // All other video elements are beneath the first, in arbitrary order.
   .clsp-player {
     z-index: 1;
     position: absolute;
@@ -15,5 +33,6 @@
     width: 100%;
     height: 100%;
     background-color: black;
+    object-fit: fill;
   }
 }
