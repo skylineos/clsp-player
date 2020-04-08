@@ -32,7 +32,7 @@ var initialStreams = [
   'clsp://hera.qa.skyline.local/FairfaxVideo0790',
 ];
 
-function displayVersions() {
+function displayVersions () {
   document.title = `v${window.clspUtils.version} ${document.title}`;
 
   var pageTitle = document.getElementById('page-title').innerHTML;

@@ -68,8 +68,9 @@ function registerHandlers () {
 }
 
 async function main () {
+  const videoElementId = 'my-video';
+
   try {
-    const videoElementId = 'my-video';
     const url = $(`#${videoElementId}`).find('source')[0].getAttribute('src');
 
     document.getElementById('stream-src').value = url;
