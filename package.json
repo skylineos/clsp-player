@@ -18,8 +18,8 @@
     "serve": "./scripts/serve/serve.sh",
     "lint": "./scripts/lint.sh",
     "lint-fix": "./scripts/lint.sh --fix",
-    "prepack": "echo 'pre-publish' && yarn run build",
-    "postpack": "rm -rf dist",
+    "prepack": "yarn run build",
+    "postpack": "./scripts/build/pre-build.sh",
     "preversion": "./scripts/version.sh --pre",
     "version": "./scripts/version.sh",
     "postversion": "./scripts/version.sh --post"
