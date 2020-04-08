@@ -24,7 +24,6 @@ The highest h.264 keyframe/iframe segment frequency this player currently suppor
   - [JS](#js)
   - [Styles (SASS)](#styles-sass)
   - [Webpack](#webpack)
-- [Dependencies](#dependencies)
 
 ## Supported Browsers
 
@@ -88,13 +87,13 @@ clsp-hash://<host>[:port]/stream?start={epoch_seconds}&end={epoch_seconds}&token
 ### Via Yarn
 
 ```
-yarn add @skylineos/clsp-player
+yarn add @babel/polyfill @skylineos/clsp-player
 ```
 
 ### Via NPM
 
 ```
-npm i @skylineos/clsp-player
+npm i @babel/polyfill @skylineos/clsp-player
 ```
 
 
@@ -102,7 +101,7 @@ npm i @skylineos/clsp-player
 
 NOTE: See `demos/simple-dist/` and `demos/advanced-dist/` for full examples.
 
-`@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
+NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
 
 ### `<head>` Tag
 
@@ -128,11 +127,13 @@ NOTE: See `demos/simple-dist/` and `demos/advanced-dist/` for full examples.
 <script src="/path/to/dist/clsp-player.min.js"></script>
 
 <script>
+  var videoElementId = 'my-video';
+
   // Construct the player collection
   var iovCollection = window.IovCollection.asSingleton();
 
   // Instantiate the iov instance for this video element id
-  iovCollection.create('my-video')
+  iovCollection.create(videoElementId)
     .then(function (iov) {
       // do something with the iov instance
       iov.changeSrc('clsp://172.28.12.57/FairfaxVideo0520');
@@ -140,6 +141,22 @@ NOTE: See `demos/simple-dist/` and `demos/advanced-dist/` for full examples.
     .catch(function (error) {
       // do something with the error
     });
+
+  // Or instantiate a tour
+  var tour = window.TourController.factory(
+    window.IovCollection.asSingleton(),
+    videoElementId,
+    {
+      intervalDuration: 10,
+    },
+  );
+
+  tour.addUrls([
+    'clsp://172.28.12.57/FairfaxVideo0520',
+    'clsp://172.28.12.57/FairfaxVideo0420',
+  ]);
+
+  tour.start();
 </script>
 ```
 
@@ -172,12 +189,40 @@ This tells the browser exactly what codec to use to decode and play the video.  
 
 NOTE: See `demos/simple-src/` and `demos/advanced-src/` for full examples.
 
-### JS
+NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
 
-@todo
+### JS
 
 ```js
 import '@babel/polyfill';
+
+import clspUtils from '~root/src/js/utils/utils';
+import IovCollection from '~root/src/js/iov/IovCollection';
+import TourController from '~root/src/js/iov/TourController';
+
+const videoElementId = 'my-video';
+const urls = [
+  'clsp://172.28.12.57/FairfaxVideo0520',
+  'clsp://172.28.12.57/FairfaxVideo0420',
+];
+
+const iovCollection = IovCollection.asSingleton();
+const iov = await iovCollection.create(videoElementId);
+
+iov.changeSrc(urls[0]);
+
+// tour
+
+const tour = TourController.factory(
+  IovCollection.asSingleton(),
+  videoElementId,
+  {
+    intervalDuration: 10,
+  },
+);
+
+tour.addUrls(urls);
+tour.start();
 ```
 
 ### Styles (SASS)
@@ -189,6 +234,20 @@ import '@babel/polyfill';
 ### Webpack
 
 Create a specific module rule for the CLSP Player in your common webpack config.  This is necessary since the CLSP Player source uses modern ES6+ features and webpack will ignore files in node_modules by default.
+
+The following peer dependencies are required to build via webpack:
+
+* `@babel/polyfill`
+* `@babel/core`
+* `babel-loader`
+* `@babel/preset-env`
+* `@babel/plugin-transform-typeof-symbol`
+* `@babel/plugin-syntax-dynamic-import`
+* `@babel/plugin-proposal-object-rest-spread`
+* `@babel/plugin-proposal-class-properties`
+* webpack SASS toolchain if using SASS src files.  See `webpack.common.js` for an example.
+
+Sample webpack config:
 
 ```js
 {
@@ -220,7 +279,3 @@ Create a specific module rule for the CLSP Player in your common webpack config.
   },
 }
 ```
-
-## Dependencies
-
-`@babel/polyfill` `7.8.7` is required.
