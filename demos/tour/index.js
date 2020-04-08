@@ -98,6 +98,6 @@ function initialize () {
   window.tour.start();
 }
 
-window.clspControls = {
+window.clspPlayerControls = {
   initialize: initialize,
 };

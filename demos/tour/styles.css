@@ -42,7 +42,7 @@ h3 {
   align-items: center;
   justify-content: space-around;
   margin: 0 auto;
-  margin-top: 2rem;
+  margin-top: 2em;
 }
 
 .container > * {
@@ -52,7 +52,7 @@ h3 {
 #tourSummary {
   display: flex;
   justify-content: space-between;
-  padding: 0.5rem;
+  padding: 0.5em;
 }
 
 #tourSummary > * {
@@ -88,7 +88,7 @@ h3 {
 }
 
 .stream-container button {
-  padding: 0.5rem;
+  padding: 0.5em;
 }
 
 .video-section {
@@ -102,14 +102,14 @@ h3 {
   flex-grow: 1;
   flex-shrink: 0;
   border: solid 2px white;
-  border-radius: 1rem;
+  border-radius: 1em;
 }
 
 .clsp-player-container {
 }
 
 .clsp-player {
-  padding: 0.5rem;
+  padding: 0.5em;
 }
 
 video {
@@ -121,18 +121,18 @@ video {
 #browser-not-supported {
   display: none;
   background-color: white;
-  border-radius: 1rem;
-  padding: 1rem;
+  border-radius: 1em;
+  padding: 1em;
 }
 
 .controls {
   display: flex;
-  margin: 1rem auto;
+  margin: 1em auto;
   justify-content: space-around;
 }
 
 .controls button {
-  padding: 1rem 2rem;
-  font-size: 1.5rem;
-  border-radius: 1rem;
+  padding: 1em 2em;
+  font-size: 1.5em;
+  border-radius: 1em;
 }

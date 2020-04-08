@@ -1,3 +1,5 @@
+import './styles.scss';
+
 import '@babel/polyfill';
 
 import $ from 'jquery';
@@ -12,7 +14,6 @@ import {
   initializeWall,
 } from './shared';
 
-import './styles.scss';
 
 window.CLSP_DEMO_VERSION = packageJson.version;
 

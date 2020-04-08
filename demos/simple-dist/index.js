@@ -5,7 +5,7 @@ function play () {
     return;
   }
 
-  window.clspControls.changeSrc();
+  window.clspPlayerControls.changeSrc();
 }
 
 function stop () {
@@ -40,8 +40,6 @@ function changeSrc () {
 }
 
 function initialize () {
-  document.getElementById('version').innerHTML += window.clspUtils.version;
-
   var videoElementId = 'my-video';
 
   var element = document.getElementById(videoElementId);
@@ -63,7 +61,7 @@ function initialize () {
     });
 }
 
-window.clspControls = {
+window.clspPlayerControls = {
   play: play,
   stop: stop,
   fullscreen: fullscreen,

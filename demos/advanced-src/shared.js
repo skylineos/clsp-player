@@ -22,7 +22,7 @@ export function onLoad () {
 
 // Get a demo local storage value
 export function getLocalStorage (name, elementId) {
-  const localStorageKey = `skyline.clspPlugin.${name}.${elementId}`;
+  const localStorageKey = `skylineos.clsp-player.${name}.${elementId}`;
 
   return {
     key: localStorageKey,
@@ -31,7 +31,7 @@ export function getLocalStorage (name, elementId) {
 }
 
 export function setLocalStorage (name, elementId, value) {
-  const localStorageKey = `skyline.clspPlugin.${name}.${elementId}`;
+  const localStorageKey = `skylineos.clsp-player.${name}.${elementId}`;
 
   window.localStorage.setItem(localStorageKey, value);
 

@@ -3,35 +3,45 @@
 }
 
 html,
-body {
+body,
+.container-fit {
   display: flex;
-  background-color: black;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
   padding: 0;
   margin: 0;
+  overflow: auto;
+}
+
+html {
+  background-color: black;
 }
 
 body {
-  display: flex;
-  flex-direction: column;
-  align-content: center;
+  padding: 0.5em;
 }
 
 .header {
   display: flex;
   color: white;
-  justify-content: space-between;
-  padding: 1rem 5%;
-  font-size: 1.5rem;
+  justify-content: space-around;
+  padding: 0.5em;
+  font-size: 1.5em;
   flex-grow: 0;
   flex-shrink: 0;
 }
 
-.header > * {
+.header>* {
   margin: auto;
-  padding: 0.5rem;
+  padding: 0 0.5em;
   text-align: center;
+}
+
+#page-title {
+  font-size: 1.5em;
 }
 
 .buttons-container {
@@ -46,7 +56,7 @@ body {
   grid-template-rows: 1fr 1fr 1fr;
   grid-template-columns: 1fr 1fr;
   flex-grow: 1;
-  padding: 2rem;
+  padding: 2em;
   margin: auto;
   width: 100%;
   height: 100%;
@@ -54,10 +64,10 @@ body {
 
 .buttons > button {
   max-width: 500px;
-  font-size: 2rem;
+  font-size: 2em;
   height: 90%;
   width: 90%;
   margin: auto;
-  border-radius: 2rem;
+  border-radius: 2em;
   cursor: pointer;
 }
