@@ -9,28 +9,28 @@ function _getTourList () {
   // @todo - how can we make this easier for clients to be able to set up their
   // own demos with functional urls without changing the source code?
   var initialStreams = [
-    'clsps://172.28.12.57/FairfaxVideo0520',
-    'clsps://172.28.12.57/FairfaxVideo0420',
-    'clsps://172.28.12.57/FairfaxVideo0440',
-    'clsps://172.28.12.57/FairfaxVideo0350',
-    'clsps://172.28.12.57/FairfaxVideo0440_FakeStreamUrl',
-    'clsps://172.28.12.57/FairfaxVideo0760',
-    'clsps://172.28.12.57/FairfaxVideo0430',
-    'clsps://172.28.12.57/FairfaxVideo0450',
-    'clsps://172.28.12.57/FairfaxVideo0470',
-    'clsps://172.28.12.57/FairfaxVideo0780',
-    'clsps://172.28.12.57/FairfaxVideo0790',
-    'clsp://172.28.12.57/FairfaxVideo0520',
-    'clsp://172.28.12.57/FairfaxVideo0420',
-    'clsp://172.28.12.57/FairfaxVideo0440',
-    'clsp://172.28.12.57/FairfaxVideo0350',
-    'clsp://172.28.12.57/FairfaxVideo0440_FakeStreamUrl',
-    'clsp://172.28.12.57/FairfaxVideo0760',
-    'clsp://172.28.12.57/FairfaxVideo0430',
-    'clsp://172.28.12.57/FairfaxVideo0450',
-    'clsp://172.28.12.57/FairfaxVideo0470',
-    'clsp://172.28.12.57/FairfaxVideo0780',
-    'clsp://172.28.12.57/FairfaxVideo0790',
+    'clsps://hera.qa.skyline.local/FairfaxVideo0520',
+    'clsps://hera.qa.skyline.local/FairfaxVideo0420',
+    'clsps://hera.qa.skyline.local/FairfaxVideo0440',
+    'clsps://hera.qa.skyline.local/FairfaxVideo0350',
+    'clsps://hera.qa.skyline.local/FairfaxVideo0440_FakeStreamUrl',
+    'clsps://hera.qa.skyline.local/FairfaxVideo0760',
+    'clsps://hera.qa.skyline.local/FairfaxVideo0430',
+    'clsps://hera.qa.skyline.local/FairfaxVideo0450',
+    'clsps://hera.qa.skyline.local/FairfaxVideo0470',
+    'clsps://hera.qa.skyline.local/FairfaxVideo0780',
+    'clsps://hera.qa.skyline.local/FairfaxVideo0790',
+    'clsp://hera.qa.skyline.local/FairfaxVideo0520',
+    'clsp://hera.qa.skyline.local/FairfaxVideo0420',
+    'clsp://hera.qa.skyline.local/FairfaxVideo0440',
+    'clsp://hera.qa.skyline.local/FairfaxVideo0350',
+    'clsp://hera.qa.skyline.local/FairfaxVideo0440_FakeStreamUrl',
+    'clsp://hera.qa.skyline.local/FairfaxVideo0760',
+    'clsp://hera.qa.skyline.local/FairfaxVideo0430',
+    'clsp://hera.qa.skyline.local/FairfaxVideo0450',
+    'clsp://hera.qa.skyline.local/FairfaxVideo0470',
+    'clsp://hera.qa.skyline.local/FairfaxVideo0780',
+    'clsp://hera.qa.skyline.local/FairfaxVideo0790',
   ];
 
   if (!document.getElementById(textAreaId).value) {
@@ -46,9 +46,6 @@ function _getTourList () {
 }
 
 function initialize () {
-  document.title = 'CLSP ' + window.clspUtils.version + ' ' + document.title;
-  document.getElementById('version').innerHTML += window.clspUtils.version;
-
   var date = new Date();
 
   document.getElementById('tourStartTime').innerText = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' + date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
