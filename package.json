@@ -14,12 +14,12 @@
   "repository": "https://github.com/skylineos/clsp-player.git",
   "main": "dist/clsp-player.min.js",
   "scripts": {
-    "build": "./scripts/build.sh",
-    "serve": "./scripts/serve.sh",
+    "build": "./scripts/build/build.sh",
+    "serve": "./scripts/serve/serve.sh",
     "lint": "./scripts/lint.sh",
     "lint-fix": "./scripts/lint.sh --fix",
-    "prepublish": "echo 'pre-publish' && yarn run build",
-    "postpublish": "rm -rf dist",
+    "prepack": "echo 'pre-publish' && yarn run build",
+    "postpack": "rm -rf dist",
     "preversion": "./scripts/version.sh --pre",
     "version": "./scripts/version.sh",
     "postversion": "./scripts/version.sh --post"
@@ -27,7 +27,9 @@
   "dependencies": {
     "debug": "4.1.1",
     "lodash": "4.17.15",
-    "paho-mqtt": "1.1.0"
+    "paho-mqtt": "1.1.0",
+    "srcdoc-polyfill": "1.0.0",
+    "uuid": "7.0.3"
   },
   "devDependencies": {
     "@babel/core": "7.9.0",
@@ -53,10 +55,8 @@
     "node-sass": "4.13.1",
     "progress-bar-webpack-plugin": "2.1.0",
     "sass-loader": "8.0.2",
-    "srcdoc-polyfill": "1.0.0",
     "standard": "14.3.3",
     "style-loader": "1.1.3",
-    "terser-webpack-plugin": "2.3.5",
     "url-loader": "4.0.0",
     "webpack": "4.42.1",
     "webpack-bundle-analyzer": "3.6.1",
