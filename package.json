@@ -13,21 +13,6 @@
   "license": "MIT",
   "repository": "https://github.com/skylineos/clsp-player.git",
   "main": "dist/clsp-player.min.js",
-  "jest": {
-    "moduleFileExtensions": [
-      "js"
-    ],
-    "moduleDirectories": [
-      "src"
-    ],
-    "moduleNameMapper": {
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/test/jest/__mocks__/fileMock.js",
-      "\\.(css|less|sass)$": "<rootDir>/test/jest/__mocks__/styleMock.js"
-    },
-    "transform": {
-      "^.+\\.js$": "babel-jest"
-    }
-  },
   "scripts": {
     "build": "./scripts/build/build.sh",
     "serve": "./scripts/serve/serve.sh",
