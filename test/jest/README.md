@@ -17,3 +17,4 @@
 
 * [https://jestjs.io/docs/en/getting-started](https://jestjs.io/docs/en/getting-started)
 * [https://medium.com/@rickhanlonii/understanding-jest-mocks-f0046c68e53c](https://medium.com/@rickhanlonii/understanding-jest-mocks-f0046c68e53c)
+* [https://github.com/facebook/jest/issues/5048](https://github.com/facebook/jest/issues/5048)
