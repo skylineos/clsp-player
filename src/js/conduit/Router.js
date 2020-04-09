@@ -806,6 +806,7 @@ export default function () {
   // possible.  Call each of these in the corresponding attribute on the
   // "body" tag.
   return {
+    Router: Router,
     onload: function () {
       try {
         window.router = Router.factory(
@@ -839,6 +840,7 @@ export default function () {
     },
     onunload: function () {
       if (!window.router) {
+        // window.router.logger.info('onunload - Router not instantiated, exiting gracefully');
         return;
       }
 
@@ -856,6 +858,6 @@ export default function () {
         window.router.logger.error(error);
       }
     },
-    Router: Router,
+    PAHO_ERROR_CODE_NOT_CONNECTED: PAHO_ERROR_CODE_NOT_CONNECTED,
   };
 }
