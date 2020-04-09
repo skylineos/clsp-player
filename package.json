@@ -13,6 +13,21 @@
   "license": "MIT",
   "repository": "https://github.com/skylineos/clsp-player.git",
   "main": "dist/clsp-player.min.js",
+  "jest": {
+    "moduleFileExtensions": [
+      "js"
+    ],
+    "moduleDirectories": [
+      "src"
+    ],
+    "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/test/jest/__mocks__/fileMock.js",
+      "\\.(css|less|sass)$": "<rootDir>/test/jest/__mocks__/styleMock.js"
+    },
+    "transform": {
+      "^.+\\.js$": "babel-jest"
+    }
+  },
   "scripts": {
     "build": "./scripts/build/build.sh",
     "serve": "./scripts/serve/serve.sh",
@@ -22,7 +37,8 @@
     "postpack": "./scripts/build/pre-build.sh",
     "preversion": "./scripts/version.sh --pre",
     "version": "./scripts/version.sh",
-    "postversion": "./scripts/version.sh --post"
+    "postversion": "./scripts/version.sh --post",
+    "test": "jest"
   },
   "dependencies": {
     "debug": "4.1.1",
@@ -39,6 +55,7 @@
     "@babel/polyfill": "7.8.7",
     "@babel/preset-env": "7.9.0",
     "babel-eslint": "10.1.0",
+    "babel-jest": "25.3.0",
     "babel-loader": "8.1.0",
     "chalk": "4.0.0",
     "css-loader": "3.4.2",
@@ -49,6 +66,7 @@
     "eslint-plugin-promise": "4.2.1",
     "eslint-plugin-standard": "4.0.1",
     "humanize": "0.0.9",
+    "jest": "25.3.0",
     "jquery": "3.4.1",
     "mini-css-extract-plugin": "0.9.0",
     "moment": "2.24.0",
