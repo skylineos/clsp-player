@@ -23,7 +23,7 @@
     "preversion": "./scripts/version.sh --pre",
     "version": "./scripts/version.sh",
     "postversion": "./scripts/version.sh --post",
-    "test": "jest"
+    "test": "jest && ./test/jest/post-test.sh"
   },
   "dependencies": {
     "debug": "4.1.1",
