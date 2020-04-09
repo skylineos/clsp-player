@@ -9,4 +9,4 @@
 .vscode
 
 # jest test coverage
-/coverage/
+/test/jest/coverage/
