@@ -850,10 +850,11 @@ export default function () {
         window.router.logger.info('onunload - Router destroyed in onunload');
       }
       catch (error) {
-        if (error.message.startsWith(PAHO_ERROR_CODE_NOT_CONNECTED)) {
-          // if there wasn't a connection, do not show an error
-          return;
-        }
+        // @todo - this needs to be handled in the Router, not here!!
+        // if (error.message.startsWith(PAHO_ERROR_CODE_NOT_CONNECTED)) {
+        //   // if there wasn't a connection, do not show an error
+        //   return;
+        // }
 
         window.router.logger.error(error);
       }
