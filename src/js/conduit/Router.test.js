@@ -4,34 +4,34 @@ import Router from './Router';
 
 describe('Router', () => {
   describe('export value', () => {
-    test('is function', () => {
+    it('is function', () => {
       expect(typeof Router).toBe('function');
     });
   });
 
   describe('has everything necessary for iframe functionality', () => {
-    test('returns object', () => {
+    it('returns object', () => {
       const router = Router();
 
       expect(typeof router).toBe('object');
     });
-    test('has "Router" property, which is the Router class', () => {
+    it('has "Router" property, which is the Router class', () => {
       const router = Router();
 
       expect(typeof router.Router).toBe('function');
       expect(router.Router.name).toBe('Router');
     });
-    test('has "onload" property of type "function"', () => {
+    it('has "onload" property of type "function"', () => {
       const router = Router();
 
       expect(typeof router.onload).toBe('function');
     });
-    test('has "onunload" property of type "function"', () => {
+    it('has "onunload" property of type "function"', () => {
       const router = Router();
 
       expect(typeof router.onunload).toBe('function');
     });
-    test('has "PAHO_ERROR_CODE_NOT_CONNECTED" property of type "string"', () => {
+    it('has "PAHO_ERROR_CODE_NOT_CONNECTED" property of type "string"', () => {
       const router = Router();
 
       expect(typeof router.PAHO_ERROR_CODE_NOT_CONNECTED).toBe('string');
@@ -39,20 +39,20 @@ describe('Router', () => {
   });
 
   xdescribe('Router', () => {
-    test('lame', () => {
+    it('lame', () => {
       throw new Error('shouldnt see me');
     });
   });
 
   xdescribe('onload', () => {
-    test('lame', () => {
+    it('lame', () => {
       throw new Error('shouldnt see me');
     });
   });
 
   describe('onunload', () => {
-    describe('when router has not been instantiated...', () => {
-      test('exits gracefully', () => {
+    describe('the router has not been instantiated', () => {
+      it('does not throw an error', () => {
         const { onunload } = Router();
 
         window.router = undefined;
@@ -61,7 +61,7 @@ describe('Router', () => {
       });
     });
 
-    describe('when router has been instantiated...', () => {
+    describe('the router has been instantiated', () => {
       function generateMockRouter () {
         return {
           destroy: jest.fn(),
@@ -72,7 +72,7 @@ describe('Router', () => {
         };
       }
 
-      test('destroys the router', () => {
+      it('destroys the router', () => {
         const {
           onunload,
         } = Router();
@@ -82,43 +82,26 @@ describe('Router', () => {
         onunload();
 
         expect(window.router.destroy.mock.calls.length).toBe(1);
-        expect(window.router.logger.info.mock.calls.length).toBe(2);
-        expect(window.router.logger.error.mock.calls.length).toBe(0);
       });
-      test('exits gracefully if the router has already been disconnected', () => {
+
+      it('exits gracefully if an unspecified error occurs and logs the error', () => {
         const {
-          PAHO_ERROR_CODE_NOT_CONNECTED,
           onunload,
         } = Router();
 
         window.router = generateMockRouter();
 
+        const error = new Error('Unspecified Error');
+
         window.router.destroy = jest.fn(() => {
-          throw new Error(PAHO_ERROR_CODE_NOT_CONNECTED);
+          throw error;
         });
 
         onunload();
 
         expect(window.router.destroy.mock.calls.length).toBe(1);
-        expect(window.router.logger.info.mock.calls.length).toBe(1);
-        expect(window.router.logger.error.mock.calls.length).toBe(0);
-      });
-      test('exits gracefully if an unspecified error occurs', () => {
-        const {
-          onunload,
-        } = Router();
-
-        window.router = generateMockRouter();
-
-        window.router.destroy = jest.fn(() => {
-          throw new Error('Unspecified Error');
-        });
-
-        onunload();
-
-        expect(window.router.destroy.mock.calls.length).toBe(1);
-        expect(window.router.logger.info.mock.calls.length).toBe(1);
         expect(window.router.logger.error.mock.calls.length).toBe(1);
+        expect(window.router.logger.error.mock.calls[0].params[0]).toBe(error);
       });
     });
   });
