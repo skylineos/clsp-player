@@ -22,7 +22,7 @@ module.exports = {
 
   // An array of glob patterns indicating a set of files for which coverage information should be collected
   collectCoverageFrom: [
-    "<rootDir>/src/js/conduit/Router.js"
+    "<rootDir>/src/js/**",
   ],
 
   // The directory where Jest should output its coverage files
