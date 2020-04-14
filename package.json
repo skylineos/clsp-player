@@ -23,7 +23,9 @@
     "preversion": "./scripts/version.sh --pre",
     "version": "./scripts/version.sh",
     "postversion": "./scripts/version.sh --post",
-    "test": "jest && ./test/jest/scripts/post-test.sh"
+    "test": "jest && ./test/jest/scripts/echo-coverage-hyperlink.sh",
+    "test:dev": "jest --coverage=false",
+    "test:watch": "yarn run test:dev --watch"
   },
   "dependencies": {
     "debug": "4.1.1",
