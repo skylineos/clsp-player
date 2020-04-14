@@ -1,40 +1,26 @@
+// @todo - it may be better to put this in `setupFilesAfterEnv` in jest config
 import '@babel/polyfill';
 
 import Router from './Router';
 
 describe('Router', () => {
-  describe('export value', () => {
-    it('is function', () => {
+  describe('has a default export value', () => {
+    it('is a function', () => {
       expect(typeof Router).toBe('function');
     });
-  });
-
-  describe('has everything necessary for iframe functionality', () => {
-    it('returns object', () => {
+    it('returns an object with the required keys and value types', () => {
       const router = Router();
 
-      expect(typeof router).toBe('object');
-    });
-    it('has "Router" property, which is the Router class', () => {
-      const router = Router();
-
+      expect(router).toBeObject();
+      expect(router).toContainAllKeys([
+        'Router',
+        'onload',
+        'onunload',
+      ]);
       expect(typeof router.Router).toBe('function');
       expect(router.Router.name).toBe('Router');
-    });
-    it('has "onload" property of type "function"', () => {
-      const router = Router();
-
       expect(typeof router.onload).toBe('function');
-    });
-    it('has "onunload" property of type "function"', () => {
-      const router = Router();
-
       expect(typeof router.onunload).toBe('function');
-    });
-    it('has "PAHO_ERROR_CODE_NOT_CONNECTED" property of type "string"', () => {
-      const router = Router();
-
-      expect(typeof router.PAHO_ERROR_CODE_NOT_CONNECTED).toBe('string');
     });
   });
 
@@ -50,8 +36,8 @@ describe('Router', () => {
     });
   });
 
-  describe('onunload', () => {
-    describe('the router has not been instantiated', () => {
+  describe('when onunload is called', () => {
+    describe('when the router has not been instantiated', () => {
       it('does not throw an error', () => {
         const { onunload } = Router();
 
@@ -61,7 +47,7 @@ describe('Router', () => {
       });
     });
 
-    describe('the router has been instantiated', () => {
+    describe('when the router has been instantiated', () => {
       function generateMockRouter () {
         return {
           destroy: jest.fn(),
@@ -84,14 +70,14 @@ describe('Router', () => {
         expect(window.router.destroy.mock.calls.length).toBe(1);
       });
 
-      it('exits gracefully if an unspecified error occurs and logs the error', () => {
+      it('logs any unexpected error and does not throw', () => {
         const {
           onunload,
         } = Router();
 
         window.router = generateMockRouter();
 
-        const error = new Error('Unspecified Error');
+        const error = new Error('Unexpected Error!');
 
         window.router.destroy = jest.fn(() => {
           throw error;
