@@ -840,7 +840,8 @@ export default function () {
     },
     onunload: function () {
       if (!window.router) {
-        // window.router.logger.info('onunload - Router not instantiated, exiting gracefully');
+        // @todo - have a debug statement here that says that the router was
+        // not instantiated
         return;
       }
 
@@ -850,15 +851,8 @@ export default function () {
         window.router.logger.info('onunload - Router destroyed in onunload');
       }
       catch (error) {
-        // @todo - this needs to be handled in the Router, not here!!
-        // if (error.message.startsWith(PAHO_ERROR_CODE_NOT_CONNECTED)) {
-        //   // if there wasn't a connection, do not show an error
-        //   return;
-        // }
-
         window.router.logger.error(error);
       }
     },
-    PAHO_ERROR_CODE_NOT_CONNECTED: PAHO_ERROR_CODE_NOT_CONNECTED,
   };
 }
