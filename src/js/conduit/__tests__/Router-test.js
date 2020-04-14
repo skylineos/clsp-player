@@ -1,7 +1,7 @@
 // @todo - it may be better to put this in `setupFilesAfterEnv` in jest config
 import '@babel/polyfill';
 
-import Router from './Router';
+import Router from '../Router';
 
 describe('Router', () => {
   describe('has a default export value', () => {
