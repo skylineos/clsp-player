@@ -24,13 +24,13 @@ describe('Router', () => {
     });
   });
 
-  xdescribe('Router', () => {
+  describe.skip('Router', () => {
     it('lame', () => {
       throw new Error('shouldnt see me');
     });
   });
 
-  xdescribe('onload', () => {
+  describe.skip('onload', () => {
     it('lame', () => {
       throw new Error('shouldnt see me');
     });
@@ -39,7 +39,9 @@ describe('Router', () => {
   describe('when onunload is called', () => {
     describe('when the router has not been instantiated', () => {
       it('does not throw an error', () => {
-        const { onunload } = Router();
+        const {
+          onunload,
+        } = Router();
 
         window.router = undefined;
 
@@ -67,7 +69,7 @@ describe('Router', () => {
 
         onunload();
 
-        expect(window.router.destroy.mock.calls.length).toBe(1);
+        expect(window.router.destroy.mock.calls).toHaveLength(1);
       });
 
       it('logs any unexpected error and does not throw', () => {
@@ -85,8 +87,8 @@ describe('Router', () => {
 
         onunload();
 
-        expect(window.router.destroy.mock.calls.length).toBe(1);
-        expect(window.router.logger.error.mock.calls.length).toBe(1);
+        expect(window.router.destroy.mock.calls).toHaveLength(1);
+        expect(window.router.logger.error.mock.calls).toHaveLength(1);
         expect(window.router.logger.error.mock.calls[0].params[0]).toBe(error);
       });
     });
