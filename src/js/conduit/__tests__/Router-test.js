@@ -89,7 +89,7 @@ describe('Router', () => {
 
         expect(window.router.destroy.mock.calls).toHaveLength(1);
         expect(window.router.logger.error.mock.calls).toHaveLength(1);
-        expect(window.router.logger.error.mock.calls[0].params[0]).toBe(error);
+        expect(window.router.logger.error.mock.calls[0][0]).toBe(error);
       });
     });
   });
