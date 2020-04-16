@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * The Conduit a hidden iframe that is used to establish a dedicated CLSP
  * websocket for a single video. This is basically an in-browser micro service
@@ -14,8 +12,8 @@ import {
 } from 'uuid';
 
 import utils from '../utils/utils';
-import Router from './Router';
 import Logger from '../utils/logger';
+import RouterIframe from './RouterIframe';
 import StreamConfiguration from '../iov/StreamConfiguration';
 
 const DEFAULT_MAX_RECONNECTION_ATTEMPTS = 0;
@@ -32,26 +30,10 @@ const DEFAULT_MOOF_TIMEOUT_DURATION = utils.DEFAULT_STREAM_TIMEOUT;
 const DEFAULT_PUBLISH_STATS_INTERVAL = 5;
 const DEFAULT_TRANSACTION_TIMEOUT = 5;
 
-const DEFAULT_ROUTER_CONNECTION_TIMEOUT = 120;
-// Setting this to half of the default value to help with SFS memory
-// management
-const DEFAULT_ROUTER_KEEP_ALIVE_INTERVAL = 30;
-// The number of seconds to wait for a "publish" message to be delivered
-const DEFAULT_ROUTER_PUBLISH_TIMEOUT = utils.DEFAULT_STREAM_TIMEOUT;
-
 export default class Conduit {
-  static iframeCommands = {
-    SUBSCRIBE: 'subscribe',
-    UNSUBSCRIBE: 'unsubscribe',
-    PUBLISH: 'publish',
-    CONNECT: 'connect',
-    DISCONNECT: 'disconnect',
-    SEND: 'send',
-  };
+  static routerEvents = RouterIframe.routerEvents;
 
-  static routerEvents = Router().Router.events;
-
-  static factory (
+  static factory(
     logId,
     clientId,
     streamConfiguration,
@@ -73,7 +55,7 @@ export default class Conduit {
    * @private
    *
    * @param {String} logId
-   *   a string that identifies this router in log messages
+   *   A string that associates this instance with an iov in log messages
    * @param {String} clientId
    *   the guid to be used to construct the topic
    * @param {StreamConfiguration} streamConfiguration
@@ -116,34 +98,29 @@ export default class Conduit {
     this.streamConfiguration = streamConfiguration;
     this.containerElement = containerElement;
 
+    this.routerIframe = RouterIframe.factory(
+      this.logId,
+      this.clientId,
+      this.streamConfiguration,
+      this.containerElement,
+      onReconnect,
+    );
+
     this.streamName = this.streamConfiguration.streamName;
     this.guid = null;
 
     this.logger = Logger().factory(`Conduit ${this.logId}`);
     this.logger.debug('Constructing...');
 
-    this.statsMsg = {
-      byteCount: 0,
-      inkbps: 0,
-      host: document.location.host,
-      clientId: this.clientId,
-    };
-
     this.handlers = {};
 
-    this.reconnectionAttempts = 0;
-
-    this.connected = false;
     this._onMessageError = onMessageError;
-    this._onReconnect = onReconnect;
 
-    this.statsInterval = null;
     this.firstMoofTimeout = null;
     this.pendingTransactions = {};
 
     this.moovRequestTopic = `${this.clientId}/init-segment/${parseInt(Math.random() * 1000000)}`;
     this.publishHandlers = {};
-    this.reconnectionInProgress = null;
 
     // These can be configured manually after construction
     this.MAX_RECONNECTION_ATTEMPTS = DEFAULT_MAX_RECONNECTION_ATTEMPTS;
@@ -173,135 +150,11 @@ export default class Conduit {
   initialize () {
     this.logger.debug('Initializing...');
 
-    return new Promise((resolve, reject) => {
-      this._onRouterCreate = (event) => {
-        const clientId = event.data.clientId;
-
-        // A window message was received that is not related to CLSP
-        if (!clientId) {
-          return;
-        }
-
-        // This message was intended for another Conduit instance
-        if (this.clientId !== clientId) {
-          return;
-        }
-
-        const eventType = event.data.event;
-
-        // Filter out all other window messages from the Router
-        if (eventType !== Conduit.routerEvents.CREATED && eventType !== Conduit.routerEvents.CREATE_FAILURE) {
-          return;
-        }
-
-        this.logger.debug(`initialize "${eventType}" event`);
-
-        // Whether success or failure, remove the event listener
-        window.removeEventListener('message', this._onRouterCreate);
-
-        // Once the event listener is removed, remove the listener handler,
-        // since it will not be used again and to prevent the `destroy` method
-        // from trying to unregister it.
-        this._onRouterCreate = null;
-
-        if (eventType === Conduit.routerEvents.CREATE_FAILURE) {
-          return reject(event.data.reason);
-        }
-
-        resolve();
-      };
-
-      // When the Router in the iframe connects, it will broadcast a message
-      // letting us know it connected, or letting us know it failed.
-      window.addEventListener('message', this._onRouterCreate);
-
-      this.iframe = this._generateIframe();
-
-      // @todo - if the Iov were to create a wrapper around the video element
-      // that it manages (rather than expecting one to already be there), each
-      // video element and iframe could be contained in a single container,
-      // rather than potentially having multiple video elements and multiple
-      // iframes contained in a single parent.
-      this.containerElement.appendChild(this.iframe);
-    });
+    await this.routerIframe.initialize();
   }
 
-  /**
-   * After initialization, call this to establish the connection to the server.
-   *
-   * Note that this is called within the play method, so you shouldn't ever need
-   * to manually call `connect`.
-   *
-   * @returns Promise
-   *   Resolves when the connection is successfully established.
-   *   Rejects upon failure to connect after a number of retries.
-   */
   connect (reconnect = true) {
-    this.logger.debug('Connecting to CLSP server...');
 
-    return new Promise((resolve, reject) => {
-      if (this.connected) {
-        return resolve();
-      }
-
-      this._onConnect = (event) => {
-        const clientId = event.data.clientId;
-
-        // A window message was received that is not related to CLSP
-        if (!clientId) {
-          return;
-        }
-
-        // This message was intended for another conduit
-        if (this.clientId !== clientId) {
-          return;
-        }
-
-        const eventType = event.data.event;
-
-        // Filter out all other window messages
-        if (eventType !== Conduit.routerEvents.CONNECT_SUCCESS && eventType !== Conduit.routerEvents.CONNECT_FAILURE) {
-          return;
-        }
-
-        this.logger.debug(`connect "${eventType}" event`);
-
-        // Whether success or failure, remove the event listener
-        window.removeEventListener('message', this._onConnect);
-        this._onConnect = null;
-
-        if (eventType === Conduit.routerEvents.CONNECT_FAILURE) {
-          this.logger.error(new Error(event.data.reason));
-
-          if (reconnect) {
-            this.reconnect()
-              .then(resolve)
-              .catch(reject);
-
-            return;
-          }
-
-          return reject(new Error('Failed to connect'));
-        }
-
-        // the mse service will stop streaming to us if we don't send
-        // a message to iov/stats within 1 minute.
-        this.statsInterval = setInterval(() => {
-          this.publishStats();
-        }, this.PUBLISH_STATS_INTERVAL * 1000);
-
-        this.connected = true;
-
-        this.logger.info('Connected');
-        resolve();
-      };
-
-      window.addEventListener('message', this._onConnect);
-
-      this._command({
-        method: Conduit.iframeCommands.CONNECT,
-      });
-    });
   }
 
   /**
@@ -377,23 +230,6 @@ export default class Conduit {
    * @todo - return a promise that resolves when the disconnection is complete!
    */
   disconnect () {
-    this.logger.debug('Disconnecting...');
-
-    // If a connection is in progress, cancel it
-    if (this._onConnect) {
-      window.removeEventListener('message', this._onConnect);
-      this._onConnect = null;
-    }
-
-    this.connected = false;
-
-    // when a stream fails, it no longer needs to send stats to the
-    // server, and it may not even be connected to the server
-    this.clearStatsInterval();
-
-    this._command({
-      method: Conduit.iframeCommands.DISCONNECT,
-    });
   }
 
   /**
@@ -465,16 +301,6 @@ export default class Conduit {
 
     this.destroyed = true;
 
-    if (this._onConnect) {
-      window.removeEventListener('message', this._onConnect);
-      this._onConnect = null;
-    }
-
-    if (this._onRouterCreate) {
-      window.removeEventListener('message', this._onRouterCreate);
-      this._onRouterCreate = null;
-    }
-
     this.stop();
 
     this.clientId = null;
@@ -483,24 +309,16 @@ export default class Conduit {
     this.streamConfiguration = null;
     this.containerElement = null;
 
-    // The Router will be destroyed along with the iframe
-    this.iframe.parentNode.removeChild(this.iframe);
-    // this.iframe.remove();
-    this.iframe.srcdoc = '';
-    this.iframe = null;
+    this.routerIframe.destroy();
+    this.routerIframe = null;
 
     this.handlers = null;
-    this.reconnectionAttempts = null;
 
-    this.connected = null;
     this.firstMoofTimeout = null;
 
     this.moovRequestTopic = null;
 
-    this.statsMsg = null;
-
     this.publishHandlers = null;
-    this.reconnectionInProgress = null;
 
     // @todo - can this be safely dereferenced?
     // this._onMessageError = null;
@@ -591,13 +409,6 @@ export default class Conduit {
     }
 
     return videoMetaData;
-  }
-
-  clearStatsInterval () {
-    if (this.statsInterval) {
-      clearInterval(this.statsInterval);
-      this.statsInterval = null;
-    }
   }
 
   clearFirstMoofTimeout () {
@@ -779,7 +590,7 @@ export default class Conduit {
         }
         case Conduit.routerEvents.CONNECT_FAILURE:
         case Conduit.routerEvents.CONNECTION_LOST: {
-          if (this.reconnectionInProgress) {
+          if (this.routerIframe.routerController.isTryingToReconnect) {
             return;
           }
 
@@ -845,14 +656,10 @@ export default class Conduit {
   segmentUsed (byteArray) {
     // @todo - it appears that this is never used!
     if ((this.LogSourceBuffer === true) && (this.LogSourceBufferTopic !== null)) {
-      this.directSend({
-        method: Conduit.iframeCommands.SEND,
-        topic: this.LogSourceBufferTopic,
-        byteArray,
-      });
+      this.directSend(this.LogSourceBufferTopic, byteArray);
     }
 
-    this.statsMsg.byteCount += byteArray.length;
+    this.routerIframe.routerController.statsMsg.byteCount += byteArray.length;
   }
 
   /**
@@ -894,10 +701,7 @@ export default class Conduit {
 
     this.handlers[topic] = handler;
 
-    this._command({
-      method: Conduit.iframeCommands.SUBSCRIBE,
-      topic,
-    });
+    this.routerIframe.subscribe(topic);
   }
 
   /**
@@ -917,10 +721,7 @@ export default class Conduit {
       delete this.handlers[topic];
     }
 
-    this._command({
-      method: Conduit.iframeCommands.UNSUBSCRIBE,
-      topic,
-    });
+    this.routerIframe.unsubscribe(topic);
   }
 
   /**
@@ -951,12 +752,7 @@ export default class Conduit {
         resolve();
       };
 
-      this._command({
-        method: Conduit.iframeCommands.PUBLISH,
-        publishId,
-        topic,
-        data,
-      });
+      this.routerIframe.publish(publishId, topic, data);
     });
   }
 
@@ -973,11 +769,7 @@ export default class Conduit {
   directSend (topic, byteArray) {
     this.logger.debug('directSend...');
 
-    this._command({
-      method: Conduit.iframeCommands.SEND,
-      topic,
-      byteArray,
-    });
+    this.routerIframe.send(topic, byteArray);
   }
 
   /**
@@ -1069,207 +861,11 @@ export default class Conduit {
   }
 
   /**
-   * @private
-   *
-   * Generate an iframe with an embedded CLSP router.  The router will be what
-   * this Conduit instance communicates with in subsequent commands.
-   *
-   * @returns Element
-   */
-  _generateIframe () {
-    this.logger.debug('Generating Iframe...');
-
-    const iframe = document.createElement('iframe');
-
-    iframe.setAttribute('id', this.clientId);
-
-    // This iframe should be invisible
-    iframe.width = 0;
-    iframe.height = 0;
-    iframe.setAttribute('style', 'display:none;');
-
-    iframe.srcdoc = `
-      <html>
-        <head>
-          <script type="text/javascript">
-            // Include the logger
-            window.Logger = ${Logger.toString()};
-
-            // Configure the CLSP properties
-            window.clspRouterConfig = {
-              logId: '${this.logId}',
-              clientId: '${this.clientId}',
-              host: '${this.streamConfiguration.host}',
-              port: ${this.streamConfiguration.port},
-              useSSL: ${this.streamConfiguration.useSSL},
-              CONNECTION_TIMEOUT: ${this.ROUTER_CONNECTION_TIMEOUT},
-              KEEP_ALIVE_INTERVAL: ${this.ROUTER_KEEP_ALIVE_INTERVAL},
-              PUBLISH_TIMEOUT: ${this.ROUTER_PUBLISH_TIMEOUT},
-            };
-
-            window.conduitCommands = ${JSON.stringify(Conduit.iframeCommands)};
-
-            window.iframeEventHandlers = ${Router.toString()}();
-          </script>
-        </head>
-        <body
-          onload="window.iframeEventHandlers.onload();"
-          onunload="window.iframeEventHandlers.onunload();"
-        >
-          <div id="message"></div>
-        </body>
-      </html>
-    `;
-
-    return iframe;
-  }
-
-  /**
-   * @private
-   * @async
-   *
-   * Do not call this method directly!  Only use the `reconnect` method.
-   */
-  async _reconnect (reconnectionStartedAt, stopTryingToReconnectAt, onSuccess, onFailure) {
-    this.logger.info('Reconnecting...');
-
-    this.reconnectionAttempts++;
-
-    if (this.MAX_RECONNECTION_ATTEMPTS && this.reconnectionAttempts > this.MAX_RECONNECTION_ATTEMPTS) {
-      return onFailure(new Error(`Failed to reconnect after ${this.reconnectionAttempts} attempts.`));
-    }
-
-    if (this.MAX_RECONNECTION_TIME && Date.now() > stopTryingToReconnectAt) {
-      return onFailure(new Error(`Failed to reconnect after ${this.MAX_RECONNECTION_TIME} seconds.`));
-    }
-
-    try {
-      this.disconnect();
-      await this.connect(false);
-
-      // After successfully connecting, reset the reconnection attempts and
-      this.reconnectionAttempts = 0;
-      this.reconnectionInProgress = null;
-
-      onSuccess();
-    }
-    catch (error) {
-      this.logger.error(error);
-
-      const reconnectionDelay = (Date.now() - reconnectionStartedAt > (this.IMMEDIATE_RECONNECTION_DURATION * 1000))
-        ? this.RECONNECTION_DELAY
-        : this.IMMEDIATE_RECONNECTION_DELAY;
-
-      setTimeout(() => {
-        // @todo - do we need to worry about recursion overflowing the stack?
-        this._reconnect(
-          reconnectionStartedAt,
-          stopTryingToReconnectAt,
-          onSuccess,
-          onFailure,
-        );
-      }, reconnectionDelay * 1000);
-    }
-  }
-
-  /**
    * Attempt to reconnect a certain number of times
    *
    * @returns {Promise}
    */
   reconnect () {
-    this.logger.info('Reconnecting...');
 
-    // If we're already trying to reconnect, don't try again
-    if (this.reconnectionInProgress) {
-      return this.reconnectionInProgress;
-    }
-
-    const reconnectionStartedAt = Date.now();
-
-    const stopTryingToReconnectAt = this.MAX_RECONNECTION_TIME
-      ? reconnectionStartedAt + (this.MAX_RECONNECTION_TIME * 1000)
-      : 0;
-
-    this.reconnectionInProgress = new Promise((resolve, reject) => {
-      this.logger.info('First reconnection attempt...');
-
-      this._reconnect(
-        reconnectionStartedAt,
-        stopTryingToReconnectAt,
-        () => {
-          this.logger.info('reconnected!');
-
-          // After successfully connecting, clear the reconnectionInProgress
-          this.reconnectionInProgress = null;
-
-          this._onReconnect();
-          resolve();
-        },
-        (error) => {
-          this._onReconnect(error);
-          reject(error);
-        },
-      );
-    });
-
-    return this.reconnectionInProgress;
-  }
-
-  /**
-   * @private
-   *
-   * Pass a CLSP command to the iframe.
-   *
-   * @param {Object} message
-   */
-  _command (message) {
-    this.logger.debug('Sending a message to the iframe...');
-
-    // @todo - this MUST be temporary - it is hiding the error resulting from
-    // improper async logic handling!
-    if (this.destroyed) {
-      console.warn('Cannot send message via destroyed iframe');
-      return;
-    }
-
-    try {
-      // @todo - we should not be dispatching to '*' - we should provide the SFS
-      // host here instead
-      // @see - https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
-      this.iframe.contentWindow.postMessage(message, '*');
-    }
-    catch (error) {
-      // @todo - we should probably throw here...
-      // eslint-disable-next-line no-console
-      console.error(error);
-    }
-  }
-
-  /**
-   * @private
-   *
-   * @async
-   *
-   * Send stats to the server
-   */
-  async publishStats () {
-    this.statsMsg.inkbps = (this.statsMsg.byteCount * 8) / 30000.0;
-    this.statsMsg.byteCount = 0;
-
-    try {
-      await this.publish('iov/stats', this.statsMsg);
-
-      this.logger.debug('iov status', this.statsMsg);
-    }
-    catch (error) {
-      this.logger.error('Error while publishing stats!');
-      this.logger.error(error);
-
-      // if the stats cannot be published, treat that as an unexpected
-      // disconnection
-      this.clearStatsInterval();
-      this.reconnect();
-    }
   }
 }

@@ -30,8 +30,15 @@ describe('Router', () => {
     });
   });
 
-  describe.skip('onload', () => {
-    it('lame', () => {
+  describe('when onload is called', () => {
+    it('calls Router.factory, and passes in the necessary properties from window.clspRouterConfig', () => {
+      const {
+        onload,
+      } = Router();
+
+
+    });
+    it('logs an error when Router.factory throws an error', () => {
       throw new Error('shouldnt see me');
     });
   });

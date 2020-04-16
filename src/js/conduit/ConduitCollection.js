@@ -1,18 +1,8 @@
 'use strict';
 
-import Paho from 'paho-mqtt';
-
 import Conduit from './Conduit';
 import utils from '../utils/utils';
-
 import Logger from '../utils/logger';
-
-// Even though the export of paho-mqtt is { Client, Message }, there is an
-// internal reference that the library makes to itself, and it expects
-// itself to exist at Paho.MQTT.
-window.Paho = {
-  MQTT: Paho,
-};
 
 let collection;
 

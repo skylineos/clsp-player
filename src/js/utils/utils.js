@@ -142,6 +142,14 @@ function _getWindowStateNames () {
   };
 }
 
+async function sleep (seconds) {
+  await new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, seconds * 1000);
+  });
+}
+
 module.exports = {
   version,
   name: name.split('/').pop(),
@@ -149,6 +157,7 @@ module.exports = {
   mediaSourceExtensionsCheck,
   isSupportedMimeType,
   windowStateNames: _getWindowStateNames(),
+  sleep,
   DEFAULT_STREAM_TIMEOUT,
   MINIMUM_CHROME_VERSION,
   SUPPORTED_MIME_TYPE,

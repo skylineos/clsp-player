@@ -1,7 +1,5 @@
-'use strict';
-
 /**
- * The Router is the lowest level controller of the actual CLSP connection.
+ * The Router is the lowest-level controller of the actual CLSP connection.
  *
  * Note that this is the code that gets duplicated in each iframe.
  * Keep the contents of the exported function light and ES5 only.
@@ -23,11 +21,9 @@
  *
  * @export - the function that provides the Router and constants
  */
-export default function () {
-  // The error code from Paho that represents the socket not being
-  // connected
-  var PAHO_ERROR_CODE_NOT_CONNECTED = 'AMQJS0011E';
-  var PAHO_ERROR_CODE_ALREADY_CONNECTED = 'AMQJS0011E';
+export default function (Logger) {
+  Logger = Logger || window.Logger;
+
   var Paho = window.parent.Paho;
 
   /**
@@ -37,37 +33,28 @@ export default function () {
    * so that the conduit can identify what client the message is for.
    *
    * @param {String} logId
-   *   a string that identifies this router in log messages
+   *   A string that associates this instance with an iov in log messages
    * @param {String} clientId
-   *   the guid to be used to construct the topic
-   * @param {String} host
-   *   the host (url or ip) of the SFS that is providing the stream
-   * @param {Number} port
-   *   the port the stream is served over
-   * @param {Boolean} useSSL
-   *   true to request the stream over clsps, false to request the stream over clsp
+   *   The guid to be used to construct the topic
+   * @param {Object} streamConfiguration
+   *   The object representation of the StreamConfiguration instance of the
+   *   stream that is to be played
    * @param {Object} options
+   *   Additional configuration options
    */
   function Router (
     logId,
     clientId,
-    host,
-    port,
-    useSSL,
+    streamConfiguration,
     options,
   ) {
     try {
-      this.logId = logId;
-
-      this.logger = window.Logger().factory(`Router ${this.logId}`);
-
-      this.clientId = clientId;
-
-      this.host = host;
-      this.port = port;
-      this.useSSL = useSSL;
-
+      this.logger = Logger().factory('Router ' + logId);
       this.logger.debug('Constructing...');
+
+      this.logId = logId;
+      this.clientId = clientId;
+      this.streamConfiguration = streamConfiguration;
 
       this.Reconnect = null;
 
@@ -84,8 +71,8 @@ export default function () {
       // Presumably, the instantiation of the WebSocket would throw, which would
       // be caught by our Router.connect try/catch block...
       this.clspClient = new Paho.MQTT.Client(
-        this.host,
-        this.port,
+        this.streamConfiguration.host,
+        this.streamConfiguration.port,
         '/mqtt',
         this.clientId,
       );
@@ -105,14 +92,43 @@ export default function () {
       this.CONNECTION_TIMEOUT = options.CONNECTION_TIMEOUT;
       this.KEEP_ALIVE_INTERVAL = options.KEEP_ALIVE_INTERVAL;
       this.PUBLISH_TIMEOUT = options.PUBLISH_TIMEOUT;
+
+      this._sendToParentWindow({
+        event: Router.events.CREATED,
+      });
     }
     catch (error) {
-      this.logger.error('IFRAME error for clientId: ' + clientId);
-      this.logger.error(error);
+      console.error('IFRAME error logId: ' + logId + ', clientId: ' + clientId);
+      console.error(error);
+
+      // "throw" the error to the parent window
+      window.parent.postMessage({
+        clientId: clientId,
+        event: Router.events.CREATE_FAILURE,
+        reason: error,
+      }, '*');
+
+      // throw the error to the local iframe caller
+      throw error;
     }
   }
 
-  // All events that are emitted by the Router are prefixed with `clsp_router`
+  /**
+   * window message `method` property enum values.  Each value is a separate
+   * "command" that can be issued to the Router.
+   */
+  Router.methods = {
+    SUBSCRIBE: 'subscribe',
+    UNSUBSCRIBE: 'unsubscribe',
+    PUBLISH: 'publish',
+    CONNECT: 'connect',
+    DISCONNECT: 'disconnect',
+    SEND: 'send',
+  };
+
+  /**
+   * All events that are emitted by the Router are prefixed with `clsp_router`
+   */
   Router.events = {
     // Triggered when the Router is successfully instantiated.
     // Can only be triggered at time of router instantiation.
@@ -152,20 +168,27 @@ export default function () {
     WINDOW_MESSAGE_FAIL: 'clsp_router_window_message_fail',
   };
 
+  /**
+   * Specific Paho error codes (which are error message prefixes) that we use
+   */
+  Router.PAHO_ERROR_CODES = {
+    // The error code from Paho that represents the socket not being connected
+    NOT_CONNECTED: 'AMQJS0011E',
+    // The error code from Paho that represents the socket already being
+    // connected when trying to make subsequent connections
+    ALREADY_CONNECTED: 'AMQJS0011E',
+  };
+
   Router.factory = function (
     logId,
     clientId,
-    host,
-    port,
-    useSSL,
+    streamConfiguration,
     options,
   ) {
     return new Router(
       logId,
       clientId,
-      host,
-      port,
-      useSSL,
+      streamConfiguration,
       options,
     );
   };
@@ -386,15 +409,15 @@ export default function () {
 
     try {
       switch (method) {
-        case window.conduitCommands.SUBSCRIBE: {
+        case Router.methods.SUBSCRIBE: {
           this._subscribe(message.topic);
           break;
         }
-        case window.conduitCommands.UNSUBSCRIBE: {
+        case Router.methods.UNSUBSCRIBE: {
           this._unsubscribe(message.topic);
           break;
         }
-        case window.conduitCommands.PUBLISH: {
+        case Router.methods.PUBLISH: {
           var payload = null;
 
           try {
@@ -414,15 +437,15 @@ export default function () {
           );
           break;
         }
-        case window.conduitCommands.CONNECT: {
+        case Router.methods.CONNECT: {
           this.connect();
           break;
         }
-        case window.conduitCommands.DISCONNECT: {
+        case Router.methods.DISCONNECT: {
           this.disconnect();
           break;
         }
-        case window.conduitCommands.SEND: {
+        case Router.methods.SEND: {
           this._publish(
             message.publishId, message.topic, message.byteArray,
           );
@@ -725,7 +748,7 @@ export default function () {
       // @todo - should `reconnect` be set here?
     };
 
-    if (this.useSSL === true) {
+    if (this.streamConfiguration.useSSL === true) {
       connectionOptions.useSSL = true;
     }
 
@@ -734,7 +757,7 @@ export default function () {
       this.logger.info('Connected');
     }
     catch (error) {
-      if (error.message.startsWith(PAHO_ERROR_CODE_ALREADY_CONNECTED)) {
+      if (error.message.startsWith(Router.PAHO_ERROR_CODES.ALREADY_CONNECTED)) {
         // if we're already connected, there's no error to report
         return;
       }
@@ -764,7 +787,7 @@ export default function () {
       this.clspClient.disconnect();
     }
     catch (error) {
-      if (error.message.startsWith(PAHO_ERROR_CODE_NOT_CONNECTED)) {
+      if (error.message.startsWith(Router.PAHO_ERROR_CODES.NOT_CONNECTED)) {
         // if we're not connected when we attempted to disconnect, there's no
         // error to report
         return;
@@ -802,57 +825,5 @@ export default function () {
     this.clspClient = null;
   };
 
-  // This is a series of "controllers" to keep the conduit's iframe as dumb as
-  // possible.  Call each of these in the corresponding attribute on the
-  // "body" tag.
-  return {
-    Router: Router,
-    onload: function () {
-      try {
-        window.router = Router.factory(
-          window.clspRouterConfig.logId,
-          window.clspRouterConfig.clientId,
-          window.clspRouterConfig.host,
-          window.clspRouterConfig.port,
-          window.clspRouterConfig.useSSL,
-          {
-            CONNECTION_TIMEOUT: window.clspRouterConfig.CONNECTION_TIMEOUT,
-            KEEP_ALIVE_INTERVAL: window.clspRouterConfig.KEEP_ALIVE_INTERVAL,
-            PUBLISH_TIMEOUT: window.clspRouterConfig.PUBLISH_TIMEOUT,
-          },
-        );
-
-        window.router._sendToParentWindow({
-          event: Router.events.CREATED,
-        });
-
-        window.router.logger.info('onload - Router created');
-      }
-      catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error);
-
-        window.parent.postMessage({
-          event: Router.events.CREATE_FAILURE,
-          reason: error,
-        }, '*');
-      }
-    },
-    onunload: function () {
-      if (!window.router) {
-        // @todo - have a debug statement here that says that the router was
-        // not instantiated
-        return;
-      }
-
-      try {
-        window.router.logger.info('onunload - Router being destroyed in onunload...');
-        window.router.destroy();
-        window.router.logger.info('onunload - Router destroyed in onunload');
-      }
-      catch (error) {
-        window.router.logger.error(error);
-      }
-    },
-  };
+  return Router;
 }
