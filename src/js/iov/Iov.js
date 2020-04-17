@@ -198,7 +198,9 @@ export default class Iov {
 
     const clspVideoElement = window.document.createElement('video');
     clspVideoElement.classList.add('clsp-player');
+    // @todo - can we remove these?
     clspVideoElement.muted = true;
+    clspVideoElement.playsinline = true;
 
     const insertBefore = this.iovPlayer && this.iovPlayer.videoElement
       ? this.iovPlayer.videoElement.nextSibling

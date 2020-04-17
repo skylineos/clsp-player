@@ -174,6 +174,7 @@ This tells the browser exactly what codec to use to decode and play the video.  
     <video
       id="my-video"
       muted
+      playsinline
     >
       <source
         src="clsp://172.28.12.57/FairfaxVideo0520"
