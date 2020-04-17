@@ -149,6 +149,7 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
         const playerOptions = {
           autoplay: true,
           muted: true,
+          playsinline: true,
           preload: 'auto',
           poster: '../skyline_logo.png',
           controls: true,
@@ -174,6 +175,7 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
           const playerOptions = {
             autoplay: true,
             muted: true,
+            playsinline: true,
             preload: 'auto',
             poster: '../skyline_logo.png',
             controls: true,
