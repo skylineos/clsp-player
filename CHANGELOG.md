@@ -4,7 +4,7 @@
 ## Table of Contents <!-- omit in toc -->
 
 - [CLSP Player](#clsp-player)
-    - [v0.20.0 - 2020-05 - Critical](#v0200---2020-05---critical)
+    - [v0.20.1 - 2020-04-30 - Critical](#v0201---2020-04-30---critical)
     - [v0.19.0 - 2020-04-21 - Critical](#v0190---2020-04-21---critical)
     - [v0.18.0-1 - 2020-04-04 - Critical](#v0180-1---2020-04-04---critical)
 - [Pre CLSP Player](#pre-clsp-player)
@@ -30,9 +30,10 @@
 
 ## CLSP Player
 
-### v0.20.0 - 2020-05 - Critical
+### v0.20.1 - 2020-04-30 - Critical
 
 * change default CLSP port from `9001` to `80` to comply with newest SFS versions
+* make default clsp and clsps ports configurable via utils
 
 ### v0.19.0 - 2020-04-21 - Critical
 
