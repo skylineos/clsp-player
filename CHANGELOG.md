@@ -4,7 +4,8 @@
 ## Table of Contents <!-- omit in toc -->
 
 - [CLSP Player](#clsp-player)
-    - [v0.19.0-1 - 2020-04-04 - Critical](#v0190-1---2020-04-04---critical)
+    - [v0.20.0 - 2020-05 - Critical](#v0200---2020-05---critical)
+    - [v0.19.0 - 2020-04-21 - Critical](#v0190---2020-04-21---critical)
     - [v0.18.0-1 - 2020-04-04 - Critical](#v0180-1---2020-04-04---critical)
 - [Pre CLSP Player](#pre-clsp-player)
     - [v0.17.0-1 - 2020-02-11 - Critical](#v0170-1---2020-02-11---critical)
@@ -29,7 +30,11 @@
 
 ## CLSP Player
 
-### v0.19.0-1 - 2020-04-04 - Critical
+### v0.20.0 - 2020-05 - Critical
+
+* change default CLSP port from `9001` to `80` to comply with newest SFS versions
+
+### v0.19.0 - 2020-04-21 - Critical
 
 * move `demo` to `demos`
 * create advanced and simple demos that use `dist` assets
