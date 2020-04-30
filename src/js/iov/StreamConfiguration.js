@@ -57,7 +57,7 @@ export default class StreamConfiguration {
     else if (url.substring(0, 9).toLowerCase() === 'clsp-hash') {
       useSSL = false;
       parser.href = url.replace('clsp-hash', 'http');
-      defaultPort = 9001;
+      defaultPort = 80;
       hashUrl = true;
     }
     else if (url.substring(0, 5).toLowerCase() === 'clsps') {
@@ -69,7 +69,7 @@ export default class StreamConfiguration {
     else if (url.substring(0, 4).toLowerCase() === 'clsp') {
       useSSL = false;
       parser.href = url.replace('clsp', 'http');
-      defaultPort = 9001;
+      defaultPort = 80;
       hashUrl = false;
     }
     else {
@@ -94,7 +94,7 @@ export default class StreamConfiguration {
     }
 
     if (hashUrl === true) {
-      // URL: clsp[s]-hash://<sfs-addr>[:9001]/<stream>?start=...&end=...&token=...
+      // URL: clsp[s]-hash://<sfs-addr>[:<port>]/<stream>?start=...&end=...&token=...
       const qpOffset = url.indexOf(parser.pathname) + parser.pathname.length;
 
       const qrArgs = url.substr(qpOffset).split('?')[1];
