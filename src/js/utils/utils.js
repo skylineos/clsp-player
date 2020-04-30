@@ -28,9 +28,20 @@ const SUPPORTED_MIME_TYPE = "video/mp4; codecs='avc1.42E01E'";
 // tours and high-quality streams.
 const DEFAULT_STREAM_TIMEOUT = 20;
 
+// CLSP default port for SFS >= 5.2.0 is 80
+// CLSP default port for SFS < 5.2.0 is 9001
+const DEFAULT_CLSP_PORT = 80;
+const DEFAULT_CLSPS_PORT = 443;
+
+// @todo - state / config could be managed better than this
+const streamPorts = {
+  clsp: DEFAULT_CLSP_PORT,
+  clsps: DEFAULT_CLSPS_PORT,
+};
+
 const logger = Logger().factory();
 
-function browserIsCompatable () {
+function isBrowserCompatable () {
   try {
     mediaSourceExtensionsCheck();
   }
@@ -142,13 +153,23 @@ function _getWindowStateNames () {
   };
 }
 
+function getDefaultStreamPort (protocol) {
+  return streamPorts[protocol];
+}
+
+function setDefaultStreamPort (protocol, port) {
+  streamPorts[protocol] = port;
+}
+
 module.exports = {
   version,
   name: name.split('/').pop(),
-  supported: browserIsCompatable,
+  supported: isBrowserCompatable,
   mediaSourceExtensionsCheck,
   isSupportedMimeType,
   windowStateNames: _getWindowStateNames(),
+  getDefaultStreamPort,
+  setDefaultStreamPort,
   DEFAULT_STREAM_TIMEOUT,
   MINIMUM_CHROME_VERSION,
   SUPPORTED_MIME_TYPE,
