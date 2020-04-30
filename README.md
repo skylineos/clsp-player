@@ -53,7 +53,7 @@ The network protocol is handled by specifying the following URI format:
 
 Example stream url:
 
-`clsp://172.28.12.57/FairfaxVideo0520`
+`clsp://172.28.12.57:9001/FairfaxVideo0520`
 
 ### Tokenization
 
@@ -136,7 +136,7 @@ NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
   iovCollection.create(videoElementId)
     .then(function (iov) {
       // do something with the iov instance
-      iov.changeSrc('clsp://172.28.12.57/FairfaxVideo0520');
+      iov.changeSrc('clsp://172.28.12.57:9001/FairfaxVideo0520');
     })
     .catch(function (error) {
       // do something with the error
@@ -152,8 +152,8 @@ NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
   );
 
   tour.addUrls([
-    'clsp://172.28.12.57/FairfaxVideo0520',
-    'clsp://172.28.12.57/FairfaxVideo0420',
+    'clsp://172.28.12.57:9001/FairfaxVideo0520',
+    'clsp://172.28.12.57:9001/FairfaxVideo0420',
   ]);
 
   tour.start();
@@ -177,7 +177,7 @@ This tells the browser exactly what codec to use to decode and play the video.  
       playsinline
     >
       <source
-        src="clsp://172.28.12.57/FairfaxVideo0520"
+        src="clsp://172.28.12.57:9001/FairfaxVideo0520"
         type="video/mp4; codecs='avc1.42E01E'"
       />
     </video>
@@ -203,8 +203,8 @@ import TourController from '~root/src/js/iov/TourController';
 
 const videoElementId = 'my-video';
 const urls = [
-  'clsp://172.28.12.57/FairfaxVideo0520',
-  'clsp://172.28.12.57/FairfaxVideo0420',
+  'clsp://172.28.12.57:9001/FairfaxVideo0520',
+  'clsp://172.28.12.57:9001/FairfaxVideo0420',
 ];
 
 const iovCollection = IovCollection.asSingleton();
