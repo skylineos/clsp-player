@@ -129,6 +129,11 @@ NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
 <script>
   var videoElementId = 'my-video';
 
+  // If you are using a Skyline SFS that uses a default CLSP stream port that
+  // isn't `80` (e.g. SFS < v5.2.0), you may set the window-level default port
+  // for `clsp` streams:
+  window.clspUtils.setDefaultStreamPort('clsp', 9001);
+
   // Construct the player collection
   var iovCollection = window.IovCollection.asSingleton();
 
@@ -206,6 +211,11 @@ const urls = [
   'clsp://172.28.12.57:9001/FairfaxVideo0520',
   'clsp://172.28.12.57:9001/FairfaxVideo0420',
 ];
+
+// If you are using a Skyline SFS that uses a default CLSP stream port that
+// isn't `80` (e.g. SFS < v5.2.0), you may set the window-level default port
+// for `clsp` streams:
+clspUtils.setDefaultStreamPort('clsp', 9001);
 
 const iovCollection = IovCollection.asSingleton();
 const iov = await iovCollection.create(videoElementId);
