@@ -333,7 +333,10 @@ export default class Conduit {
     // @todo - should connect be called here?
     await this.connect();
 
-    if (this.streamConfiguration.hash && this.streamConfiguration.hash.length > 0) {
+    //if (this.streamConfiguration.hash && this.streamConfiguration.hash.length > 0) {
+    if (this.streamConfiguration.tokenConfig &&
+        this.streamConfiguration.tokenConfig.hash &&
+        this.streamConfiguration.tokenConfig.hash.length > 0 ) {
       this.streamName = await this.validateHash();
     }
 
@@ -521,18 +524,17 @@ export default class Conduit {
     const {
       payloadString: response,
     } = await this.transaction('iov/hashValidate', {
-      // @todo - does this work?  these properties are on `tokenConfig`...
-      b64HashURL: this.streamConfiguration.b64HashAccessUrl,
-      token: this.streamConfiguration.hash,
+      b64HashURL: this.streamConfiguration.tokenConfig.b64HashAccessUrl,
+      token: this.streamConfiguration.tokenConfig.hash,
     });
-
-    if (response.status === 403) {
+     
+    if (response.status === 401) {
       throw new Error('HashUnAuthorized');
     }
 
     if (response.status !== 200) {
       throw new Error('HashInvalid');
-    }
+    } 
 
     // TODO, figure out how to handle a change in the sfs url from the
     // clsp-hash from the target url returned from decrypting the hash
