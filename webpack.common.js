@@ -43,28 +43,15 @@ function generateConfig (name, entry) {
     output: {
       path: outputPath,
       filename: '[name].js',
+      libraryTarget: 'umd',
     },
     module: {
       rules: [
         {
-          test: /\.js$/,
-          loader: 'babel-loader?cacheDirectory=true',
-          options: {
-            presets: [
-              [
-                '@babel/preset-env',
-                {
-                  exclude: [
-                    '@babel/plugin-transform-typeof-symbol',
-                  ],
-                },
-              ],
-            ],
-            plugins: [
-              '@babel/plugin-syntax-dynamic-import',
-              '@babel/plugin-proposal-object-rest-spread',
-              '@babel/plugin-proposal-class-properties',
-            ],
+          test: /\.m?js$/,
+          exclude: /(node_modules|bower_components)/,
+          use: {
+            loader: 'babel-loader',
           },
           // @see - https://github.com/webpack/webpack/issues/2031
           include: [
