@@ -9,17 +9,21 @@ import 'srcdoc-polyfill';
 import '../styles/clsp-player.scss';
 
 import IovCollection from './iov/IovCollection';
+import Iov from './iov/Iov';
 import TourController from './iov/TourController';
 import utils from './utils/utils';
 
 window.IovCollection = IovCollection;
 window.TourController = TourController;
+const ClspUtils = utils;
 
 if (!window.clspUtils) {
   window.clspUtils = utils;
 }
 
-export default {
+export {
+  Iov,
   IovCollection,
   TourController,
+  ClspUtils,
 };
