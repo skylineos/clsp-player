@@ -9,7 +9,11 @@ const {
   version,
   name,
 } = require('../../../package.json');
+
 const Logger = require('./logger');
+
+// @todo - remove this side-effect
+const logger = Logger().factory();
 
 const MINIMUM_CHROME_VERSION = 53;
 
@@ -38,8 +42,6 @@ const streamPorts = {
   clsp: DEFAULT_CLSP_PORT,
   clsps: DEFAULT_CLSPS_PORT,
 };
-
-const logger = Logger().factory();
 
 function isBrowserCompatable () {
   try {
