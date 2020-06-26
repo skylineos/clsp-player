@@ -8,22 +8,43 @@ import 'srcdoc-polyfill';
 
 import '../styles/clsp-player.scss';
 
-import IovCollection from './iov/IovCollection';
 import Iov from './iov/Iov';
+import IovCollection from './iov/IovCollection';
 import TourController from './iov/TourController';
 import utils from './utils/utils';
 
-window.IovCollection = IovCollection;
-window.TourController = TourController;
-const ClspUtils = utils;
+function register () {
+  // @todo - deprecate `window` mutations.  use `globalThis`
+  if (!window.IovCollection) {
+    window.IovCollection = IovCollection;
+  }
 
-if (!window.clspUtils) {
-  window.clspUtils = utils;
+  if (!window.TourController) {
+    window.TourController = TourController;
+  }
+
+  if (!window.clspUtils) {
+    window.clspUtils = utils;
+  }
 }
 
+// @todo - do not mutate `window`, the caller should do it as needed
+register();
+
+// Support default `import`
+export default {
+  Iov,
+  IovCollection,
+  TourController,
+  utils,
+  register,
+};
+
+// Support destructured `import` and `require`
 export {
   Iov,
   IovCollection,
   TourController,
-  ClspUtils,
+  utils,
+  register,
 };
