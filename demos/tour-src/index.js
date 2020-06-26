@@ -6,9 +6,12 @@ import '@babel/polyfill';
 import $ from 'jquery';
 import humanize from 'humanize';
 
-import clspUtils from '~root/src/js/utils/utils';
-import IovCollection from '~root/src/js/iov/IovCollection';
-import TourController from '~root/src/js/iov/TourController';
+// simulate `import '@skylineos/clsp-player'`
+import {
+  IovCollection,
+  TourController,
+  utils as clspUtils,
+} from '~root/dist/clsp-player.min.js';
 
 let durationDisplayInterval;
 

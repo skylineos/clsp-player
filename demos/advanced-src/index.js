@@ -4,13 +4,27 @@ import '@babel/polyfill';
 
 import $ from 'jquery';
 
-import clspUtils from '~root/src/js/utils/utils';
-import IovCollection from '~root/src/js/iov/IovCollection';
-import TourController from '~root/src/js/iov/TourController';
+// simulate `import '@skylineos/clsp-player'`
+import {
+  IovCollection,
+  TourController,
+  utils as clspUtils,
+} from '~root/dist/clsp-player.min.js';
+
+/**
+ * or with `require`....
+ *
+ * const {
+ *   IovCollection,
+ *   TourController,
+ *   utils: clspUtils,
+ * } = require('~root/dist/clsp-player.min.js');
+ */
 
 import {
   initializeWall,
 } from './shared';
+
 
 let wallPlayers = [];
 

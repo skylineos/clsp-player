@@ -5,8 +5,11 @@ import '@babel/polyfill';
 // @todo - import fontawesome
 import $ from 'jquery';
 
-import clspUtils from '~root/src/js/utils/utils';
-import IovCollection from '~root/src/js/iov/IovCollection';
+// simulate `import '@skylineos/clsp-player'`
+import {
+  IovCollection,
+  utils as clspUtils,
+} from '~root/dist/clsp-player.min.js';
 
 let iovCollection;
 let iov;
