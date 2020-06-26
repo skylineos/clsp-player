@@ -2,24 +2,38 @@
 
 'use strict';
 
-/**
- * @see - https://webpack.js.org/api/node/
- */
-
-const pify = require('pify');
-
 const BuildCompiler = require('./BuildCompiler');
 
-async function main () {
-  const buildCompiler = BuildCompiler.factory();
+const webpackConfigDev = require('../../webpack.dev');
+const webpackConfigProd = require('../../webpack.prod');
 
-  const stats = await pify(buildCompiler.compiler.run.bind(buildCompiler.compiler))();
+async function buildProd () {
+  const webpackCompiler = BuildCompiler.factory(webpackConfigProd());
+
+  const stats = await webpackCompiler.run();
 
   if (stats.hasErrors()) {
     const info = stats.toJson();
 
-    throw new Error(`Build encountered ${info.errors.length} errors.`);
+    throw new Error(`Prod Build encountered ${info.errors.length} errors.`);
   }
+}
+
+async function buildDev () {
+  const webpackCompiler = BuildCompiler.factory(webpackConfigDev());
+
+  const stats = await webpackCompiler.run();
+
+  if (stats.hasErrors()) {
+    const info = stats.toJson();
+
+    throw new Error(`Dev Build encountered ${info.errors.length} errors.`);
+  }
+}
+
+async function main () {
+  await buildProd();
+  await buildDev();
 }
 
 main()

@@ -7,21 +7,17 @@
 
 const chalk = require('chalk');
 const webpack = require('webpack');
+const pify = require('pify');
 
 const utils = require('../../src/js/utils/utils');
-const webpackConfigDev = require('../../webpack.dev');
-const webpackConfigProd = require('../../webpack.prod');
 
 module.exports = class BuildCompiler {
-  static factory () {
-    return new BuildCompiler();
+  static factory (webpackConfigs) {
+    return new BuildCompiler(webpackConfigs);
   }
 
-  constructor () {
-    this.compiler = webpack([
-      ...(webpackConfigDev()),
-      ...(webpackConfigProd()),
-    ]);
+  constructor (webpackConfigs = []) {
+    this.compiler = webpack(webpackConfigs);
 
     this.name = utils.name;
     this.secondsCompiling = 0;
@@ -118,5 +114,15 @@ module.exports = class BuildCompiler {
       console.log('Make a change and save it to recompile...');
       console.log('');
     });
+  }
+
+  async run () {
+    const stats = await pify(this.compiler.run.bind(this.compiler))();
+
+    return stats;
+  }
+
+  destroy () {
+    // @todo
   }
 };
