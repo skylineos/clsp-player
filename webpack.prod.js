@@ -3,7 +3,7 @@
 const webpack = require('webpack');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
-const webpackConfigs = require('./webpack.common');
+const webpackConfigs = require('./webpack.clsp-player');
 
 const proConfig = (webpackConfig) => {
   const config = {
@@ -39,11 +39,8 @@ const proConfig = (webpackConfig) => {
 };
 
 module.exports = function () {
+  // We ONLY want the CLSP Player to be built in prod mode, not the demos
   const configs = webpackConfigs().map((webpackConfig) => proConfig(webpackConfig));
 
-  // We ONLY want the CLSP Player to be built in prod mode
-  // Discard all the demo configs
-  return [
-    configs.pop(),
-  ];
+  return configs;
 };

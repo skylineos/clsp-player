@@ -1,7 +1,7 @@
 'use strict';
 
 const webpack = require('webpack');
-const webpackConfigs = require('./webpack.common');
+const webpackConfigs = require('./webpack.demos');
 
 function devConfig (webpackConfig) {
   return {
@@ -24,11 +24,8 @@ function devConfig (webpackConfig) {
 }
 
 module.exports = function () {
+  // Note that we do not build the clsp-player as a development asset
   const configs = webpackConfigs().map((webpackConfig) => devConfig(webpackConfig));
-
-  // Remove the CLSP Player config
-  // We ONLY want the demo pages to be built in dev mode
-  configs.pop();
 
   return configs;
 };
