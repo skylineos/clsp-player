@@ -16,11 +16,11 @@ The highest h.264 keyframe/iframe segment frequency this player currently suppor
 - [Installation](#installation)
   - [Via Yarn](#via-yarn)
   - [Via NPM](#via-npm)
-- [Using with `dist` assets](#using-with-dist-assets)
+- [Using with `<script>` tag](#using-with-script-tag)
   - [`<head>` Tag](#head-tag)
   - [`<script>` Tag](#script-tag)
   - [`<video>` tag](#video-tag)
-- [Using with `src` assets](#using-with-src-assets)
+- [Using with `import` or `require`](#using-with-import-or-require)
   - [JS](#js)
   - [Styles (SASS)](#styles-sass)
   - [Webpack](#webpack)
@@ -97,7 +97,7 @@ npm i @babel/polyfill @skylineos/clsp-player
 ```
 
 
-## Using with `dist` assets
+## Using with `<script>` tag
 
 NOTE: See `demos/simple-dist/` and `demos/advanced-dist/` for full examples.
 
@@ -191,7 +191,7 @@ This tells the browser exactly what codec to use to decode and play the video.  
 ```
 
 
-## Using with `src` assets
+## Using with `import` or `require`
 
 NOTE: See `demos/simple-src/` and `demos/advanced-src/` for full examples.
 
@@ -202,9 +202,19 @@ NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
 ```js
 import '@babel/polyfill';
 
-import clspUtils from '~root/src/js/utils/utils';
-import IovCollection from '~root/src/js/iov/IovCollection';
-import TourController from '~root/src/js/iov/TourController';
+import {
+  IovCollection,
+  TourController,
+  utils as clspUtils,
+} from '@skylineos/clsp-player';
+
+// or ...
+
+const {
+  IovCollection,
+  TourController,
+  utils: clspUtils,
+} = require('@skylineos/clsp-player');
 
 const videoElementId = 'my-video';
 const urls = [
@@ -244,7 +254,7 @@ tour.start();
 
 ### Webpack
 
-Create a specific module rule for the CLSP Player in your common webpack config.  This is necessary since the CLSP Player source uses modern ES6+ features and webpack will ignore files in node_modules by default.
+If you opt to use any files from the `src` directory, you will likely need to transpile them via babel/webpack.  In this case, you will need to create a specific module rule for the CLSP Player in your common webpack config.  This is necessary since the CLSP Player source uses modern ES6+ features and webpack will ignore files in `node_modules` by default.
 
 The following peer dependencies are required to build via webpack:
 
