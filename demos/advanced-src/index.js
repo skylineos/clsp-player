@@ -1,7 +1,5 @@
 import './styles.scss';
 
-import '@babel/polyfill';
-
 import $ from 'jquery';
 
 // simulate `import '@skylineos/clsp-player'`
