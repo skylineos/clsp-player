@@ -23,7 +23,6 @@ The highest h.264 keyframe/iframe segment frequency this player currently suppor
 - [Using with `import` or `require`](#using-with-import-or-require)
   - [JS](#js)
   - [Styles (SASS)](#styles-sass)
-  - [Webpack](#webpack)
 
 ## Supported Browsers
 
@@ -250,53 +249,4 @@ tour.start();
 
 ```scss
 @import '/path/to/node_modules/@skylineos/clsp-player/src/styles/clsp-player.scss';
-```
-
-### Webpack
-
-If you opt to use any files from the `src` directory, you will likely need to transpile them via babel/webpack.  In this case, you will need to create a specific module rule for the CLSP Player in your common webpack config.  This is necessary since the CLSP Player source uses modern ES6+ features and webpack will ignore files in `node_modules` by default.
-
-The following peer dependencies are required to build via webpack:
-
-* `@babel/polyfill`
-* `@babel/core`
-* `babel-loader`
-* `@babel/preset-env`
-* `@babel/plugin-transform-typeof-symbol`
-* `@babel/plugin-syntax-dynamic-import`
-* `@babel/plugin-proposal-object-rest-spread`
-* `@babel/plugin-proposal-class-properties`
-* webpack SASS toolchain if using SASS src files.  See `webpack.common.js` for an example.
-
-Sample webpack config:
-
-```js
-{
-  module: {
-    rules: [
-      {
-        test: /.*clsp-player\/(src|demos).*\.js$/,
-        loader: 'babel-loader?cacheDirectory=true',
-        options: {
-          presets: [
-            [
-              '@babel/preset-env',
-              {
-                // Prevents "ReferenceError: _typeof is not defined" error
-                exclude: [
-                  '@babel/plugin-transform-typeof-symbol',
-                ],
-              },
-            ],
-          ],
-          plugins: [
-            '@babel/plugin-syntax-dynamic-import',
-            '@babel/plugin-proposal-object-rest-spread',
-            '@babel/plugin-proposal-class-properties',
-          ],
-        },
-      },
-    ],
-  },
-}
 ```
