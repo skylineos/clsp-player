@@ -13,6 +13,10 @@ import IovCollection from './iov/IovCollection';
 import TourController from './iov/TourController';
 import utils from './utils/utils';
 
+/**
+ * Add the necessary CLSP classes/objects to the `window`.  Useful for simple
+ * projects and importing via `<script>` tags.
+ */
 function register () {
   // @todo - deprecate `window` mutations.  use `globalThis`
   if (!window.IovCollection) {
