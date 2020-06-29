@@ -23,7 +23,7 @@ The highest h.264 keyframe/iframe segment frequency this player currently suppor
 - [Using with `import` or `require`](#using-with-import-or-require)
   - [JS](#js)
   - [Styles (SASS)](#styles-sass)
-  - [Webpack](#webpack)
+- [Using `src` files](#using-src-files)
 
 ## Supported Browsers
 
@@ -87,21 +87,19 @@ clsp-hash://<host>[:port]/stream?start={epoch_seconds}&end={epoch_seconds}&token
 ### Via Yarn
 
 ```
-yarn add @babel/polyfill @skylineos/clsp-player
+yarn add @skylineos/clsp-player
 ```
 
 ### Via NPM
 
 ```
-npm i @babel/polyfill @skylineos/clsp-player
+npm i @skylineos/clsp-player
 ```
 
 
 ## Using with `<script>` tag
 
 NOTE: See `demos/simple-dist/` and `demos/advanced-dist/` for full examples.
-
-NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
 
 ### `<head>` Tag
 
@@ -112,11 +110,6 @@ NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
     rel="stylesheet"
     href="/path/to/dist/clsp-player.css"
   >
-  <!-- Babel Polyfill -->
-  <script
-    type="text/javascript"
-    src="//cdn.jsdelivr.net/npm/@babel/polyfill@7.8.7/dist/polyfill.min.js"
-  ></script>
 <head>
 ```
 
@@ -195,13 +188,9 @@ This tells the browser exactly what codec to use to decode and play the video.  
 
 NOTE: See `demos/simple-src/` and `demos/advanced-src/` for full examples.
 
-NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
-
 ### JS
 
 ```js
-import '@babel/polyfill';
-
 import {
   IovCollection,
   TourController,
@@ -252,20 +241,13 @@ tour.start();
 @import '/path/to/node_modules/@skylineos/clsp-player/src/styles/clsp-player.scss';
 ```
 
-### Webpack
+## Using `src` files
 
 If you opt to use any files from the `src` directory, you will likely need to transpile them via babel/webpack.  In this case, you will need to create a specific module rule for the CLSP Player in your common webpack config.  This is necessary since the CLSP Player source uses modern ES6+ features and webpack will ignore files in `node_modules` by default.
 
 The following peer dependencies are required to build via webpack:
 
-* `@babel/polyfill`
-* `@babel/core`
-* `babel-loader`
-* `@babel/preset-env`
-* `@babel/plugin-transform-typeof-symbol`
-* `@babel/plugin-syntax-dynamic-import`
-* `@babel/plugin-proposal-object-rest-spread`
-* `@babel/plugin-proposal-class-properties`
+* See the list of dependencies in the top comment of `babel.config.js`
 * webpack SASS toolchain if using SASS src files.  See `webpack.common.js` for an example.
 
 Sample webpack config:
@@ -277,24 +259,7 @@ Sample webpack config:
       {
         test: /.*clsp-player\/(src|demos).*\.js$/,
         loader: 'babel-loader?cacheDirectory=true',
-        options: {
-          presets: [
-            [
-              '@babel/preset-env',
-              {
-                // Prevents "ReferenceError: _typeof is not defined" error
-                exclude: [
-                  '@babel/plugin-transform-typeof-symbol',
-                ],
-              },
-            ],
-          ],
-          plugins: [
-            '@babel/plugin-syntax-dynamic-import',
-            '@babel/plugin-proposal-object-rest-spread',
-            '@babel/plugin-proposal-class-properties',
-          ],
-        },
+        options: require('@skylineos/clsp-player/babel.config'),
       },
     ],
   },

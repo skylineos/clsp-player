@@ -6,6 +6,8 @@ const ProgressBarPlugin = require('progress-bar-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const WriteFilePlugin = require('write-file-webpack-plugin');
 
+const babelConfig = require('./babel.config');
+
 const devMode = process.env.NODE_ENV !== 'production';
 
 function generateProgressBarPlugin (name) {
@@ -43,23 +45,7 @@ function generateConfig (name, entry) {
         {
           test: /\.js$/,
           loader: 'babel-loader?cacheDirectory=true',
-          options: {
-            presets: [
-              [
-                '@babel/preset-env',
-                {
-                  exclude: [
-                    '@babel/plugin-transform-typeof-symbol',
-                  ],
-                },
-              ],
-            ],
-            plugins: [
-              '@babel/plugin-syntax-dynamic-import',
-              '@babel/plugin-proposal-object-rest-spread',
-              '@babel/plugin-proposal-class-properties',
-            ],
-          },
+          options: babelConfig,
           // @see - https://github.com/webpack/webpack/issues/2031
           include: [
             path.resolve(
