@@ -1,7 +1,5 @@
 import './styles.scss';
 
-import '@babel/polyfill';
-
 // @todo - import fontawesome
 import $ from 'jquery';
 
