@@ -2,38 +2,35 @@
 
 'use strict';
 
-const BuildCompiler = require('./BuildCompiler');
+/**
+ * A script to build the CLSP Player and Demos.
+ *
+ * This should only ever be called from `./build.sh`
+ */
 
-const webpackConfigDev = require('../../webpack.dev');
-const webpackConfigProd = require('../../webpack.prod');
+const BuildCompiler = require('../webpack-utils/BuildCompiler');
 
-async function buildProd () {
-  const webpackCompiler = BuildCompiler.factory(webpackConfigProd());
+const webpackConfigClspPlayer = require('../../webpack.clsp-player');
+const webpackConfigDemos = require('../../webpack.demos');
 
-  const stats = await webpackCompiler.run();
+async function build (name, webpackConfigs) {
+  const buildCompiler = BuildCompiler.factory(name, webpackConfigs);
 
+  const stats = await buildCompiler.build();
+
+  // Show an error summary.  The user will need to scroll up in the terminal
+  // to see the detailed errors and warnings.
   if (stats.hasErrors()) {
     const info = stats.toJson();
 
-    throw new Error(`Prod Build encountered ${info.errors.length} errors.`);
-  }
-}
-
-async function buildDev () {
-  const webpackCompiler = BuildCompiler.factory(webpackConfigDev());
-
-  const stats = await webpackCompiler.run();
-
-  if (stats.hasErrors()) {
-    const info = stats.toJson();
-
-    throw new Error(`Dev Build encountered ${info.errors.length} errors.`);
+    throw new Error(`${name} Build encountered ${info.errors.length} errors.`);
   }
 }
 
 async function main () {
-  await buildProd();
-  await buildDev();
+  // Build the CLSP Player first, because the demos depend on it.
+  await build('clsp-player', webpackConfigClspPlayer());
+  await build('clsp-player-demos', webpackConfigDemos());
 }
 
 main()
