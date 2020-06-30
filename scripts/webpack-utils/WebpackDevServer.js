@@ -84,8 +84,6 @@ module.exports = class WebpackDevServer {
   }
 
   /**
-   * @async
-   *
    * Run the dev server.
    *
    * @returns {Promise}
@@ -107,8 +105,6 @@ module.exports = class WebpackDevServer {
   }
 
   /**
-   * @async
-   *
    * Stop and dereference the dev server.
    *
    * @returns {Promise}
@@ -128,8 +124,6 @@ module.exports = class WebpackDevServer {
   }
 
   /**
-   * @async
-   *
    * To be called when the dev server is no longer needed.
    *
    * Destroy and dereference the watchCompiler, stop and dereference the server.

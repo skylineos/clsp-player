@@ -198,8 +198,6 @@ module.exports = class BuildCompiler {
   }
 
   /**
-   * @async
-   *
    * Build the files.
    *
    * @see - https://webpack.js.org/api/node/#run
