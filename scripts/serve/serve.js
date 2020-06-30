@@ -19,39 +19,39 @@ const WatchCompiler = require('../webpack-utils/WatchCompiler');
 const WebpackDevServer = require('../webpack-utils/WebpackDevServer');
 
 // This watches the CLSP Player src
-let clspPlayerWatcher;
+let clspPlayerSrcWatcher;
 // This watches and serves the demos
-let webpackDevServer;
+let demoServer;
 
 /**
  * Do our best to ensure that no watchers remain active.
  */
 async function cleanUp () {
   // @todo - what happens during an error in a stop call?
-  if (clspPlayerWatcher) {
-    await clspPlayerWatcher.destroy();
-    clspPlayerWatcher = null;
+  if (clspPlayerSrcWatcher) {
+    await clspPlayerSrcWatcher.destroy();
+    clspPlayerSrcWatcher = null;
   }
 
-  if (webpackDevServer) {
-    await webpackDevServer.destroy();
-    webpackDevServer = null;
+  if (demoServer) {
+    await demoServer.destroy();
+    demoServer = null;
   }
 }
 
 async function main () {
   // Build / Watch the CLSP Player first, because the demos depend on it.
-  clspPlayerWatcher = WatchCompiler.factory('clsp-player', webpackConfigClspPlayer());
-  await clspPlayerWatcher.watch();
+  clspPlayerSrcWatcher = WatchCompiler.factory('clsp-player', webpackConfigClspPlayer());
+  await clspPlayerSrcWatcher.watch();
 
-  webpackDevServer = WebpackDevServer.factory('clsp-player-demos', webpackConfigDemos());
-  await webpackDevServer.serve();
+  demoServer = WebpackDevServer.factory('clsp-player-demos', webpackConfigDemos());
+  await demoServer.serve();
 }
 
 main()
   .then(() => {
     console.log('');
-    console.log(`Webpack dev server is running on port ${webpackDevServer.port}!`);
+    console.log(`Webpack dev server is running on port ${demoServer.port}!`);
     console.log('');
 
     // Do not exit here because the watcher needs to keep running
