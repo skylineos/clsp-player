@@ -91,8 +91,10 @@ module.exports = class WebpackDevServer {
    * @returns {Promise}
    */
   serve () {
-    // @todo - if there is a server error, such as trying to serve via port 80,
-    // the error is not caught / handled
+    // @todo - do we need to perform any error catching / handling here?
+    // I attempted to follow the steps at https://nodejs.org/api/net.html#net_server_listen
+    // for error handling, but it appears that this server is not the same as
+    // a stock node http server, and does not have the `on` method.
     return new Promise((resolve, reject) => {
       this.server.listen(
         this.port,
