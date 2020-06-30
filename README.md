@@ -23,7 +23,6 @@ The highest h.264 keyframe/iframe segment frequency this player currently suppor
 - [Using with `import` or `require`](#using-with-import-or-require)
   - [JS](#js)
   - [Styles (SASS)](#styles-sass)
-- [Using `src` files](#using-src-files)
 
 ## Supported Browsers
 
@@ -128,21 +127,21 @@ NOTE: See `demos/simple-dist/` and `demos/advanced-dist/` for full examples.
   window.clspUtils.setDefaultStreamPort('clsp', 9001);
 
   // Construct the player collection
-  var iovCollection = window.IovCollection.asSingleton();
+  var clspIovCollection = window.ClspIovCollection.asSingleton();
 
   // Instantiate the iov instance for this video element id
-  iovCollection.create(videoElementId)
-    .then(function (iov) {
+  clspIovCollection.create(videoElementId)
+    .then(function (clspIov) {
       // do something with the iov instance
-      iov.changeSrc('clsp://172.28.12.57:9001/FairfaxVideo0520');
+      clspIov.changeSrc('clsp://172.28.12.57:9001/FairfaxVideo0520');
     })
     .catch(function (error) {
       // do something with the error
     });
 
   // Or instantiate a tour
-  var tour = window.TourController.factory(
-    window.IovCollection.asSingleton(),
+  var tour = window.ClspTourController.factory(
+    window.ClspIovCollection.asSingleton(),
     videoElementId,
     {
       intervalDuration: 10,
@@ -192,17 +191,17 @@ NOTE: See `demos/simple-src/` and `demos/advanced-src/` for full examples.
 
 ```js
 import {
-  IovCollection,
-  TourController,
-  utils as clspUtils,
+  ClspIovCollection,
+  ClspTourController,
+  clspUtils,
 } from '@skylineos/clsp-player';
 
 // or ...
 
 const {
-  IovCollection,
-  TourController,
-  utils: clspUtils,
+  ClspIovCollection,
+  ClspTourController,
+  clspUtils,
 } = require('@skylineos/clsp-player');
 
 const videoElementId = 'my-video';
@@ -216,15 +215,15 @@ const urls = [
 // for `clsp` streams:
 clspUtils.setDefaultStreamPort('clsp', 9001);
 
-const iovCollection = IovCollection.asSingleton();
-const iov = await iovCollection.create(videoElementId);
+const clspIovCollection = ClspIovCollection.asSingleton();
+const clspIov = await clspIovCollection.create(videoElementId);
 
 iov.changeSrc(urls[0]);
 
 // tour
 
-const tour = TourController.factory(
-  IovCollection.asSingleton(),
+const tour = ClspTourController.factory(
+  ClspIovCollection.asSingleton(),
   videoElementId,
   {
     intervalDuration: 10,
@@ -239,29 +238,4 @@ tour.start();
 
 ```scss
 @import '/path/to/node_modules/@skylineos/clsp-player/src/styles/clsp-player.scss';
-```
-
-## Using `src` files
-
-If you opt to use any files from the `src` directory, you will likely need to transpile them via babel/webpack.  In this case, you will need to create a specific module rule for the CLSP Player in your common webpack config.  This is necessary since the CLSP Player source uses modern ES6+ features and webpack will ignore files in `node_modules` by default.
-
-The following peer dependencies are required to build via webpack:
-
-* See the list of dependencies in the top comment of `babel.config.js`
-* webpack SASS toolchain if using SASS src files.  See `webpack.common.js` for an example.
-
-Sample webpack config:
-
-```js
-{
-  module: {
-    rules: [
-      {
-        test: /.*clsp-player\/(src|demos).*\.js$/,
-        loader: 'babel-loader?cacheDirectory=true',
-        options: require('@skylineos/clsp-player/babel.config'),
-      },
-    ],
-  },
-}
 ```

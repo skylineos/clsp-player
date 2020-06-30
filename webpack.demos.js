@@ -3,8 +3,9 @@
 const path = require('path');
 
 const {
-  generateConfig,
   outputPath,
+  generateConfig,
+  exportAsDevConfig,
 } = require('./webpack.utils');
 
 const demoOutputPath = path.resolve(
@@ -61,11 +62,11 @@ const tourDemoSrcConfig = generateConfig(
 tourDemoSrcConfig.output.path = demoOutputPath;
 
 module.exports = function () {
-  return [
+  return exportAsDevConfig([
     // Note that the demo files depend on `dist/clsp-player.min.js`
     advancedDemoDistConfig,
     advancedDemoSrcConfig,
     simpleDemoSrcConfig,
     tourDemoSrcConfig,
-  ];
+  ]);
 };

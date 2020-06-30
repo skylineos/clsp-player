@@ -6,9 +6,9 @@ import humanize from 'humanize';
 
 // simulate `import '@skylineos/clsp-player'`
 import {
-  IovCollection,
-  TourController,
-  utils as clspUtils,
+  ClspIovCollection,
+  ClspTourController,
+  clspUtils,
 } from '~root/dist/clsp-player.min.js';
 
 let durationDisplayInterval;
@@ -97,8 +97,8 @@ $(() => {
 
   const urls = getTourList();
 
-  const tour = TourController.factory(
-    IovCollection.asSingleton(),
+  const tour = ClspTourController.factory(
+    ClspIovCollection.asSingleton(),
     videoElementId,
     {
       intervalDuration: 10,
