@@ -161,7 +161,8 @@ module.exports = class WatchCompiler extends BuildCompiler {
    *
    * Stops the watcher, the compile timer, and dereferences the compiler.
    *
-   * @returns {void}
+   * @returns {Promise}
+   *   Resolves when all async destruction logic finishes
    */
   destroy () {
     super.destroy();
