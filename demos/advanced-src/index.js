@@ -6,25 +6,24 @@ import $ from 'jquery';
 
 // simulate `import '@skylineos/clsp-player'`
 import {
-  IovCollection,
-  TourController,
-  utils as clspUtils,
+  ClspIovCollection,
+  ClspTourController,
+  clspUtils,
 } from '~root/dist/clsp-player.min.js';
 
 /**
  * or with `require`....
  *
  * const {
- *   IovCollection,
- *   TourController,
- *   utils: clspUtils,
+ *   ClspIovCollection,
+ *   ClspTourController,
+ *   clspUtils,
  * } = require('~root/dist/clsp-player.min.js');
  */
 
 import {
   initializeWall,
 } from './shared';
-
 
 let wallPlayers = [];
 
@@ -39,7 +38,7 @@ function destroyAllPlayers () {
 }
 
 async function createPlayer (index, playerOptions) {
-  const iovCollection = IovCollection.asSingleton();
+  const clspIovCollection = ClspIovCollection.asSingleton();
 
   const videoId = `wall-video-${index}`;
 
@@ -56,8 +55,10 @@ async function createPlayer (index, playerOptions) {
   $container.find('.video-stream .index').text(index);
 
   if (playerOptions.tour && playerOptions.tour.enabled) {
-    const tour = TourController.factory(
-      iovCollection, videoElementId, {
+    const tour = ClspTourController.factory(
+      clspIovCollection,
+      videoElementId,
+      {
         intervalDuration: 10,
         onShown: (
           error, index, streamConfiguration,
@@ -123,13 +124,13 @@ async function createPlayer (index, playerOptions) {
       }
     }
 
-    const iov = await iovCollection.create(videoElementId);
+    const clspIov = await clspIovCollection.create(videoElementId);
 
-    iov.changeSrc(url);
+    clspIov.changeSrc(url);
 
-    wallPlayers.push(iov);
+    wallPlayers.push(clspIov);
 
-    // iov.on('metric', (event, { metric }) => {
+    // clspIov.on('metric', (event, { metric }) => {
     //   $videoMetrics.find(`.${metric.type.replace(new RegExp(/\./, 'g'), '-')} .value`)
     //     .attr('title', metric.value)
     //     .html(metric.value);
@@ -137,7 +138,7 @@ async function createPlayer (index, playerOptions) {
 
     $container.find('.video-stream .close').on('click', () => {
       $('#wallTotalVideos').text(parseInt($('#wallTotalVideos').text(), 10) - 1);
-      iovCollection.remove(iov.id);
+      clspIovCollection.remove(clspIov.id);
     });
   }
 }
