@@ -185,36 +185,6 @@ html, body {
         flex-grow: 1;
         flex-shrink: 0;
       }
-
-      .video-metrics {
-        display: flex;
-        flex-direction: column;
-        background-color: white;
-
-        .metric {
-          display: flex;
-
-          &:nth-of-type(2n) {
-            background: lightgrey;
-          }
-
-          .value {
-            width: 10em;
-            overflow: hidden;
-            flex-grow: 0;
-            flex-shrink: 0;
-            padding: 0 3px;
-            font-weight: bold;
-          }
-
-          .type {
-            flex-grow: 1;
-            flex-shrink: 0;
-            text-align: left;
-            overflow: hidden;
-          }
-        }
-      }
     }
   }
 }
