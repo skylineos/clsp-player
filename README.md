@@ -134,21 +134,21 @@ NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
   window.clspUtils.setDefaultStreamPort('clsp', 9001);
 
   // Construct the player collection
-  var iovCollection = window.IovCollection.asSingleton();
+  var clspIovCollection = window.ClspIovCollection.asSingleton();
 
   // Instantiate the iov instance for this video element id
-  iovCollection.create(videoElementId)
-    .then(function (iov) {
+  clspIovCollection.create(videoElementId)
+    .then(function (clspIov) {
       // do something with the iov instance
-      iov.changeSrc('clsp://172.28.12.57:9001/FairfaxVideo0520');
+      clspIov.changeSrc('clsp://172.28.12.57:9001/FairfaxVideo0520');
     })
     .catch(function (error) {
       // do something with the error
     });
 
   // Or instantiate a tour
-  var tour = window.TourController.factory(
-    window.IovCollection.asSingleton(),
+  var tour = window.ClspTourController.factory(
+    window.ClspIovCollection.asSingleton(),
     videoElementId,
     {
       intervalDuration: 10,
@@ -202,17 +202,17 @@ NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
 import '@babel/polyfill';
 
 import {
-  IovCollection,
-  TourController,
-  utils as clspUtils,
+  ClspIovCollection,
+  ClspTourController,
+  clspUtils,
 } from '@skylineos/clsp-player';
 
 // or ...
 
 const {
-  IovCollection,
-  TourController,
-  utils: clspUtils,
+  ClspIovCollection,
+  ClspTourController,
+  clspUtils,
 } = require('@skylineos/clsp-player');
 
 const videoElementId = 'my-video';
@@ -226,15 +226,15 @@ const urls = [
 // for `clsp` streams:
 clspUtils.setDefaultStreamPort('clsp', 9001);
 
-const iovCollection = IovCollection.asSingleton();
-const iov = await iovCollection.create(videoElementId);
+const clspIovCollection = ClspIovCollection.asSingleton();
+const clspIov = await clspIovCollection.create(videoElementId);
 
 iov.changeSrc(urls[0]);
 
 // tour
 
-const tour = TourController.factory(
-  IovCollection.asSingleton(),
+const tour = ClspTourController.factory(
+  ClspIovCollection.asSingleton(),
   videoElementId,
   {
     intervalDuration: 10,
