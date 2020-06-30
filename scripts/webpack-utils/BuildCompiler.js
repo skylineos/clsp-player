@@ -73,7 +73,10 @@ module.exports = class BuildCompiler {
    * @returns {void}
    */
   setTimer () {
-    // @todo - what should happen when this.timer already exists?
+    if (this.timer) {
+      return;
+    }
+
     this.timer = setInterval(() => {
       console.log('');
       console.log(`${this.name} webpack has been compiling for ${++this.secondsCompiling} seconds...`);
