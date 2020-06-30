@@ -3,23 +3,34 @@
 'use strict';
 
 /**
- * @see - https://webpack.js.org/api/node/
+ * A script to build the CLSP Player and Demos.
+ *
+ * This should only ever be called from `./build.sh`
  */
 
-const pify = require('pify');
+const BuildCompiler = require('../webpack-utils/BuildCompiler');
 
-const BuildCompiler = require('./BuildCompiler');
+const webpackConfigClspPlayer = require('../../webpack.clsp-player');
+const webpackConfigDemos = require('../../webpack.demos');
 
-async function main () {
-  const buildCompiler = BuildCompiler.factory();
+async function build (name, webpackConfigs) {
+  const buildCompiler = BuildCompiler.factory(name, webpackConfigs);
 
-  const stats = await pify(buildCompiler.compiler.run.bind(buildCompiler.compiler))();
+  const stats = await buildCompiler.build();
 
+  // Show an error summary.  The user will need to scroll up in the terminal
+  // to see the detailed errors and warnings.
   if (stats.hasErrors()) {
     const info = stats.toJson();
 
-    throw new Error(`Build encountered ${info.errors.length} errors.`);
+    throw new Error(`${name} Build encountered ${info.errors.length} errors.`);
   }
+}
+
+async function main () {
+  // Build the CLSP Player first, because the demos depend on it.
+  await build('clsp-player', webpackConfigClspPlayer());
+  await build('clsp-player-demos', webpackConfigDemos());
 }
 
 main()

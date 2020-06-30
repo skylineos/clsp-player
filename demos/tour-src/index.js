@@ -6,9 +6,12 @@ import '@babel/polyfill';
 import $ from 'jquery';
 import humanize from 'humanize';
 
-import clspUtils from '~root/src/js/utils/utils';
-import IovCollection from '~root/src/js/iov/IovCollection';
-import TourController from '~root/src/js/iov/TourController';
+// simulate `import '@skylineos/clsp-player'`
+import {
+  ClspIovCollection,
+  ClspTourController,
+  clspUtils,
+} from '~root/dist/clsp-player.min.js';
 
 let durationDisplayInterval;
 
@@ -96,8 +99,8 @@ $(() => {
 
   const urls = getTourList();
 
-  const tour = TourController.factory(
-    IovCollection.asSingleton(),
+  const tour = ClspTourController.factory(
+    ClspIovCollection.asSingleton(),
     videoElementId,
     {
       intervalDuration: 10,
