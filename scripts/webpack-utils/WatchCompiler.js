@@ -108,8 +108,6 @@ module.exports = class WatchCompiler extends BuildCompiler {
   }
 
   /**
-   * @async
-   *
    * Build and then Watch the files.
    *
    * @see - https://webpack.js.org/api/node/#watching
@@ -133,8 +131,6 @@ module.exports = class WatchCompiler extends BuildCompiler {
   }
 
   /**
-   * @async
-   *
    * Stop the watcher.
    *
    * @returns {Promise}
