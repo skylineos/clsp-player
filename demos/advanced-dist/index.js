@@ -19,7 +19,7 @@ function destroyAllPlayers () {
 }
 
 async function createPlayer (index, playerOptions) {
-  const iovCollection = window.IovCollection.asSingleton();
+  const clspIovCollection = window.ClspIovCollection.asSingleton();
 
   const videoId = `wall-video-${index}`;
 
@@ -36,8 +36,10 @@ async function createPlayer (index, playerOptions) {
   $container.find('.video-stream .index').text(index);
 
   if (playerOptions.tour && playerOptions.tour.enabled) {
-    const tour = window.TourController.factory(
-      iovCollection, videoElementId, {
+    const tour = window.ClspTourController.factory(
+      clspIovCollection,
+      videoElementId,
+      {
         intervalDuration: 10,
         onShown: (
           error, index, streamConfiguration,
@@ -103,13 +105,13 @@ async function createPlayer (index, playerOptions) {
       }
     }
 
-    const iov = await iovCollection.create(videoElementId);
+    const clspIov = await clspIovCollection.create(videoElementId);
 
-    iov.changeSrc(url);
+    clspIov.changeSrc(url);
 
-    wallPlayers.push(iov);
+    wallPlayers.push(clspIov);
 
-    // iov.on('metric', (event, { metric }) => {
+    // clspIov.on('metric', (event, { metric }) => {
     //   $videoMetrics.find(`.${metric.type.replace(new RegExp(/\./, 'g'), '-')} .value`)
     //     .attr('title', metric.value)
     //     .html(metric.value);
@@ -117,7 +119,7 @@ async function createPlayer (index, playerOptions) {
 
     $container.find('.video-stream .close').on('click', () => {
       $('#wallTotalVideos').text(parseInt($('#wallTotalVideos').text(), 10) - 1);
-      iovCollection.remove(iov.id);
+      clspIovCollection.remove(clspIov.id);
     });
   }
 }

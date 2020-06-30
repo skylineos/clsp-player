@@ -7,12 +7,12 @@ import $ from 'jquery';
 
 // simulate `import '@skylineos/clsp-player'`
 import {
-  IovCollection,
-  utils as clspUtils,
+  ClspIovCollection,
+  clspUtils,
 } from '~root/dist/clsp-player.min.js';
 
-let iovCollection;
-let iov;
+let clspIovCollection;
+let clspIov;
 
 function displayVersions () {
   document.title = `v${clspUtils.version} ${document.title}`;
@@ -23,7 +23,7 @@ function displayVersions () {
 
 function registerHandlers () {
   function play () {
-    if (!iov) {
+    if (!clspIov) {
       return;
     }
 
@@ -31,34 +31,34 @@ function registerHandlers () {
   }
 
   function stop () {
-    if (!iov) {
+    if (!clspIov) {
       return;
     }
 
-    iov.stop();
+    clspIov.stop();
   }
 
   function fullscreen () {
-    if (!iov) {
+    if (!clspIov) {
       return;
     }
 
-    iov.toggleFullscreen();
+    clspIov.toggleFullscreen();
   }
 
   function destroy () {
-    if (!iov) {
+    if (!clspIov) {
       return;
     }
 
-    iovCollection.remove(iov.id);
-    iov = null;
+    clspIovCollection.remove(clspIov.id);
+    clspIov = null;
   }
 
   function changeSrc () {
     const streamUrl = document.getElementById('stream-src').value;
 
-    iov.changeSrc(streamUrl);
+    clspIov.changeSrc(streamUrl);
   }
 
   window.clspPlayerControls = {
@@ -78,10 +78,10 @@ async function main () {
 
     document.getElementById('stream-src').value = url;
 
-    iovCollection = IovCollection.asSingleton();
-    iov = await iovCollection.create(videoElementId);
+    clspIovCollection = ClspIovCollection.asSingleton();
+    clspIov = await clspIovCollection.create(videoElementId);
 
-    iov.changeSrc(url);
+    clspIov.changeSrc(url);
   }
   catch (error) {
     document.getElementById('browser-not-supported').style.display = 'block';

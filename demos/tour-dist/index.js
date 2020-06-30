@@ -86,8 +86,10 @@ function initialize () {
 
   var urls = getTourList();
 
-  var tour = window.TourController.factory(
-    window.IovCollection.asSingleton(), videoElementId, {
+  var tour = window.ClspTourController.factory(
+    window.ClspIovCollection.asSingleton(),
+    videoElementId,
+    {
       intervalDuration: 10,
       onShown: function (
         error, index, streamConfiguration,
