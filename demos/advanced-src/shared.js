@@ -111,15 +111,6 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
     $controlsToggle.text('Show Controls');
   }
 
-  function setMetricsVisibility () {
-    if ($('#show-metrics').prop('checked')) {
-      $('.wall-video-metrics').show();
-    }
-    else {
-      $('.wall-video-metrics').hide();
-    }
-  }
-
   function onclick () {
     destroyAllPlayers();
 
@@ -159,7 +150,7 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
           },
           sources,
           clsp: {
-            enableMetrics: $('#enable-metrics').prop('checked'),
+            enableMetrics: false,
           },
         };
 
@@ -186,7 +177,7 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
               },
             ],
             clsp: {
-              enableMetrics: $('#enable-metrics').prop('checked'),
+              enableMetrics: false,
             },
           };
 
@@ -225,12 +216,10 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
     }, 1000);
 
     hideControls();
-    setMetricsVisibility();
   }
 
   $('#wallCreate').click(onclick);
   $('#wall-controls-toggle').click(toggleControls);
-  $('#show-metrics').on('change', setMetricsVisibility);
 
   initLocalStorage(
     name, 'wall-enabled', 'checkbox', true,

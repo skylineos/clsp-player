@@ -4,6 +4,7 @@ const path = require('path');
 
 const {
   generateConfig,
+  exportAsProdConfig,
 } = require('./webpack.utils');
 
 const utils = require('./src/js/utils/utils');
@@ -22,7 +23,7 @@ const clspPlayerConfig = generateConfig(
 clspPlayerConfig.output.libraryTarget = 'umd';
 
 module.exports = function () {
-  return [
+  return exportAsProdConfig([
     clspPlayerConfig,
-  ];
+  ]);
 };

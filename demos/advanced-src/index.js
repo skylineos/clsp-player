@@ -4,25 +4,24 @@ import $ from 'jquery';
 
 // simulate `import '@skylineos/clsp-player'`
 import {
-  IovCollection,
-  TourController,
-  utils as clspUtils,
+  ClspIovCollection,
+  ClspTourController,
+  clspUtils,
 } from '~root/dist/clsp-player.min.js';
 
 /**
  * or with `require`....
  *
  * const {
- *   IovCollection,
- *   TourController,
- *   utils: clspUtils,
+ *   ClspIovCollection,
+ *   ClspTourController,
+ *   clspUtils,
  * } = require('~root/dist/clsp-player.min.js');
  */
 
 import {
   initializeWall,
 } from './shared';
-
 
 let wallPlayers = [];
 
@@ -37,7 +36,7 @@ function destroyAllPlayers () {
 }
 
 async function createPlayer (index, playerOptions) {
-  const iovCollection = IovCollection.asSingleton();
+  const clspIovCollection = ClspIovCollection.asSingleton();
 
   const videoId = `wall-video-${index}`;
 
@@ -54,8 +53,10 @@ async function createPlayer (index, playerOptions) {
   $container.find('.video-stream .index').text(index);
 
   if (playerOptions.tour && playerOptions.tour.enabled) {
-    const tour = TourController.factory(
-      iovCollection, videoElementId, {
+    const tour = ClspTourController.factory(
+      clspIovCollection,
+      videoElementId,
+      {
         intervalDuration: 10,
         onShown: (
           error, index, streamConfiguration,
@@ -86,56 +87,15 @@ async function createPlayer (index, playerOptions) {
     $container.find('.video-stream .url').text(url);
     $container.find('.video-stream .url').attr('title', url);
 
-    const $videoMetrics = $container.find('.wall-video-metrics');
+    const clspIov = await clspIovCollection.create(videoElementId);
 
-    const metricTypes = [];
-    // const metricTypes = [
-    //   ClspPlugin().METRIC_TYPES,
-    //   IOV.METRIC_TYPES,
-    //   Conduit.METRIC_TYPES,
-    //   IOVPlayer.METRIC_TYPES,
-    //   MediaSourceWrapper.METRIC_TYPES,
-    //   SourceBufferWrapper.METRIC_TYPES,
-    // ];
+    clspIov.changeSrc(url);
 
-    for (let i = 0; i < metricTypes.length; i++) {
-      const metricType = metricTypes[i];
-
-      for (let j = 0; j < metricType.length; j++) {
-        const text = metricType[j];
-        const name = text.replace(new RegExp(/\./, 'g'), '-');
-        const $metric = $('<div/>', {
-          class: `metric ${name}`,
-        });
-
-        $metric.append($('<span/>', {
-          class: 'value',
-        }));
-        $metric.append($('<span/>', {
-          class: 'type',
-          title: text,
-          text,
-        }));
-
-        $videoMetrics.append($metric);
-      }
-    }
-
-    const iov = await iovCollection.create(videoElementId);
-
-    iov.changeSrc(url);
-
-    wallPlayers.push(iov);
-
-    // iov.on('metric', (event, { metric }) => {
-    //   $videoMetrics.find(`.${metric.type.replace(new RegExp(/\./, 'g'), '-')} .value`)
-    //     .attr('title', metric.value)
-    //     .html(metric.value);
-    // });
+    wallPlayers.push(clspIov);
 
     $container.find('.video-stream .close').on('click', () => {
       $('#wallTotalVideos').text(parseInt($('#wallTotalVideos').text(), 10) - 1);
-      iovCollection.remove(iov.id);
+      clspIovCollection.remove(clspIov.id);
     });
   }
 }
