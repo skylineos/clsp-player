@@ -5,43 +5,78 @@
  * by webpack.
  */
 
-const {
-  version,
-  name,
-} = require('../../../package.json');
+const packageJson = require('../../../package.json');
 
 const Logger = require('./logger');
 
 // @todo - remove this side-effect
 const logger = Logger().factory();
 
-const MINIMUM_CHROME_VERSION = 53;
-
-// @todo - this mime type, though used in the videojs plugin, and
-// seemingly enforced, is not actually enforced.  The only enforcement
-// done is requiring the user provide this string on the video element
-// in the DOM.  The codecs that are supplied by the SFS's vary.  Here
-// are some "valid", though not enforced mimeCodec values I have come
-// across:
-// video/mp4; codecs="avc1.4DE016"
-// video/mp4; codecs="avc1.42E00C"
-// video/mp4; codecs="avc1.42E00D"
-const SUPPORTED_MIME_TYPE = "video/mp4; codecs='avc1.42E01E'";
-
-// The streams must not timeout earlier than this to be able to support Vero
-// tours and high-quality streams.
-const DEFAULT_STREAM_TIMEOUT = 20;
-
 // CLSP default port for SFS >= 5.2.0 is 80
 // CLSP default port for SFS < 5.2.0 is 9001
 const DEFAULT_CLSP_PORT = 80;
 const DEFAULT_CLSPS_PORT = 443;
 
+// Locally-scoped value that maintains the clsp and clsps port states.
+//
+// @see - getDefaultStreamPort
+// @see - setDefaultStreamPort
+//
 // @todo - state / config could be managed better than this
 const streamPorts = {
   clsp: DEFAULT_CLSP_PORT,
   clsps: DEFAULT_CLSPS_PORT,
 };
+
+/**
+ * The name of the CLSP Player library as defined in `package.json` without the
+ * group name.
+ *
+ * @type {String}
+ */
+const name = packageJson.name.split('/').pop();
+
+/**
+ * The version of the CLSP Player library.  Follows semver.
+ *
+ * @type {String}
+ */
+const version = packageJson.version;
+
+/**
+ * The oldest Chrome browser version supported by CLSP Player.
+ *
+ * @type {Number}
+ */
+const MINIMUM_CHROME_VERSION = 53;
+
+/**
+ * The MIME type required for CLSP Player to be able to play the stream.
+ *
+ * @todo - this mime type, though used in the videojs plugin, and
+ * seemingly enforced, is not actually enforced.  The only enforcement
+ * done is requiring the user provide this string on the video element
+ * in the DOM.  The codecs that are supplied by the SFS's vary.  Here
+ * are some "valid", though not enforced mimeCodec values I have come
+ * across:
+ * - video/mp4; codecs="avc1.4DE016"
+ * - video/mp4; codecs="avc1.42E00C"
+ * - video/mp4; codecs="avc1.42E00D"
+ *
+ * @type {String}
+ */
+const SUPPORTED_MIME_TYPE = "video/mp4; codecs='avc1.42E01E'";
+
+/**
+ * The amount of time (in seconds) before a stream times out.
+ *
+ * Note that this timeout value should be treated as the minimum value to
+ * support Vero tours and high-quality streams.
+ *
+ * @type {Number}
+ */
+const DEFAULT_STREAM_TIMEOUT = 20;
+
 
 function isBrowserCompatable () {
   try {
@@ -164,15 +199,15 @@ function setDefaultStreamPort (protocol, port) {
 }
 
 module.exports = {
+  name,
   version,
-  name: name.split('/').pop(),
+  MINIMUM_CHROME_VERSION,
+  SUPPORTED_MIME_TYPE,
+  DEFAULT_STREAM_TIMEOUT,
   supported: isBrowserCompatable,
   mediaSourceExtensionsCheck,
   isSupportedMimeType,
   windowStateNames: _getWindowStateNames(),
   getDefaultStreamPort,
   setDefaultStreamPort,
-  DEFAULT_STREAM_TIMEOUT,
-  MINIMUM_CHROME_VERSION,
-  SUPPORTED_MIME_TYPE,
 };
