@@ -1,9 +1,16 @@
+// Type definitions for CLSP
+// Project: @skylineos/clsp-player
+
+// @see - https://www.typescriptlang.org/docs/handbook/declaration-files/templates/module-d-ts.html
+
+export as namespace CLSP;
+
 /**
  * Responsible for receiving stream input and routing it to the media source
  * buffer for rendering on the video tag. There is some 'light' reworking of
  * the binary data that is required.
 */
-export class IovPlayer {
+interface IovPlayer {
     static factory(logId, videoElement,onConduitMessageError?: Function, onPlayerError?: Function ): IovPlayer;
     on(name, action);
     trigger (name, value);
@@ -105,9 +112,9 @@ export class TourController {
     destroy();
 }
 
-export class ClspUtils {
-    static version: string;
+export class utils {
     static name: string;
+    static version: string;
     static supported: () => boolean;
     static windowStateNames: { hiddenStateName: string, visibilityChangeEventName: string };
     static DEFAULT_STREAM_TIMEOUT: number;
