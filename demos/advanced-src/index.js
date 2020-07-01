@@ -4,18 +4,18 @@ import $ from 'jquery';
 
 // simulate `import '@skylineos/clsp-player'`
 import {
-  ClspIovCollection,
-  ClspTourController,
-  clspUtils,
+  IovCollection,
+  TourController,
+  utils,
 } from '~root/dist/clsp-player.min.js';
 
 /**
  * or with `require`....
  *
  * const {
- *   ClspIovCollection,
- *   ClspTourController,
- *   clspUtils,
+ *   IovCollection,
+ *   TourController,
+ *   tils,
  * } = require('~root/dist/clsp-player.min.js');
  */
 
@@ -36,7 +36,7 @@ function destroyAllPlayers () {
 }
 
 async function createPlayer (index, playerOptions) {
-  const clspIovCollection = ClspIovCollection.asSingleton();
+  const iovCollection = IovCollection.asSingleton();
 
   const videoId = `wall-video-${index}`;
 
@@ -53,8 +53,8 @@ async function createPlayer (index, playerOptions) {
   $container.find('.video-stream .index').text(index);
 
   if (playerOptions.tour && playerOptions.tour.enabled) {
-    const tour = ClspTourController.factory(
-      clspIovCollection,
+    const tour = TourController.factory(
+      iovCollection,
       videoElementId,
       {
         intervalDuration: 10,
@@ -87,15 +87,15 @@ async function createPlayer (index, playerOptions) {
     $container.find('.video-stream .url').text(url);
     $container.find('.video-stream .url').attr('title', url);
 
-    const clspIov = await clspIovCollection.create(videoElementId);
+    const iov = await iovCollection.create(videoElementId);
 
-    clspIov.changeSrc(url);
+    iov.changeSrc(url);
 
-    wallPlayers.push(clspIov);
+    wallPlayers.push(iov);
 
     $container.find('.video-stream .close').on('click', () => {
       $('#wallTotalVideos').text(parseInt($('#wallTotalVideos').text(), 10) - 1);
-      clspIovCollection.remove(clspIov.id);
+      iovCollection.remove(iov.id);
     });
   }
 }
@@ -103,10 +103,10 @@ async function createPlayer (index, playerOptions) {
 $(() => {
   const localStorageName = 'clsp-player-advanced-demo-src';
 
-  document.title = `v${clspUtils.version} ${document.title}`;
+  document.title = `v${utils.version} ${document.title}`;
 
   const pageTitle = $('#page-title').html();
-  $('#page-title').html(`${pageTitle} <br /> v${clspUtils.version}`);
+  $('#page-title').html(`${pageTitle} <br /> v${utils.version}`);
 
   initializeWall(
     localStorageName,

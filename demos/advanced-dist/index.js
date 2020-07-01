@@ -19,7 +19,7 @@ function destroyAllPlayers () {
 }
 
 async function createPlayer (index, playerOptions) {
-  const clspIovCollection = window.ClspIovCollection.asSingleton();
+  const clspIovCollection = window.CLSP.IovCollection.asSingleton();
 
   const videoId = `wall-video-${index}`;
 
@@ -36,7 +36,7 @@ async function createPlayer (index, playerOptions) {
   $container.find('.video-stream .index').text(index);
 
   if (playerOptions.tour && playerOptions.tour.enabled) {
-    const tour = window.ClspTourController.factory(
+    const tour = window.CLSP.TourController.factory(
       clspIovCollection,
       videoElementId,
       {
@@ -86,10 +86,10 @@ async function createPlayer (index, playerOptions) {
 $(() => {
   const localStorageName = 'clsp-player-advanced-demo-dist';
 
-  document.title = `v${window.clspUtils.version} ${document.title}`;
+  document.title = `v${window.CLSP.utils.version} ${document.title}`;
 
   const pageTitle = $('#page-title').html();
-  $('#page-title').html(`${pageTitle} <br /> v${window.clspUtils.version}`);
+  $('#page-title').html(`${pageTitle} <br /> v${window.CLSP.utils.version}`);
 
   initializeWall(
     localStorageName,
