@@ -86,21 +86,19 @@ clsp-hash://<host>[:port]/stream?start={epoch_seconds}&end={epoch_seconds}&token
 ### Via Yarn
 
 ```
-yarn add @babel/polyfill @skylineos/clsp-player
+yarn add @skylineos/clsp-player
 ```
 
 ### Via NPM
 
 ```
-npm i @babel/polyfill @skylineos/clsp-player
+npm i @skylineos/clsp-player
 ```
 
 
 ## Using with `<script>` tag
 
 NOTE: See `demos/simple-dist/` and `demos/advanced-dist/` for full examples.
-
-NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
 
 ### `<head>` Tag
 
@@ -111,11 +109,6 @@ NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
     rel="stylesheet"
     href="/path/to/dist/clsp-player.css"
   >
-  <!-- Babel Polyfill -->
-  <script
-    type="text/javascript"
-    src="//cdn.jsdelivr.net/npm/@babel/polyfill@7.8.7/dist/polyfill.min.js"
-  ></script>
 <head>
 ```
 
@@ -194,13 +187,9 @@ This tells the browser exactly what codec to use to decode and play the video.  
 
 NOTE: See `demos/simple-src/` and `demos/advanced-src/` for full examples.
 
-NOTE: `@babel/polyfill` MUST be sourced/included prior to the CLSP Player.
-
 ### JS
 
 ```js
-import '@babel/polyfill';
-
 import {
   ClspIovCollection,
   ClspTourController,
