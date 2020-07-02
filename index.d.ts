@@ -22,13 +22,29 @@ interface StreamConfigurationConfig {
 }
 
 /**
+ * Defined in /src/js/iov/StreamConfiguration.js
+ */
+declare class StreamConfiguration {
+    static factory(streamName: string, host: string, port: number, useSSL: boolean, tokenConfig: StreamConfigurationTokenConfig): StreamConfiguration;
+    static fromObject(config): StreamConfiguration;
+    static isStreamConfiguration(target: any): boolean;
+    static generateConfigFromUrl(url: string): StreamConfigurationConfig;
+    static fromUrl(url): StreamConfiguration;
+    protocol: string;
+    url: string;
+    clone(streamConfiguration: StreamConfiguration): StreamConfiguration;
+    toObject(): StreamConfigurationConfig;
+    destroy();
+}
+
+/**
  * defined in src/iov/IovPlayer.js
  *
  * Responsible for receiving stream input and routing it to the media source
  * buffer for rendering on the video tag. There is some 'light' reworking of
  * the binary data that is required.
 */
-interface IovPlayer {
+declare class IovPlayer {
     static factory(logId: string, videoElement, onConduitMessageError?: Function, onPlayerError?: Function): IovPlayer;
     on(name: string, action: Function);
     initialize (streamConfiguration: StreamConfigurationToken): Promise<void>;
@@ -40,22 +56,6 @@ interface IovPlayer {
     exitFullscreen();
     toggleFullscreen();
     destroy(): Promise<void>;
-}
-
-/**
- * Defined in /src/js/iov/StreamConfiguration.js
- */
-interface StreamConfiguration {
-    static factory(streamName: string, host: string, port: number, useSSL: boolean, tokenConfig: StreamConfigurationTokenConfig): StreamConfiguration;
-    static fromObject(config): StreamConfiguration;
-    static isStreamConfiguration(target: any): boolean;
-    static generateConfigFromUrl(url: string): StreamConfigurationConfig;
-    static fromUrl(url): StreamConfiguration;
-    protocol: string;
-    url: string;
-    clone(streamConfiguration: StreamConfiguration): StreamConfiguration;
-    toObject(): StreamConfigurationConfig;
-    destroy();
 }
 
 interface IovChangeSrcReturnValue {
