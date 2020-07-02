@@ -77,35 +77,40 @@ const SUPPORTED_MIME_TYPE = "video/mp4; codecs='avc1.42E01E'";
  */
 const DEFAULT_STREAM_TIMEOUT = 20;
 
-
+/**
+ * Determine whether or not the CLSP Player is supported in the current browser.
+ *
+ * @todo - we are currently manually checking useragentstring - we should find a
+ *   library that can check browser type for us
+ *
+ * @returns {Boolean}
+ *   `true` if the browser is supported by CLSP Player
+ *   `false` if the browser is not supported by CLSP Player
+ */
 function isBrowserCompatable () {
-  try {
-    mediaSourceExtensionsCheck();
-  }
-  catch (error) {
-    logger.error(error);
+  // @todo - at one time, this was needed for browsers on MacOS - is this still
+  // necessary?
+  window.MediaSource = window.MediaSource || window.WebKitMediaSource;
 
+  if (!window.MediaSource) {
+    console.error('Media Source Extensions not supported in your browser, unable to load CLSP Player');
     return false;
   }
 
-  // We don't support Internet Explorer
   const isInternetExplorer = navigator.userAgent.toLowerCase().indexOf('trident') > -1;
 
   if (isInternetExplorer) {
-    logger.debug('Detected Internet Explorer browser');
+    logger.debug('Detected Internet Explorer browser, which is not supported.');
     return false;
   }
 
-  // We don't support Edge (yet)
   const isEdge = navigator.userAgent.toLowerCase().indexOf('edge') > -1;
 
   if (isEdge) {
-    logger.debug('Detected Edge browser');
+    logger.debug('Detected older Edge browser, which is not supported');
     return false;
   }
 
-  // We support a limited number of streams in Firefox
-  // no specific version of firefox required for now.
   const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
   if (isFirefox) {
@@ -131,31 +136,42 @@ function isBrowserCompatable () {
     return chromeVersion >= MINIMUM_CHROME_VERSION;
   }
   catch (error) {
+    logger.error('Unable to detect Chrome version');
     logger.error(error);
 
     return false;
   }
 }
 
-function mediaSourceExtensionsCheck () {
-  // For the MAC
-  window.MediaSource = window.MediaSource || window.WebKitMediaSource;
-
-  if (!window.MediaSource) {
-    throw new Error('Media Source Extensions not supported in your browser: Claris Live Streaming will not work!');
-  }
-}
-
+/**
+ * Check to see if the passed mimeType is supported by CLSP Player.
+ *
+ * @param {String} mimeType
+ *   Will check to see if this mimeType is supported
+ *
+ * @returns {Boolean}
+ *   `true` if the mimeType is supported by CLSP Player
+ *   `false` if the mimeType is not supported by CLSP Player
+ */
 function isSupportedMimeType (mimeType) {
   return mimeType === SUPPORTED_MIME_TYPE;
 }
 
-function _getWindowStateNames () {
-  logger.debug('Determining Page_Visibility_API property names.');
+/**
+ * @typedef {Object} PageVisibilityApiPropertyNames
+ * @property {String} hiddenStateName
+ *   The property name used for the `document.hidden` property
+ * @property {String} visibilityChangeEventName
+ *   The property name used for the `document.visibilityChange` event name
+ */
 
-  if (typeof document === 'undefined') {
-    return {};
-  }
+/**
+ * Get the property names used by this browser for the Page Visibility API.
+ *
+ * @returns {PageVisibilityApiPropertyNames}
+ */
+function getWindowStateNames () {
+  logger.debug('Determining Page_Visibility_API property names.');
 
   // @see - https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API
   if (typeof document.hidden !== 'undefined') {
@@ -166,6 +182,7 @@ function _getWindowStateNames () {
     };
   }
 
+  // @todo - do we need this since we don't support IE or old Edge?
   if (typeof document.msHidden !== 'undefined') {
     logger.debug('Using Microsoft Page_Visibility_API property names.');
     return {
@@ -190,10 +207,24 @@ function _getWindowStateNames () {
   };
 }
 
+/**
+ * Get the default port number for the given protocol.
+ *
+ * @param {String} protocol
+ *   The protocol to get the default port for.  Must be a known protocol (e.g.
+ *   `clsp` or `clsps`)
+ */
 function getDefaultStreamPort (protocol) {
   return streamPorts[protocol];
 }
 
+/**
+ * Set the default port number for the given protocol.
+ *
+ * @param {String} protocol
+ *   The protocol to set the default port for.  Must be a known protocol (e.g.
+ *   `clsp` or `clsps`)
+ */
 function setDefaultStreamPort (protocol, port) {
   streamPorts[protocol] = port;
 }
@@ -202,12 +233,10 @@ module.exports = {
   name,
   version,
   MINIMUM_CHROME_VERSION,
-  SUPPORTED_MIME_TYPE,
   DEFAULT_STREAM_TIMEOUT,
   supported: isBrowserCompatable,
-  mediaSourceExtensionsCheck,
   isSupportedMimeType,
-  windowStateNames: _getWindowStateNames(),
+  windowStateNames: getWindowStateNames(),
   getDefaultStreamPort,
   setDefaultStreamPort,
 };

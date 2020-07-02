@@ -1,19 +1,20 @@
-// Type definitions for CLSP
-// Project: @skylineos/clsp-player
+// Type definitions for CLSP Player
+// Project: https://github.com/skylineos/clsp-player
 
 // @see - https://www.typescriptlang.org/docs/handbook/declaration-files/templates/module-d-ts.html
+// @see - https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/index.d.ts
 
 export as namespace CLSP;
 
 /**
- * @see - src/iov/IovPlayer.js
+ * defined in src/iov/IovPlayer.js
  *
  * Responsible for receiving stream input and routing it to the media source
  * buffer for rendering on the video tag. There is some 'light' reworking of
  * the binary data that is required.
 */
 interface IovPlayer {
-    static factory(logId, videoElement,onConduitMessageError?: Function, onPlayerError?: Function ): IovPlayer;
+    static factory(logId, videoElement, onConduitMessageError?: Function, onPlayerError?: Function ): IovPlayer;
     on(name, action);
     trigger (name, value);
     metric (type, value);
@@ -114,16 +115,20 @@ export class TourController {
     destroy();
 }
 
+interface PageVisibilityApiPropertyNames {
+    hiddenStateName: string;
+    visibilityChangeEventName: string;
+}
+
 export class utils {
     static name: string;
     static version: string;
-    static supported: () => boolean;
-    static windowStateNames: { hiddenStateName: string, visibilityChangeEventName: string };
-    static DEFAULT_STREAM_TIMEOUT: number;
     static MINIMUM_CHROME_VERSION: number;
     static SUPPORTED_MIME_TYPE: string;
-    static mediaSourceExtensionsCheck(): { hiddenStateName: string, visibilityChangeEventName: string };
+    static DEFAULT_STREAM_TIMEOUT: number;
+    static supported(): boolean;
     static isSupportedMimeType(): boolean;
+    static windowStateNames: PageVisibilityApiPropertyNames;
     static getDefaultStreamPort(): number;
     static setDefaultStreamPort(protocol: string, port: number);
 }
