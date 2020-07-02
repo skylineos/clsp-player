@@ -173,6 +173,15 @@ function isSupportedMimeType (mimeType) {
 function getWindowStateNames () {
   logger.debug('Determining Page_Visibility_API property names.');
 
+  // @todo - this check is needed to support these utils being imported by
+  // webpack.  there is probably a more elegant way to handle this scenario.
+  if (typeof document === 'undefined') {
+    return {
+      hiddenStateName: '',
+      visibilityChangeEventName: '',
+    };
+  }
+
   // @see - https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API
   if (typeof document.hidden !== 'undefined') {
     logger.debug('Using standard Page_Visibility_API property names.');
