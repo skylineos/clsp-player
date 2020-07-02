@@ -54,7 +54,7 @@ export default class IovCollection {
       videoElementId,
       {
         id: (++totalIovCount).toString(),
-      }
+      },
     );
 
     this.add(iov);

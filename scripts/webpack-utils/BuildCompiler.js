@@ -193,8 +193,6 @@ module.exports = class BuildCompiler {
     }
 
     this.clearTimer();
-
-    return;
   }
 
   /**

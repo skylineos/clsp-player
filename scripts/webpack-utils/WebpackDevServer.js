@@ -77,7 +77,7 @@ module.exports = class WebpackDevServer {
       stats: false,
 
       // Allow the caller to override or add devServerConfig properties
-      ...(config.devServerConfig || {})
+      ...(config.devServerConfig || {}),
     };
 
     this.server = new _WebpackDevServer(this.watchCompiler.compiler, this.devServerConfig);
