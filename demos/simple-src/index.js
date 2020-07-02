@@ -5,23 +5,32 @@ import $ from 'jquery';
 
 // simulate `import '@skylineos/clsp-player'`
 import {
-  ClspIovCollection,
-  clspUtils,
+  IovCollection,
+  utils,
 } from '~root/dist/clsp-player.min.js';
 
-let clspIovCollection;
-let clspIov;
+/**
+ * or with `require`....
+ *
+ * const {
+ *   IovCollection,
+ *   utils,
+ * } = require('~root/dist/clsp-player.min.js');
+ */
+
+let iovCollection;
+let iov;
 
 function displayVersions () {
-  document.title = `v${clspUtils.version} ${document.title}`;
+  document.title = `v${utils.version} ${document.title}`;
 
   const pageTitle = $('#page-title').html();
-  $('#page-title').html(`${pageTitle} <br /> v${clspUtils.version}`);
+  $('#page-title').html(`${pageTitle} <br /> v${utils.version}`);
 }
 
 function registerHandlers () {
   function play () {
-    if (!clspIov) {
+    if (!iov) {
       return;
     }
 
@@ -29,34 +38,34 @@ function registerHandlers () {
   }
 
   function stop () {
-    if (!clspIov) {
+    if (!iov) {
       return;
     }
 
-    clspIov.stop();
+    iov.stop();
   }
 
   function fullscreen () {
-    if (!clspIov) {
+    if (!iov) {
       return;
     }
 
-    clspIov.toggleFullscreen();
+    iov.toggleFullscreen();
   }
 
   function destroy () {
-    if (!clspIov) {
+    if (!iov) {
       return;
     }
 
-    clspIovCollection.remove(clspIov.id);
-    clspIov = null;
+    iovCollection.remove(iov.id);
+    iov = null;
   }
 
   function changeSrc () {
     const streamUrl = document.getElementById('stream-src').value;
 
-    clspIov.changeSrc(streamUrl);
+    iov.changeSrc(streamUrl);
   }
 
   window.clspPlayerControls = {
@@ -76,10 +85,10 @@ async function main () {
 
     document.getElementById('stream-src').value = url;
 
-    clspIovCollection = ClspIovCollection.asSingleton();
-    clspIov = await clspIovCollection.create(videoElementId);
+    iovCollection = IovCollection.asSingleton();
+    iov = await iovCollection.create(videoElementId);
 
-    clspIov.changeSrc(url);
+    iov.changeSrc(url);
   }
   catch (error) {
     document.getElementById('browser-not-supported').style.display = 'block';

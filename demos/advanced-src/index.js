@@ -15,7 +15,7 @@ import {
  * const {
  *   IovCollection,
  *   TourController,
- *   tils,
+ *   utils,
  * } = require('~root/dist/clsp-player.min.js');
  */
 

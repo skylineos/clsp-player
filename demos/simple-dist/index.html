@@ -36,7 +36,7 @@
           value="clsp://172.28.12.57:9001/FairfaxVideo0520"
         />
         <button
-          onclick="clspPlayerControls.changeSrc()"
+          onclick="window.clspPlayerControls.changeSrc()"
           title="Change Stream"
         >Change Stream</button>
       </div>
@@ -57,25 +57,25 @@
       </div>
       <div class="controls">
         <button
-          onclick="clspPlayerControls.play()"
+          onclick="window.clspPlayerControls.play()"
           title="play"
         >
           <i class="fas fa-play"></i>
         </button>
         <button
-          onclick="clspPlayerControls.stop()"
+          onclick="window.clspPlayerControls.stop()"
           title="stop"
         >
           <i class="fas fa-stop"></i>
         </button>
         <button
-          onclick="clspPlayerControls.fullscreen()"
+          onclick="window.clspPlayerControls.fullscreen()"
           title="fullscreen"
         >
           <i class="fas fa-expand"></i>
         </button>
         <button
-          onclick="clspPlayerControls.destroy()"
+          onclick="window.clspPlayerControls.destroy()"
           title="destroy"
         >
           <i class="fas fa-bomb"></i>
@@ -93,12 +93,12 @@
     ></script>
 
     <script>
-      document.title = `v${window.clspUtils.version} ${document.title}`;
+      document.title = `v${window.CLSP.utils.version} ${document.title}`;
 
       const pageTitle = document.getElementById('page-title').innerHTML;
-      document.getElementById('page-title').innerHTML = `${pageTitle} <br /> v${window.clspUtils.version}`;
+      document.getElementById('page-title').innerHTML = `${pageTitle} <br /> v${window.CLSP.utils.version}`;
 
-      clspPlayerControls.initialize();
+      window.clspPlayerControls.initialize();
     </script>
   </body>
 </html>

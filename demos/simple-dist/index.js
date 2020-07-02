@@ -1,7 +1,7 @@
 'use strict';
 
 function play () {
-  if (!window.clspIov) {
+  if (!window.iov) {
     return;
   }
 
@@ -9,34 +9,34 @@ function play () {
 }
 
 function stop () {
-  if (!window.clspIov) {
+  if (!window.iov) {
     return;
   }
 
-  window.clspIov.stop();
+  window.iov.stop();
 }
 
 function fullscreen () {
-  if (!window.clspIov) {
+  if (!window.iov) {
     return;
   }
 
-  window.clspIov.toggleFullscreen();
+  window.iov.toggleFullscreen();
 }
 
 function destroy () {
-  if (!window.clspIov) {
+  if (!window.iov) {
     return;
   }
 
-  window.clspIovCollection.remove(window.clspIov.id);
-  window.clspIov = null;
+  window.iovCollection.remove(window.iov.id);
+  window.iov = null;
 }
 
 function changeSrc () {
   var streamUrl = document.getElementById('stream-src').value;
 
-  window.clspIov.changeSrc(streamUrl);
+  window.iov.changeSrc(streamUrl);
 }
 
 function initialize () {
@@ -47,12 +47,12 @@ function initialize () {
 
   document.getElementById('stream-src').value = url;
 
-  window.clspIovCollection = window.ClspIovCollection.asSingleton();
+  window.iovCollection = window.CLSP.IovCollection.asSingleton();
 
-  window.clspIovCollection.create(videoElementId)
-    .then(function (clspIov) {
-      window.clspIov = clspIov;
-      window.clspIov.changeSrc(url);
+  window.iovCollection.create(videoElementId)
+    .then(function (iov) {
+      window.iov = iov;
+      window.iov.changeSrc(url);
     })
     .catch(function (error) {
       document.getElementById('browser-not-supported').style.display = 'block';
