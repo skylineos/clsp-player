@@ -4,7 +4,7 @@
 ## Table of Contents <!-- omit in toc -->
 
 - [CLSP Player](#clsp-player)
-    - [v0.21.0 - 2020-04-30 - Recommended](#v0210---2020-04-30---recommended)
+    - [v0.21.0 - 2020-07-07 - Recommended](#v0210---2020-07-07---recommended)
     - [v0.20.1 - 2020-04-30 - Critical](#v0201---2020-04-30---critical)
     - [v0.19.0 - 2020-04-21 - Critical](#v0190---2020-04-21---critical)
     - [v0.18.0-1 - 2020-04-04 - Critical](#v0180-1---2020-04-04---critical)
@@ -31,7 +31,7 @@
 
 ## CLSP Player
 
-### v0.21.0 - 2020-04-30 - Recommended
+### v0.21.0 - 2020-07-07 - Recommended
 
 * CLSP Player is now packaged and published as a UMD module
 * Updated the default exports (@see `src/js/index.js`)
