@@ -428,6 +428,7 @@ export default class IovPlayer {
 
     const playError = await this.play();
 
+    // @todo - should this throw?
     if (playError) {
       return playError;
     }
@@ -639,7 +640,7 @@ export default class IovPlayer {
     this.logger.debug('destroy...');
 
     if (this.destroyed) {
-      return;
+      return Promise.resolve();
     }
 
     this.destroyed = true;

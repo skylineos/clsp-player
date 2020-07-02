@@ -20,6 +20,7 @@ const clspPlayerConfig = generateConfig(
 );
 
 // @see - https://webpack.js.org/configuration/output/#module-definition-systems
+clspPlayerConfig.output.library = 'CLSP';
 clspPlayerConfig.output.libraryTarget = 'umd';
 
 module.exports = function () {
