@@ -1,10 +1,25 @@
 // Type definitions for CLSP Player
 // Project: https://github.com/skylineos/clsp-player
 
+import StreamConfiguration from "./src/js/iov/StreamConfiguration";
+
 // @see - https://www.typescriptlang.org/docs/handbook/declaration-files/templates/module-d-ts.html
 // @see - https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/react/index.d.ts
 
 export as namespace CLSP;
+
+interface StreamConfigurationTokenConfig {
+    b64HashAccessUrl: string;
+    hash: string;
+}
+
+interface StreamConfigurationConfig {
+    streamName: string;
+    host: string;
+    port: number;
+    useSSL: boolean;
+    tokenConfig: StreamConfigurationTokenConfig;
+}
 
 /**
  * defined in src/iov/IovPlayer.js
@@ -14,25 +29,38 @@ export as namespace CLSP;
  * the binary data that is required.
 */
 interface IovPlayer {
-    static factory(logId, videoElement, onConduitMessageError?: Function, onPlayerError?: Function ): IovPlayer;
-    on(name, action);
-    trigger (name, value);
-    metric (type, value);
-    generateConduitLogId(): string;
-    onConduitReconnect: (error) => void;
-    onPlayerError: (error) => void;
-    onConduitMessageError: (error) => void;
-    initialize (streamConfiguration): Promise<void>;
+    static factory(logId: string, videoElement, onConduitMessageError?: Function, onPlayerError?: Function): IovPlayer;
+    on(name: string, action: Function);
+    initialize (streamConfiguration: StreamConfigurationToken): Promise<void>;
     reinitializeMseWrapper(mimeCodec): Promise<void>;
     restart(): Promise<void>;
-    onMoof: (clspMessage) => void;
     play(): Promise<void>;
     stop(): Promise<void>;
-    getSegmentIntervalMetrics();
     enterFullscreen();
     exitFullscreen();
     toggleFullscreen();
     destroy(): Promise<void>;
+}
+
+/**
+ * Defined in /src/js/iov/StreamConfiguration.js
+ */
+interface StreamConfiguration {
+    static factory(streamName: string, host: string, port: number, useSSL: boolean, tokenConfig: StreamConfigurationTokenConfig): StreamConfiguration;
+    static fromObject(config): StreamConfiguration;
+    static isStreamConfiguration(target: any): boolean;
+    static generateConfigFromUrl(url: string): StreamConfigurationConfig;
+    static fromUrl(url): StreamConfiguration;
+    protocol: string;
+    url: string;
+    clone(streamConfiguration: StreamConfiguration): StreamConfiguration;
+    toObject(): StreamConfigurationConfig;
+    destroy();
+}
+
+interface IovChangeSrcReturnValue {
+    id: string;
+    firstFrameReceivedPromise: Promise<void>;
 }
 
 /**
@@ -41,27 +69,25 @@ interface IovPlayer {
  */
 export class Iov {
     on(eventName: string, action: any);
-    trigger(eventName: string, value: any);
-    metric(eventName: string, value: any);
     onConnectionChange();
     onVisibilityChange():Promise<void>;
     generatePlayerLogId(): string;
     showNextStream();
-    cancelChangeSrc(id: string);
+    cancelChangeSrc();
+    changeSrc(url: string | StreamConfiguration, showOnFirstFrame?: boolean): Promise<IovChangeSrcReturnValue>;
+    clone(streamConfiguration?: StreamConfiguration): Iov;
+    onPlayerError(error);
     play(iovPlayer?: IovPlayer):Promise<void>;
     stop(iovPlayer?: IovPlayer):Promise<void>;
     restart(iovPlayer?: IovPlayer):Promise<void>;
-    enterFullscreen(iovPlayer?: IovPlayer):Promise<void>;
-    exitFullscreen(iovPlayer?: IovPlayer):Promise<void>;
-    toggleFullscreen(iovPlayer?: IovPlayer):Promise<void>;
-    changeSrc(url: string, showOnFirstFrame?: boolean);
-    clone(streamConfiguration?);
-    onPlayerError(error);
+    enterFullscreen(iovPlayer?: IovPlayer);
+    exitFullscreen(iovPlayer?: IovPlayer);
+    toggleFullscreen(iovPlayer?: IovPlayer);
     /**
      * Dereference the necessary properties, clear any intervals and timeouts, and
      * remove any listeners.  Will also destroy the player.
      */
-    destroy();
+    destroy(): Promise<void>;
 }
 
 /**
@@ -81,20 +107,20 @@ export class IovCollection {
     /**
      * Add an Iov instance to this collection.  It can then be accessed by its id.
      */
-    add(iov: Iov);
+    add(iov: Iov): this;
     /**
      * Determine whether or not an iov with the passed id exists in this
      * collection.
      */
-    has(iovId: string):boolean;
+    has(id: string): boolean;
     /**
      * Get an iov with the passed id from this collection.
      */
-    get(iovId: string):Iov | undefined;
+    get(id: string): Iov | undefined;
     /**
      * Remove an iov instance from this collection and destroy it.
      */
-    remove(iovId: string):this;
+    remove(id: string): this;
     /**
      * Destroy this collection and destroy all iov instances in this collection.
      */

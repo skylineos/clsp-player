@@ -50,10 +50,12 @@ export default class IovCollection {
    * @returns {Iov}
    */
   async create (videoElementId) {
-    const iov = Iov.factory(videoElementId,
+    const iov = Iov.factory(
+      videoElementId,
       {
         id: (++totalIovCount).toString(),
-      });
+      }
+    );
 
     this.add(iov);
 
