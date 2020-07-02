@@ -233,6 +233,7 @@ module.exports = {
   name,
   version,
   MINIMUM_CHROME_VERSION,
+  SUPPORTED_MIME_TYPE,
   DEFAULT_STREAM_TIMEOUT,
   supported: isBrowserCompatable,
   isSupportedMimeType,
