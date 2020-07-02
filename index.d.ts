@@ -6,6 +6,8 @@
 export as namespace CLSP;
 
 /**
+ * @see - src/iov/IovPlayer.js
+ *
  * Responsible for receiving stream input and routing it to the media source
  * buffer for rendering on the video tag. There is some 'light' reworking of
  * the binary data that is required.
