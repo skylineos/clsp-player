@@ -4,6 +4,7 @@
 ## Table of Contents <!-- omit in toc -->
 
 - [CLSP Player](#clsp-player)
+    - [v0.21.0 - 2020-04-30 - Recommended](#v0210---2020-04-30---recommended)
     - [v0.20.1 - 2020-04-30 - Critical](#v0201---2020-04-30---critical)
     - [v0.19.0 - 2020-04-21 - Critical](#v0190---2020-04-21---critical)
     - [v0.18.0-1 - 2020-04-04 - Critical](#v0180-1---2020-04-04---critical)
@@ -29,6 +30,25 @@
     - [Status Definitions](#status-definitions)
 
 ## CLSP Player
+
+### v0.21.0 - 2020-04-30 - Recommended
+
+* CLSP Player is now packaged and published as a UMD module
+* Updated the default exports (@see `src/js/index.js`)
+* README no longer uses `src` and `dist` terms - now references `import/require` and `<script>`
+* `@babel/polyfill` is no longer required! - instead, `@babel/runtime` is used and already included
+* All exports when using CLSP Player via `<script>` are namespaced in `window.CLSP`
+* All examples and demos now use `dist` assets rather than `src` assets to be more in line with 3rd party use
+* Babel configuration is now in its own file
+* All demos have their own README files
+* Metrics have been temporarily removed from all demos
+* Created typescript module definition file
+* All utils exports are now documented
+* Webpack configurations were refactored to support the demos relying on the CLSP Player dist assets
+* Webpack configurations were refactored to be explicitly named after the CLSP Player and demos
+* The `build` and `serve` scripts were refactored to use the new webpack config files
+* The `build` and `serve` webpack utilities were consolidated and moved to their own folder
+* Removed unused `pre-build` script
 
 ### v0.20.1 - 2020-04-30 - Critical
 
