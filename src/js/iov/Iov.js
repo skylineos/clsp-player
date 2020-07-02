@@ -267,7 +267,7 @@ export default class Iov {
     }
   }
 
-  cancelChangeSrc (id) {
+  cancelChangeSrc () {
     if (!this.pendingChangeSrcIovPlayer) {
       return;
     }
@@ -466,7 +466,7 @@ export default class Iov {
     this.logger.debug('destroy');
 
     if (this.destroyed) {
-      return;
+      return Promise.resolve();
     }
 
     this.destroyed = true;

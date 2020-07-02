@@ -2,14 +2,14 @@ import '../styles/clsp-player.scss';
 
 import 'srcdoc-polyfill';
 
-import ClspIov from './iov/Iov';
-import ClspIovCollection from './iov/IovCollection';
-import ClspTourController from './iov/TourController';
-import clspUtils from './utils/utils';
+import Iov from './iov/Iov';
+import IovCollection from './iov/IovCollection';
+import TourController from './iov/TourController';
+import utils from './utils/utils';
 
 export {
-  ClspIov,
-  ClspIovCollection,
-  ClspTourController,
-  clspUtils,
+  Iov,
+  IovCollection,
+  TourController,
+  utils,
 };

@@ -100,11 +100,13 @@ npm i @skylineos/clsp-player
 
 NOTE: See `demos/simple-dist/` and `demos/advanced-dist/` for full examples.
 
+A `CLSP` object is attached to `window`, which contains the classes and utils you need to create players.
+
 ### `<head>` Tag
 
 ```html
 <head>
-  <!-- CLSP Player styles -->
+  <!-- load CLSP Player styles -->
   <link
     rel="stylesheet"
     href="/path/to/dist/clsp-player.css"
@@ -115,44 +117,46 @@ NOTE: See `demos/simple-dist/` and `demos/advanced-dist/` for full examples.
 ### `<script>` Tag
 
 ```html
-<!-- CLSP Player -->
+<!-- load CLSP Player in `head` or `body` -->
 <script src="/path/to/dist/clsp-player.min.js"></script>
 
+<!-- use CLSP Player at end of `body` -->
 <script>
   var videoElementId = 'my-video';
+  var urls = [
+    'clsp://172.28.12.57:9001/FairfaxVideo0520',
+    'clsp://172.28.12.57:9001/FairfaxVideo0420',
+  ];
 
   // If you are using a Skyline SFS that uses a default CLSP stream port that
   // isn't `80` (e.g. SFS < v5.2.0), you may set the window-level default port
   // for `clsp` streams:
-  window.clspUtils.setDefaultStreamPort('clsp', 9001);
+  window.CLPS.utils.setDefaultStreamPort('clsp', 9001);
 
   // Construct the player collection
-  var clspIovCollection = window.ClspIovCollection.asSingleton();
+  var iovCollection = window.CLSP.IovCollection.asSingleton();
 
-  // Instantiate the iov instance for this video element id
-  clspIovCollection.create(videoElementId)
-    .then(function (clspIov) {
+  // Instantiate the iov instance for the target video element
+  iovCollection.create(videoElementId)
+    .then(function (iov) {
       // do something with the iov instance
-      clspIov.changeSrc('clsp://172.28.12.57:9001/FairfaxVideo0520');
+      iov.changeSrc(urls[0]);
     })
     .catch(function (error) {
       // do something with the error
+      console.error(error);
     });
 
   // Or instantiate a tour
-  var tour = window.ClspTourController.factory(
-    window.ClspIovCollection.asSingleton(),
+  var tour = window.CLSP.TourController.factory(
+    iovCollection,
     videoElementId,
     {
       intervalDuration: 10,
     },
   );
 
-  tour.addUrls([
-    'clsp://172.28.12.57:9001/FairfaxVideo0520',
-    'clsp://172.28.12.57:9001/FairfaxVideo0420',
-  ]);
-
+  tour.addUrls(urls);
   tour.start();
 </script>
 ```
@@ -191,18 +195,10 @@ NOTE: See `demos/simple-src/` and `demos/advanced-src/` for full examples.
 
 ```js
 import {
-  ClspIovCollection,
-  ClspTourController,
-  clspUtils,
+  IovCollection,
+  TourController,
+  utils,
 } from '@skylineos/clsp-player';
-
-// or ...
-
-const {
-  ClspIovCollection,
-  ClspTourController,
-  clspUtils,
-} = require('@skylineos/clsp-player');
 
 const videoElementId = 'my-video';
 const urls = [
@@ -210,32 +206,43 @@ const urls = [
   'clsp://172.28.12.57:9001/FairfaxVideo0420',
 ];
 
-// If you are using a Skyline SFS that uses a default CLSP stream port that
-// isn't `80` (e.g. SFS < v5.2.0), you may set the window-level default port
-// for `clsp` streams:
-clspUtils.setDefaultStreamPort('clsp', 9001);
+try {
+  // If you are using a Skyline SFS that uses a default CLSP stream port that
+  // isn't `80` (e.g. SFS < v5.2.0), you may set the window-level default port
+  // for `clsp` streams:
+  utils.setDefaultStreamPort('clsp', 9001);
 
-const clspIovCollection = ClspIovCollection.asSingleton();
-const clspIov = await clspIovCollection.create(videoElementId);
+  // Construct the player collection
+  const iovCollection = IovCollection.asSingleton();
 
-iov.changeSrc(urls[0]);
+  // Instantiate the iov instance for the target video element
+  const iov = await iovCollection.create(videoElementId);
 
-// tour
+  // do something with the iov instance
+  iov.changeSrc(urls[0]);
 
-const tour = ClspTourController.factory(
-  ClspIovCollection.asSingleton(),
-  videoElementId,
-  {
-    intervalDuration: 10,
-  },
-);
+  // Or instantiate a tour
+  const tour = TourController.factory(
+    iovCollection,
+    videoElementId,
+    {
+      intervalDuration: 10,
+    },
+  );
 
-tour.addUrls(urls);
-tour.start();
+  tour.addUrls(urls);
+  tour.start();
+}
+catch (error) {
+  // do something with the error
+  console.error(error);
+}
 ```
 
 ### Styles (SASS)
 
 ```scss
+@import '/path/to/node_modules/@skylineos/clsp-player/dist/clsp-player.css';
+// or import it from src
 @import '/path/to/node_modules/@skylineos/clsp-player/src/styles/clsp-player.scss';
 ```
