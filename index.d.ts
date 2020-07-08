@@ -47,7 +47,7 @@ declare class StreamConfiguration {
 declare class IovPlayer {
     static factory(logId: string, videoElement, onConduitMessageError?: Function, onPlayerError?: Function): IovPlayer;
     on(name: string, action: Function);
-    initialize (streamConfiguration: StreamConfigurationToken): Promise<void>;
+    initialize (streamConfiguration: StreamConfiguration): Promise<void>;
     reinitializeMseWrapper(mimeCodec): Promise<void>;
     restart(): Promise<void>;
     play(): Promise<void>;
