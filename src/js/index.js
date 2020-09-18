@@ -1,25 +1,15 @@
-/**
- * This is the entrypoint for using the CLSP Player distributable file.  If you
- * are importing / requiring the CLSP Player source, it is recommended that you
- * do not use this file.
- */
+import '../styles/clsp-player.scss';
 
 import 'srcdoc-polyfill';
 
-import '../styles/clsp-player.scss';
-
+import Iov from './iov/Iov';
 import IovCollection from './iov/IovCollection';
 import TourController from './iov/TourController';
 import utils from './utils/utils';
 
-window.IovCollection = IovCollection;
-window.TourController = TourController;
-
-if (!window.clspUtils) {
-  window.clspUtils = utils;
-}
-
-export default {
+export {
+  Iov,
   IovCollection,
   TourController,
+  utils,
 };

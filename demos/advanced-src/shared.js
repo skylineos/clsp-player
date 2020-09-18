@@ -5,11 +5,11 @@ import humanize from 'humanize';
 let wallInterval = null;
 
 const defaultClspUrls = [
-  'clsp://172.28.12.248/testpattern',
-  'clsp://172.28.12.247/testpattern',
+  'clsp://172.28.12.248:9001/testpattern',
+  'clsp://172.28.12.247:9001/testpattern',
   'clsps://sky-qa-dionysus.qa.skyline.local/testpattern',
-  'clsp://172.28.12.57/FairfaxVideo0520',
-  'clsp://172.28.12.57/40004',
+  'clsp://172.28.12.57:9001/FairfaxVideo0520',
+  'clsp://172.28.12.57:9001/40004',
 ];
 
 // Get a demo local storage value
@@ -111,15 +111,6 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
     $controlsToggle.text('Show Controls');
   }
 
-  function setMetricsVisibility () {
-    if ($('#show-metrics').prop('checked')) {
-      $('.wall-video-metrics').show();
-    }
-    else {
-      $('.wall-video-metrics').hide();
-    }
-  }
-
   function onclick () {
     destroyAllPlayers();
 
@@ -149,6 +140,7 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
         const playerOptions = {
           autoplay: true,
           muted: true,
+          playsinline: true,
           preload: 'auto',
           poster: '../skyline_logo.png',
           controls: true,
@@ -158,7 +150,7 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
           },
           sources,
           clsp: {
-            enableMetrics: $('#enable-metrics').prop('checked'),
+            enableMetrics: false,
           },
         };
 
@@ -174,6 +166,7 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
           const playerOptions = {
             autoplay: true,
             muted: true,
+            playsinline: true,
             preload: 'auto',
             poster: '../skyline_logo.png',
             controls: true,
@@ -184,7 +177,7 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
               },
             ],
             clsp: {
-              enableMetrics: $('#enable-metrics').prop('checked'),
+              enableMetrics: false,
             },
           };
 
@@ -223,12 +216,10 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
     }, 1000);
 
     hideControls();
-    setMetricsVisibility();
   }
 
   $('#wallCreate').click(onclick);
   $('#wall-controls-toggle').click(toggleControls);
-  $('#show-metrics').on('change', setMetricsVisibility);
 
   initLocalStorage(
     name, 'wall-enabled', 'checkbox', true,

@@ -198,7 +198,9 @@ export default class Iov {
 
     const clspVideoElement = window.document.createElement('video');
     clspVideoElement.classList.add('clsp-player');
+    // @todo - can we remove these?
     clspVideoElement.muted = true;
+    clspVideoElement.playsinline = true;
 
     const insertBefore = this.iovPlayer && this.iovPlayer.videoElement
       ? this.iovPlayer.videoElement.nextSibling
@@ -265,7 +267,7 @@ export default class Iov {
     }
   }
 
-  cancelChangeSrc (id) {
+  cancelChangeSrc () {
     if (!this.pendingChangeSrcIovPlayer) {
       return;
     }
@@ -464,7 +466,7 @@ export default class Iov {
     this.logger.debug('destroy');
 
     if (this.destroyed) {
-      return;
+      return Promise.resolve();
     }
 
     this.destroyed = true;

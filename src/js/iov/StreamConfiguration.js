@@ -1,5 +1,7 @@
 'use strict';
 
+import utils from '../utils/utils';
+
 export default class StreamConfiguration {
   static factory (
     streamName, host, port, useSSL, tokenConfig,
@@ -51,25 +53,25 @@ export default class StreamConfiguration {
     if (url.substring(0, 10).toLowerCase() === 'clsps-hash') {
       useSSL = true;
       parser.href = url.replace('clsps-hash', 'https');
-      defaultPort = 443;
+      defaultPort = utils.getDefaultStreamPort('clsps');
       hashUrl = true;
     }
     else if (url.substring(0, 9).toLowerCase() === 'clsp-hash') {
       useSSL = false;
       parser.href = url.replace('clsp-hash', 'http');
-      defaultPort = 9001;
+      defaultPort = utils.getDefaultStreamPort('clsp');
       hashUrl = true;
     }
     else if (url.substring(0, 5).toLowerCase() === 'clsps') {
       useSSL = true;
       parser.href = url.replace('clsps', 'https');
-      defaultPort = 443;
+      defaultPort = utils.getDefaultStreamPort('clsps');
       hashUrl = false;
     }
     else if (url.substring(0, 4).toLowerCase() === 'clsp') {
       useSSL = false;
       parser.href = url.replace('clsp', 'http');
-      defaultPort = 9001;
+      defaultPort = utils.getDefaultStreamPort('clsp');
       hashUrl = false;
     }
     else {
@@ -94,7 +96,7 @@ export default class StreamConfiguration {
     }
 
     if (hashUrl === true) {
-      // URL: clsp[s]-hash://<sfs-addr>[:9001]/<stream>?start=...&end=...&token=...
+      // URL: clsp[s]-hash://<sfs-addr>[:<port>]/<stream>?start=...&end=...&token=...
       const qpOffset = url.indexOf(parser.pathname) + parser.pathname.length;
 
       const qrArgs = url.substr(qpOffset).split('?')[1];

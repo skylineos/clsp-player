@@ -47,12 +47,12 @@ function initialize () {
 
   document.getElementById('stream-src').value = url;
 
-  window.iovCollection = window.IovCollection.asSingleton();
+  window.iovCollection = window.CLSP.IovCollection.asSingleton();
 
   window.iovCollection.create(videoElementId)
     .then(function (iov) {
       window.iov = iov;
-      iov.changeSrc(url);
+      window.iov.changeSrc(url);
     })
     .catch(function (error) {
       document.getElementById('browser-not-supported').style.display = 'block';
