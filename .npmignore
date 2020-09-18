@@ -7,3 +7,6 @@
 /yarn-error.log
 
 .vscode
+
+# jest test coverage
+/test/jest/coverage/
