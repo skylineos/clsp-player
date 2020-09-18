@@ -45,6 +45,8 @@ yarn version --new-version 1.2.3+4
 
 ## Publishing
 
+NOTE - YOU CANNOT PUBLISH A BUILD VERSION / TAG!  Only publish pre-releases and releases!
+
 1. Ensure all lint checks and tests pass
 1. It is best to do this immediately after cutting a release tag
 1. You MUST be on an unmodified checkout of the `git` tag you intend to publish.  i.e, `git status` should show:
@@ -54,7 +56,6 @@ yarn version --new-version 1.2.3+4
 1. You MUST be logged in to the public npm registry
 1. You MUST have access to the `skylineos` organization on npm
 1. You MUST ONLY publish releases (e.g. `0.18.0`) or pre-releases (e.g. `0.18.0-4`)
-    1. no builds or anything else without approval
     1. pre-releases should be published with the `beta` tag, e.g. `npm publish --tag beta`
 
 When the above checklist is complete, publish via:

@@ -1,14 +1,25 @@
 import './styles.scss';
 
-import '@babel/polyfill';
-
 // @todo - import fontawesome
 import $ from 'jquery';
 import humanize from 'humanize';
 
-import clspUtils from '~root/src/js/utils/utils';
-import IovCollection from '~root/src/js/iov/IovCollection';
-import TourController from '~root/src/js/iov/TourController';
+// simulate `import '@skylineos/clsp-player'`
+import {
+  IovCollection,
+  TourController,
+  utils,
+} from '~root/dist/clsp-player.min.js';
+
+/**
+ * or with `require`....
+ *
+ * const {
+ *   IovCollection,
+ *   TourController,
+ *   utils,
+ * } = require('~root/dist/clsp-player.min.js');
+ */
 
 let durationDisplayInterval;
 
@@ -43,10 +54,10 @@ const initialStreams = [
 ];
 
 function displayVersions () {
-  document.title = `v${clspUtils.version} ${document.title}`;
+  document.title = `v${utils.version} ${document.title}`;
 
   const pageTitle = document.getElementById('page-title').innerHTML;
-  document.getElementById('page-title').innerHTML = `${pageTitle} <br /> v${clspUtils.version}`;
+  document.getElementById('page-title').innerHTML = `${pageTitle} <br /> v${utils.version}`;
 }
 
 function getTourList () {

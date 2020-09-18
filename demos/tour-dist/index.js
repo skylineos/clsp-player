@@ -33,10 +33,10 @@ var initialStreams = [
 ];
 
 function displayVersions () {
-  document.title = `v${window.clspUtils.version} ${document.title}`;
+  document.title = `v${window.CLSP.utils.version} ${document.title}`;
 
   var pageTitle = document.getElementById('page-title').innerHTML;
-  document.getElementById('page-title').innerHTML = `${pageTitle} <br /> v${window.clspUtils.version}`;
+  document.getElementById('page-title').innerHTML = `${pageTitle} <br /> v${window.CLSP.utils.version}`;
 }
 
 function getTourList () {
@@ -86,8 +86,10 @@ function initialize () {
 
   var urls = getTourList();
 
-  var tour = window.TourController.factory(
-    window.IovCollection.asSingleton(), videoElementId, {
+  var tour = window.CLSP.TourController.factory(
+    window.CLSP.IovCollection.asSingleton(),
+    videoElementId,
+    {
       intervalDuration: 10,
       onShown: function (
         error, index, streamConfiguration,

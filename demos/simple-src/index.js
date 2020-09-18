@@ -1,21 +1,31 @@
 import './styles.scss';
 
-import '@babel/polyfill';
-
 // @todo - import fontawesome
 import $ from 'jquery';
 
-import clspUtils from '~root/src/js/utils/utils';
-import IovCollection from '~root/src/js/iov/IovCollection';
+// simulate `import '@skylineos/clsp-player'`
+import {
+  IovCollection,
+  utils,
+} from '~root/dist/clsp-player.min.js';
+
+/**
+ * or with `require`....
+ *
+ * const {
+ *   IovCollection,
+ *   utils,
+ * } = require('~root/dist/clsp-player.min.js');
+ */
 
 let iovCollection;
 let iov;
 
 function displayVersions () {
-  document.title = `v${clspUtils.version} ${document.title}`;
+  document.title = `v${utils.version} ${document.title}`;
 
   const pageTitle = $('#page-title').html();
-  $('#page-title').html(`${pageTitle} <br /> v${clspUtils.version}`);
+  $('#page-title').html(`${pageTitle} <br /> v${utils.version}`);
 }
 
 function registerHandlers () {
