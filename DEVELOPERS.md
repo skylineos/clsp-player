@@ -6,6 +6,7 @@
 - [Getting Started](#getting-started)
     - [Prepare Node Environment](#prepare-node-environment)
     - [Run test server](#run-test-server)
+- [Testing](#testing)
 - [Versioning](#versioning)
 - [Publishing](#publishing)
 - [References](#references)
@@ -31,6 +32,14 @@
 1. add a `clsp` url to any of the inputs, then click submit
 1. click play on the video element (if not using an autoplay player)
 
+
+## Testing
+
+Run the following command to run the unit tests and compile the TS definition file:
+
+```
+yarn run test
+```
 
 ## Versioning
 
