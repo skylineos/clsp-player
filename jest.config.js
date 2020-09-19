@@ -1,6 +1,10 @@
 // For a detailed explanation regarding each configuration property, visit:
 // https://jestjs.io/docs/en/configuration.html
 
+// Disabling some eslint rules to allow for easier diffing of our configuration
+// file against the default configuration file.
+/* eslint-disable max-len, quotes */
+
 module.exports = {
   // All imported modules in your tests should be mocked automatically
   // automock: false,
