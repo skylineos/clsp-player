@@ -97,17 +97,17 @@ function generateConfig (name, entry) {
           include: [
             path.resolve(
               __dirname,
-              'src'
+              'src',
             ),
             path.resolve(
               __dirname,
-              'demos'
+              'demos',
             ),
             // @see - https://github.com/visionmedia/debug/issues/668
             path.resolve(
               __dirname,
               'node_modules',
-              'debug'
+              'debug',
             ),
           ],
         },

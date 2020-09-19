@@ -16,8 +16,8 @@
   "scripts": {
     "build": "./scripts/build/build.sh",
     "serve": "./scripts/serve/serve.sh",
-    "lint": "./scripts/lint.sh",
-    "lint-fix": "./scripts/lint.sh --fix",
+    "lint": "eslint .",
+    "lint-fix": "eslint . --fix",
     "prepack": "yarn run build",
     "postpack": "./scripts/build/pre-build.sh",
     "preversion": "./scripts/version.sh --pre",
