@@ -1,13 +1,13 @@
-// @todo - it may be better to put this in `setupFilesAfterEnv` in jest config
-// import '@babel/polyfill';
+'use strict';
 
-import Router from '../Router';
+const Router = require('../Router').default;
 
 describe('Router', () => {
   describe('has a default export value', () => {
     it('is a function', () => {
       expect(typeof Router).toBe('function');
     });
+
     it('returns an object with the required keys and value types', () => {
       const router = Router();
 
@@ -43,14 +43,12 @@ describe('Router', () => {
           onunload,
         } = Router();
 
-        window.router = undefined;
-
         expect(onunload).not.toThrow();
       });
     });
 
     describe('when the router has been instantiated', () => {
-      function generateMockRouter() {
+      function generateMockRouter () {
         return {
           destroy: jest.fn(),
           logger: {
