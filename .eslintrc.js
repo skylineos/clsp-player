@@ -1,5 +1,7 @@
 'use strict';
 
+const testOverride = require('./test/jest/.eslintrc');
+
 const rules = {
   'max-len': [
     'error',
@@ -118,7 +120,10 @@ module.exports = {
     },
   },
   env: {
-    node: true,
+    browser: true,
   },
   rules,
+  overrides: [
+    testOverride,
+  ],
 };
