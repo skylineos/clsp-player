@@ -23,12 +23,12 @@
  *
  * @export - the function that provides the Router and constants
  */
-export default function () {
+
+export default function (Paho) {
   // The error code from Paho that represents the socket not being
   // connected
   var PAHO_ERROR_CODE_NOT_CONNECTED = 'AMQJS0011E';
   var PAHO_ERROR_CODE_ALREADY_CONNECTED = 'AMQJS0011E';
-  var Paho = window.parent.Paho;
 
   /**
    * A Router that can be used to set up a CLSP connection to the specified
@@ -803,57 +803,5 @@ export default function () {
     this.clspClient = null;
   };
 
-  // keep the conduit's iframe as dumb as possible.  Call each of these in the
-  // corresponding attribute on the "body" tag in the conduit's iframe.
-  return {
-    onload: function (config) {
-      try {
-        window.router = Router.factory(
-          config.logId,
-          config.clientId,
-          config.host,
-          config.port,
-          config.useSSL,
-          {
-            CONNECTION_TIMEOUT: config.CONNECTION_TIMEOUT,
-            KEEP_ALIVE_INTERVAL: config.KEEP_ALIVE_INTERVAL,
-            PUBLISH_TIMEOUT: config.PUBLISH_TIMEOUT,
-            Logger: config.Logger,
-            conduitCommands: config.conduitCommands,
-          },
-        );
-
-        window.router._sendToParentWindow({
-          event: Router.events.CREATED,
-        });
-
-        window.router.logger.info('onload - Router created');
-      }
-      catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error);
-
-        window.parent.postMessage({
-          event: Router.events.CREATE_FAILURE,
-          reason: error,
-        }, '*');
-      }
-    },
-    onunload: function () {
-      if (!window.router) {
-        return;
-      }
-
-      try {
-        window.router.logger.info('onunload - Router being destroyed in onunload...');
-        window.router.destroy();
-        window.router.logger.info('onunload - Router destroyed in onunload');
-      }
-      catch (error) {
-        window.router.logger.error(error);
-      }
-    },
-    // This only needs to be exposed for testing
-    Router: Router,
-  };
+  return Router;
 }
