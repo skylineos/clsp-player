@@ -22,7 +22,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const WriteFilePlugin = require('write-file-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
-const babelConfig = require('./babel.config');
+const babelConfig = require('./babel.config')();
 
 const devMode = process.env.NODE_ENV !== 'production';
 
