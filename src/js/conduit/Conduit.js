@@ -15,6 +15,7 @@ import {
 
 import utils from '../utils/utils';
 import Router from './Router';
+import iframeEventHandlers from './iframeEventHandlers';
 import Logger from '../utils/logger';
 import StreamConfiguration from '../iov/StreamConfiguration';
 
@@ -49,7 +50,7 @@ export default class Conduit {
     SEND: 'send',
   };
 
-  static routerEvents = Router().Router.events;
+  static routerEvents = Router().events;
 
   static factory (
     logId,
@@ -1109,12 +1110,20 @@ export default class Conduit {
               conduitCommands: ${JSON.stringify(Conduit.iframeCommands)},
             };
 
-            window.iframeEventHandlers = ${Router.toString()}();
+            window.Router = ${Router.toString()}(window.parent.Paho);
+            window.iframeEventHandlers = ${iframeEventHandlers.toString()}();
           </script>
         </head>
         <body
-          onload="window.iframeEventHandlers.onload(window.clspRouterConfig);"
-          onunload="window.iframeEventHandlers.onunload();"
+          onload="window.router = window.iframeEventHandlers.onload(
+            '${this.logId}',
+            window.Router,
+            window.clspRouterConfig
+          );"
+          onunload="window.iframeEventHandlers.onunload(
+            '${this.logId}',
+            window.router
+          );"
         >
           <div id="message"></div>
         </body>

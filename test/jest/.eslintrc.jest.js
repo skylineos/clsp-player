@@ -11,6 +11,7 @@
 module.exports = {
   files: [
     '**/__tests__/*.js',
+    '**/__mocks__/*.js',
   ],
   plugins: [
     'jest',
