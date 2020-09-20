@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * The Router is the lowest level controller of the actual CLSP connection.
+ * The Router contains the lowest-level logic of the actual CLSP connection.
  *
  * Note that this is the code that gets duplicated in each iframe.
  * Keep the contents of the exported function light and ES5 only.
@@ -59,7 +59,8 @@ export default function () {
     try {
       this.logId = logId;
 
-      this.logger = window.Logger().factory(`Router ${this.logId}`);
+      this.logger = options.Logger().factory(`Router ${this.logId}`);
+      this.conduitCommands = options.conduitCommands;
 
       this.clientId = clientId;
 
@@ -386,15 +387,15 @@ export default function () {
 
     try {
       switch (method) {
-        case window.conduitCommands.SUBSCRIBE: {
+        case this.conduitCommands.SUBSCRIBE: {
           this._subscribe(message.topic);
           break;
         }
-        case window.conduitCommands.UNSUBSCRIBE: {
+        case this.conduitCommands.UNSUBSCRIBE: {
           this._unsubscribe(message.topic);
           break;
         }
-        case window.conduitCommands.PUBLISH: {
+        case this.conduitCommands.PUBLISH: {
           var payload = null;
 
           try {
@@ -414,15 +415,15 @@ export default function () {
           );
           break;
         }
-        case window.conduitCommands.CONNECT: {
+        case this.conduitCommands.CONNECT: {
           this.connect();
           break;
         }
-        case window.conduitCommands.DISCONNECT: {
+        case this.conduitCommands.DISCONNECT: {
           this.disconnect();
           break;
         }
-        case window.conduitCommands.SEND: {
+        case this.conduitCommands.SEND: {
           this._publish(
             message.publishId, message.topic, message.byteArray,
           );
@@ -802,22 +803,23 @@ export default function () {
     this.clspClient = null;
   };
 
-  // This is a series of "controllers" to keep the conduit's iframe as dumb as
-  // possible.  Call each of these in the corresponding attribute on the
-  // "body" tag.
+  // keep the conduit's iframe as dumb as possible.  Call each of these in the
+  // corresponding attribute on the "body" tag in the conduit's iframe.
   return {
-    onload: function () {
+    onload: function (config) {
       try {
         window.router = Router.factory(
-          window.clspRouterConfig.logId,
-          window.clspRouterConfig.clientId,
-          window.clspRouterConfig.host,
-          window.clspRouterConfig.port,
-          window.clspRouterConfig.useSSL,
+          config.logId,
+          config.clientId,
+          config.host,
+          config.port,
+          config.useSSL,
           {
-            CONNECTION_TIMEOUT: window.clspRouterConfig.CONNECTION_TIMEOUT,
-            KEEP_ALIVE_INTERVAL: window.clspRouterConfig.KEEP_ALIVE_INTERVAL,
-            PUBLISH_TIMEOUT: window.clspRouterConfig.PUBLISH_TIMEOUT,
+            CONNECTION_TIMEOUT: config.CONNECTION_TIMEOUT,
+            KEEP_ALIVE_INTERVAL: config.KEEP_ALIVE_INTERVAL,
+            PUBLISH_TIMEOUT: config.PUBLISH_TIMEOUT,
+            Logger: config.Logger,
+            conduitCommands: config.conduitCommands,
           },
         );
 
@@ -848,14 +850,10 @@ export default function () {
         window.router.logger.info('onunload - Router destroyed in onunload');
       }
       catch (error) {
-        if (error.message.startsWith(PAHO_ERROR_CODE_NOT_CONNECTED)) {
-          // if there wasn't a connection, do not show an error
-          return;
-        }
-
         window.router.logger.error(error);
       }
     },
+    // This only needs to be exposed for testing
     Router: Router,
   };
 }

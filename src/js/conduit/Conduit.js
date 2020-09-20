@@ -1094,8 +1094,6 @@ export default class Conduit {
       <html>
         <head>
           <script type="text/javascript">
-            // Include the logger
-            window.Logger = ${Logger.toString()};
 
             // Configure the CLSP properties
             window.clspRouterConfig = {
@@ -1107,15 +1105,15 @@ export default class Conduit {
               CONNECTION_TIMEOUT: ${this.ROUTER_CONNECTION_TIMEOUT},
               KEEP_ALIVE_INTERVAL: ${this.ROUTER_KEEP_ALIVE_INTERVAL},
               PUBLISH_TIMEOUT: ${this.ROUTER_PUBLISH_TIMEOUT},
+              Logger: ${Logger.toString()},
+              conduitCommands: ${JSON.stringify(Conduit.iframeCommands)},
             };
-
-            window.conduitCommands = ${JSON.stringify(Conduit.iframeCommands)};
 
             window.iframeEventHandlers = ${Router.toString()}();
           </script>
         </head>
         <body
-          onload="window.iframeEventHandlers.onload();"
+          onload="window.iframeEventHandlers.onload(window.clspRouterConfig);"
           onunload="window.iframeEventHandlers.onunload();"
         >
           <div id="message"></div>

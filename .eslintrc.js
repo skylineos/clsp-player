@@ -1,6 +1,6 @@
 'use strict';
 
-const testOverride = require('./test/jest/.eslintrc');
+const testOverride = require('./test/jest/.eslintrc.jest');
 
 const rules = {
   'max-len': [
