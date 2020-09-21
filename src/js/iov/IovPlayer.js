@@ -230,11 +230,17 @@ export default class IovPlayer {
     // connected that has the same id anywhere in the world, the stream to all
     // clients that use that topic will fail.  This is why we use guids rather
     // than an incrementing integer.
-    // It is now prefixed with `clsp-plugin-` to differentiate requests that
-    // come from this plugin from others.
+    //
+    // We prefix it with the project name and version for server debugging
+    // purposes.
+    //
     // Note - this must not contain the '+' character
     // @todo - the caller should be able to provide a prefix or something
-    this.clientId = `clsp-plugin-${utils.version.replace('+', '-build-')}-${uuidv4()}`;
+    this.clientId = [
+      utils.name,
+      utils.version.replace('+', '-build-'),
+      uuidv4(),
+    ].join('--');
 
     this.videoElement.id = this.clientId;
     this.videoElement.dataset.name = streamConfiguration.streamName;

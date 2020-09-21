@@ -1238,7 +1238,7 @@ export default class Conduit {
     // @todo - this MUST be temporary - it is hiding the error resulting from
     // improper async logic handling!
     if (this.destroyed) {
-      console.warn('Cannot send message via destroyed iframe');
+      console.warn('Cannot send message via destroyed iframe', message);
       return;
     }
 
