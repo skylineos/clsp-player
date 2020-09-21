@@ -1,8 +1,9 @@
 'use strict';
 
+// @todo - can we use module alias or something here?
 const {
   generateUniqueString,
-} = require("../../../../test/jest/utils");
+} = require('../../../../test/jest/utils');
 
 const RouterMock = jest.fn().mockImplementation(() => {
   return {
@@ -30,8 +31,11 @@ RouterMock.events = {
   SUBSCRIBE_FAILURE: generateUniqueString(),
   UNSUBSCRIBE_FAILURE: generateUniqueString(),
   WINDOW_MESSAGE_FAIL: generateUniqueString(),
-}
+};
 
+// @todo - would it be useful or practical to mock the export format of the
+// `Router.js` file?   Or is having the `Router` class mock good enough?
+//
 // const ExportMock = {
 //   default: jest.fn().mockReturnValue(RouterMock),
 // };

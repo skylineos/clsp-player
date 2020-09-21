@@ -29,7 +29,7 @@ describe('iframeEventHandlers', () => {
       PUBLISH_TIMEOUT: generateUniqueString(),
       Logger: generateUniqueString(),
       conduitCommands: generateUniqueString(),
-    }
+    };
   }
 
   describe('has a default export value', () => {
@@ -74,6 +74,7 @@ describe('iframeEventHandlers', () => {
       expect(Router.factory.mock.calls[0][2]).toEqual(config.host);
       expect(Router.factory.mock.calls[0][3]).toEqual(config.port);
       expect(Router.factory.mock.calls[0][4]).toEqual(config.useSSL);
+      expect(Router.factory.mock.calls[0][5]).toBeObject();
       expect(Router.factory.mock.calls[0][5]).toContainAllKeys([
         'CONNECTION_TIMEOUT',
         'KEEP_ALIVE_INTERVAL',
@@ -104,16 +105,49 @@ describe('iframeEventHandlers', () => {
       const router = onload(logId, Router, config);
 
       expect(router._sendToParentWindow.mock.calls).toHaveLength(1);
+      expect(router._sendToParentWindow.mock.calls[0][0]).toBeObject();
       expect(router._sendToParentWindow.mock.calls[0][0]).toContainAllKeys([
         'event',
       ]);
       expect(router._sendToParentWindow.mock.calls[0][0].event).toEqual(Router.events.CREATED);
     });
 
-    it.skip('should let the parent window know if an error was encountered during instantiation', () => {
+    it('should let the parent window know if an error was encountered during instantiation', () => {
       const restoreConsole = mockConsole();
+      const logId = generateLogId();
+      const config = generateRouterConfig();
+
+      const {
+        onload,
+      } = _iframeEventHandlers.default();
+
+      const error = new Error('onload error');
+
+      // @todo - is there a more jest-y way of overriding mock instance
+      // methods on a per-test basis?
+      Router.factory = jest.fn(() => {
+        throw error;
+      });
+
+      // @see - https://medium.com/@the_teacher/how-to-test-console-output-console-log-console-warn-with-rtl-react-testing-library-and-jest-6df367736cf0
+      const originalPostMessage = window.parent.postMessage;
+      window.parent.postMessage = jest.fn();
+
+      expect(() => onload(logId, Router, config)).not.toThrow();
+      expect(console.error.mock.calls).toHaveLength(2);
+      expect(console.error.mock.calls[0][0]).toInclude(logId);
+      expect(console.error.mock.calls[1][0]).toEqual(error);
+      expect(window.parent.postMessage.mock.calls).toHaveLength(1);
+      expect(window.parent.postMessage.mock.calls[0][0]).toBeObject();
+      expect(window.parent.postMessage.mock.calls[0][0]).toContainAllKeys([
+        'event',
+        'reason',
+      ]);
+      expect(window.parent.postMessage.mock.calls[0][0].event).toEqual(Router.events.CREATE_FAILURE);
+      expect(window.parent.postMessage.mock.calls[0][0].reason).toEqual(error);
 
       restoreConsole();
+      window.parent.postMessage = originalPostMessage;
     });
   });
 
