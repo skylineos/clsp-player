@@ -7,7 +7,7 @@
 
 const packageJson = require('../../../package.json');
 
-const Logger = require('./logger');
+const Logger = require('./Logger');
 
 // @todo - remove this side-effect
 const logger = Logger().factory();

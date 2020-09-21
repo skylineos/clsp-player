@@ -32,24 +32,26 @@ describe('iframeEventHandlers', () => {
     };
   }
 
-  describe('has a default export value', () => {
-    it('has a default property that is a function', () => {
+  describe('exports', () => {
+    it('should have a default property that is a function', () => {
       expect(_iframeEventHandlers).toBeObject();
       expect(_iframeEventHandlers).toHaveProperty('default');
       expect(typeof _iframeEventHandlers.default).toBe('function');
     });
 
-    it('default returns an object with the required keys and value types', () => {
-      const iframeEventHandlers = _iframeEventHandlers.default();
+    describe('default', () => {
+      it('should return an object with the required keys and value types', () => {
+        const iframeEventHandlers = _iframeEventHandlers.default();
 
-      expect(iframeEventHandlers).toBeObject();
-      expect(iframeEventHandlers).toContainAllKeys([
-        'onload',
-        'onunload',
-      ]);
+        expect(iframeEventHandlers).toBeObject();
+        expect(iframeEventHandlers).toContainAllKeys([
+          'onload',
+          'onunload',
+        ]);
 
-      expect(typeof iframeEventHandlers.onload).toBe('function');
-      expect(typeof iframeEventHandlers.onunload).toBe('function');
+        expect(typeof iframeEventHandlers.onload).toBe('function');
+        expect(typeof iframeEventHandlers.onunload).toBe('function');
+      });
     });
   });
 
@@ -121,12 +123,10 @@ describe('iframeEventHandlers', () => {
         onload,
       } = _iframeEventHandlers.default();
 
-      const error = new Error('onload error');
+      const onloadError = new Error('onload error');
 
-      // @todo - is there a more jest-y way of overriding mock instance
-      // methods on a per-test basis?
-      Router.factory = jest.fn(() => {
-        throw error;
+      Router.factory.mockImplementationOnce(() => {
+        throw onloadError;
       });
 
       // @see - https://medium.com/@the_teacher/how-to-test-console-output-console-log-console-warn-with-rtl-react-testing-library-and-jest-6df367736cf0
@@ -136,7 +136,7 @@ describe('iframeEventHandlers', () => {
       expect(() => onload(logId, Router, config)).not.toThrow();
       expect(console.error.mock.calls).toHaveLength(2);
       expect(console.error.mock.calls[0][0]).toInclude(logId);
-      expect(console.error.mock.calls[1][0]).toEqual(error);
+      expect(console.error.mock.calls[1][0]).toEqual(onloadError);
       expect(window.parent.postMessage.mock.calls).toHaveLength(1);
       expect(window.parent.postMessage.mock.calls[0][0]).toBeObject();
       expect(window.parent.postMessage.mock.calls[0][0]).toContainAllKeys([
@@ -144,77 +144,77 @@ describe('iframeEventHandlers', () => {
         'reason',
       ]);
       expect(window.parent.postMessage.mock.calls[0][0].event).toEqual(Router.events.CREATE_FAILURE);
-      expect(window.parent.postMessage.mock.calls[0][0].reason).toEqual(error);
+      expect(window.parent.postMessage.mock.calls[0][0].reason).toEqual(onloadError);
 
       restoreConsole();
       window.parent.postMessage = originalPostMessage;
     });
   });
 
-  describe('when onunload is called', () => {
-    describe('when the router has not been instantiated', () => {
-      it('does not throw an error', () => {
-        const restoreConsole = mockConsole();
+  describe('onunload', () => {
+    describe('when onunload is called', () => {
+      describe('when the router has not been instantiated', () => {
+        it('should not throw an error', () => {
+          const restoreConsole = mockConsole();
 
-        const logId = generateLogId();
+          const logId = generateLogId();
 
-        const {
-          onunload,
-        } = _iframeEventHandlers.default();
+          const {
+            onunload,
+          } = _iframeEventHandlers.default();
 
-        expect(() => onunload(logId)).not.toThrow();
-        expect(console.warn).toHaveBeenCalled();
-        expect(console.warn.mock.calls[0][0]).toInclude(logId);
+          expect(() => onunload(logId)).not.toThrow();
+          expect(console.warn).toHaveBeenCalled();
+          expect(console.warn.mock.calls[0][0]).toInclude(logId);
 
-        restoreConsole();
-      });
-    });
-
-    describe('when the router has been instantiated', () => {
-      beforeEach(() => {
-        Router.mockClear();
+          restoreConsole();
+        });
       });
 
-      it('destroys the router', () => {
-        const logId = generateLogId();
-
-        const {
-          onunload,
-        } = _iframeEventHandlers.default();
-
-        const router = new Router();
-
-        onunload(logId, router);
-
-        expect(router.destroy.mock.calls).toHaveLength(1);
-        expect(router.logger.info.mock.calls).toHaveLength(2);
-        expect(router.logger.info.mock.calls[0][0]).toInclude(logId);
-        expect(router.logger.info.mock.calls[1][0]).toInclude(logId);
-      });
-
-      it('logs any unexpected error and does not throw', () => {
-        const logId = generateLogId();
-
-        const {
-          onunload,
-        } = _iframeEventHandlers.default();
-
-        const router = new Router();
-
-        const error = new Error('Unexpected Error!');
-
-        // @todo - is there a more jest-y way of overriding mock instance
-        // methods on a per-test basis?
-        router.destroy = jest.fn(() => {
-          throw error;
+      describe('when the router has been instantiated', () => {
+        beforeEach(() => {
+          Router.mockClear();
         });
 
-        onunload(logId, router);
+        it('should destroy the router', () => {
+          const logId = generateLogId();
 
-        expect(router.destroy.mock.calls).toHaveLength(1);
-        expect(router.logger.error.mock.calls).toHaveLength(2);
-        expect(router.logger.error.mock.calls[0][0]).toInclude(logId);
-        expect(router.logger.error.mock.calls[1][0]).toBe(error);
+          const {
+            onunload,
+          } = _iframeEventHandlers.default();
+
+          const router = new Router();
+
+          onunload(logId, router);
+
+          expect(router.destroy.mock.calls).toHaveLength(1);
+          expect(router.logger.info.mock.calls).toHaveLength(2);
+          expect(router.logger.info.mock.calls[0][0]).toInclude(logId);
+          expect(router.logger.info.mock.calls[1][0]).toInclude(logId);
+        });
+
+        it('should log any unexpected error and does not throw', () => {
+          const logId = generateLogId();
+
+          const {
+            onunload,
+          } = _iframeEventHandlers.default();
+
+          const router = new Router();
+
+          const routerDestroyError = new Error('Router Destroy Error');
+
+          router.destroy.mockImplementationOnce(() => {
+            throw routerDestroyError;
+          });
+
+          onunload(logId, router);
+
+          expect(router.destroy.mock.calls).toHaveLength(1);
+          expect(router.logger.error.mock.calls).toHaveLength(2);
+          expect(router.logger.error.mock.calls[0][0]).toInclude(logId);
+          expect(router.logger.error.mock.calls[1][0]).toBe(routerDestroyError);
+        });
       });
     });
   });
