@@ -405,7 +405,6 @@ export default class Conduit {
    *
    * @todo - await the disconnection, and maybe even the
    * unsubscribes
-
    */
   stop () {
     this.logger.debug('Stopping stream...');
