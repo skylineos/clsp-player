@@ -1,12 +1,12 @@
 # CLSP Player Developer Notes <!-- omit in toc -->
 
-
 ## Table of Contents <!-- omit in toc -->
 
 - [Getting Started](#getting-started)
-    - [Prepare Node Environment](#prepare-node-environment)
-    - [Run test server](#run-test-server)
-- [Testing](#testing)
+    - [Prepare Node environment](#prepare-node-environment)
+    - [Run development server](#run-development-server)
+- [Lint](#lint)
+- [Test](#test)
 - [Versioning](#versioning)
 - [Publishing](#publishing)
 - [References](#references)
@@ -14,7 +14,7 @@
 
 ## Getting Started
 
-### Prepare Node Environment
+### Prepare Node environment
 
 1. Install latest NodeJS LTS version using `tj/n`:
     * [https://github.com/tj/n](https://github.com/tj/n)
@@ -23,7 +23,7 @@
     * [https://classic.yarnpkg.com/en/docs/install#debian-stable](https://classic.yarnpkg.com/en/docs/install#debian-stable)
 1. `yarn install`
 
-### Run test server
+### Run development server
 
 1. `yarn run serve`
     * set `DEV_SERVER_HOST` to change the default host of `0.0.0.0`
@@ -32,14 +32,26 @@
 1. add a `clsp` url to any of the inputs, then click submit
 1. click play on the video element (if not using an autoplay player)
 
+## Lint
 
-## Testing
+To lint your code after making changes, run:
 
-Run the following command to run the unit tests and compile the TS definition file:
+```
+yarn run lint
+```
+
+## Test
+
+@see the test README.md here [./test/jest/README.md](./test/jest/README.md)
+
+To test the TS definition file and run the unit tests on the codebase, run:
 
 ```
 yarn run test
 ```
+
+A code coverage report will be available at `test/jest/coverage/lcov-report/index.html`.  A link to this will be shown in the terminal after running the tests.
+
 
 ## Versioning
 
