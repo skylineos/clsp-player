@@ -2,28 +2,29 @@
 
 /**
  * The Router contains the lowest-level logic of the actual CLSP connection.
+ * The Router will manage a CLSP connection for a given clientId, and pass
+ * the relevant data and messages back up to the Conduit.
  *
  * Note that this is the code that gets duplicated in each iframe.
  * Keep the contents of the exported function light and ES5 only.
+ *
+ * @see - https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe
+ * @see - https://developer.mozilla.org/en-US/docs/Web/HTML/Element/body
+ * @see - https://www.eclipse.org/paho/files/jsdoc/index.html
  *
  * @todo - have a custom loader for webpack that can convert this to ES5 and
  * minify it in a self-contained way at the time it is required so that we can
  * use ES6 and multiple files.
  *
  * @todo - should all thrown errors send a message to the parent Conduit?
- */
-
-/**
- * This Router will manage a CLSP connection for a given clientId, and pass
- * the relevant data and messages back up to the Conduit.
  *
- * @see - https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe
- * @see - https://developer.mozilla.org/en-US/docs/Web/HTML/Element/body
- * @see - https://www.eclipse.org/paho/files/jsdoc/index.html
+ * @param {object} Paho
+ *   The Paho instance to use for server communication.  This should be passed
+ *   in as `window.parent.Paho` to prevent the Paho library from being
+ *   duplicated for every CLSP iframe.
  *
  * @export - the function that provides the Router and constants
  */
-
 export default function (Paho) {
   // The error code from Paho that represents the socket not being
   // connected
