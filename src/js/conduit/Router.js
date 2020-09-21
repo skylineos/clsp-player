@@ -26,11 +26,6 @@
  * @export - the function that provides the Router and constants
  */
 export default function (Paho) {
-  // The error code from Paho that represents the socket not being
-  // connected
-  var PAHO_ERROR_CODE_NOT_CONNECTED = 'AMQJS0011E';
-  var PAHO_ERROR_CODE_ALREADY_CONNECTED = 'AMQJS0011E';
-
   /**
    * A Router that can be used to set up a CLSP connection to the specified
    * host and port, using a Conduit-provided clientId that will be a part of
@@ -57,22 +52,38 @@ export default function (Paho) {
     useSSL,
     options,
   ) {
+    Router.constructorArgumentsBouncer(
+      logId,
+      clientId,
+      host,
+      port,
+      useSSL,
+      options,
+    );
+
+    this.logId = logId;
+
     try {
-      this.logId = logId;
+      this.logger = options.Logger.factory(`Router ${this.logId}`);
+    }
+    catch (error) {
+      console.error(error);
+      throw new Error('Error while constructing Logger!');
+    }
 
-      this.logger = options.Logger().factory(`Router ${this.logId}`);
-      this.conduitCommands = options.conduitCommands;
+    this.conduitCommands = options.conduitCommands;
 
-      this.clientId = clientId;
+    this.clientId = clientId;
 
-      this.host = host;
-      this.port = port;
-      this.useSSL = useSSL;
+    this.host = host;
+    this.port = port;
+    this.useSSL = useSSL;
 
-      this.logger.debug('Constructing...');
+    this.logger.debug('Constructing...');
 
-      this.Reconnect = null;
+    this.Reconnect = null;
 
+    try {
       // @todo - there is a "private" method named "_doConnect" in the paho
       // library that is responsible for instantiating the WebSocket.  We have
       // seen at least 1 instance where the instantiation of the WebSocket fails
@@ -91,28 +102,88 @@ export default function (Paho) {
         '/mqtt',
         this.clientId,
       );
-
-      this.clspClient.onConnectionLost = this._onConnectionLost.bind(this);
-      this.clspClient.onMessageArrived = this._onMessageArrived.bind(this);
-      this.clspClient.onMessageDelivered = this._onMessageDelivered.bind(this);
-
-      this.boundWindowMessageEventHandler = this._windowMessageEventHandler.bind(this);
-
-      window.addEventListener(
-        'message',
-        this.boundWindowMessageEventHandler,
-        false,
-      );
-
-      this.CONNECTION_TIMEOUT = options.CONNECTION_TIMEOUT;
-      this.KEEP_ALIVE_INTERVAL = options.KEEP_ALIVE_INTERVAL;
-      this.PUBLISH_TIMEOUT = options.PUBLISH_TIMEOUT;
     }
     catch (error) {
-      this.logger.error('IFRAME error for clientId: ' + clientId);
-      this.logger.error(error);
+      console.error(error);
+      throw new Error('Error while constructing Paho Client!');
     }
+
+    this.clspClient.onConnectionLost = this._onConnectionLost.bind(this);
+    this.clspClient.onMessageArrived = this._onMessageArrived.bind(this);
+    this.clspClient.onMessageDelivered = this._onMessageDelivered.bind(this);
+
+    this.boundWindowMessageEventHandler = this._windowMessageEventHandler.bind(this);
+
+    window.addEventListener(
+      'message',
+      this.boundWindowMessageEventHandler,
+      false,
+    );
+
+    this.CONNECTION_TIMEOUT = options.CONNECTION_TIMEOUT;
+    this.KEEP_ALIVE_INTERVAL = options.KEEP_ALIVE_INTERVAL;
+    this.PUBLISH_TIMEOUT = options.PUBLISH_TIMEOUT;
   }
+
+  Router.constructorArgumentsBouncer = function (
+    logId,
+    clientId,
+    host,
+    port,
+    useSSL,
+    options,
+  ) {
+    if (typeof Paho !== 'object') {
+      throw new Error('Paho is required to construct a Router');
+    }
+    if (typeof Paho.MQTT !== 'object') {
+      throw new Error('Paho.MQTT is required to construct a Router');
+    }
+    if (typeof Paho.MQTT.Client !== 'function') {
+      throw new Error('Paho.MQTT.Client is required to construct a Router');
+    }
+    if (typeof Paho.MQTT.Message !== 'function') {
+      throw new Error('Paho.MQTT.Message is required to construct a Router');
+    }
+    if (logId === undefined) {
+      throw new Error('`logId` is required to construct a Router');
+    }
+    if (clientId === undefined) {
+      throw new Error('`clientId` is required to construct a Router');
+    }
+    if (host === undefined) {
+      throw new Error('`host` is required to construct a Router');
+    }
+    if (port === undefined) {
+      throw new Error('`port` is required to construct a Router');
+    }
+    if (useSSL === undefined) {
+      throw new Error('`useSSL` is required to construct a Router');
+    }
+    if (typeof options !== 'object') {
+      throw new Error('`options` is required to construct a Router');
+    }
+    if (options.Logger === undefined) {
+      throw new Error('`options.Logger` is required to construct a Router');
+    }
+    if (typeof options.conduitCommands !== 'object') {
+      throw new Error('`options.conduitCommands` is required to construct a Router');
+    }
+    if (options.CONNECTION_TIMEOUT === undefined) {
+      throw new Error('`options.CONNECTION_TIMEOUT` is required to construct a Router');
+    }
+    if (options.KEEP_ALIVE_INTERVAL === undefined) {
+      throw new Error('`options.KEEP_ALIVE_INTERVAL` is required to construct a Router');
+    }
+    if (options.PUBLISH_TIMEOUT === undefined) {
+      throw new Error('`options.PUBLISH_TIMEOUT` is required to construct a Router');
+    }
+  };
+
+  Router.pahoErrorCodes = {
+    NOT_CONNECTED: 'AMQJS0011E',
+    ALREADY_CONNECTED: 'AMQJS0011E',
+  };
 
   // All events that are emitted by the Router are prefixed with `clsp_router`
   Router.events = {
@@ -736,7 +807,7 @@ export default function (Paho) {
       this.logger.info('Connected');
     }
     catch (error) {
-      if (error.message.startsWith(PAHO_ERROR_CODE_ALREADY_CONNECTED)) {
+      if (error.message.startsWith(Router.pahoErrorCodes.ALREADY_CONNECTED)) {
         // if we're already connected, there's no error to report
         return;
       }
@@ -766,7 +837,7 @@ export default function (Paho) {
       this.clspClient.disconnect();
     }
     catch (error) {
-      if (error.message.startsWith(PAHO_ERROR_CODE_NOT_CONNECTED)) {
+      if (error.message.startsWith(Router.pahoErrorCodes.NOT_CONNECTED)) {
         // if we're not connected when we attempted to disconnect, there's no
         // error to report
         return;

@@ -16,7 +16,7 @@ import {
 import utils from '../utils/utils';
 import Router from './Router';
 import iframeEventHandlers from './iframeEventHandlers';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 import StreamConfiguration from '../iov/StreamConfiguration';
 
 const DEFAULT_MAX_RECONNECTION_ATTEMPTS = 0;
@@ -1106,7 +1106,7 @@ export default class Conduit {
               CONNECTION_TIMEOUT: ${this.ROUTER_CONNECTION_TIMEOUT},
               KEEP_ALIVE_INTERVAL: ${this.ROUTER_KEEP_ALIVE_INTERVAL},
               PUBLISH_TIMEOUT: ${this.ROUTER_PUBLISH_TIMEOUT},
-              Logger: ${Logger.toString()},
+              Logger: (${Logger.toString()})(),
               conduitCommands: ${JSON.stringify(Conduit.iframeCommands)},
             };
 

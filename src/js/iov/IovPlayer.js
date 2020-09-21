@@ -6,7 +6,7 @@ import {
 
 import ConduitCollection from '../conduit/ConduitCollection';
 import MSEWrapper from './MSEWrapper';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 import StreamConfiguration from './StreamConfiguration';
 import utils from '../utils/utils';
 

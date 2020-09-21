@@ -4,7 +4,7 @@ import {
   v4 as uuidv4,
 } from 'uuid';
 
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 import utils from '../utils/utils';
 
 import IovPlayer from './IovPlayer';
