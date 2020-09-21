@@ -124,6 +124,6 @@ module.exports = {
   },
   rules,
   overrides: [
-    testOverride,
+    ...testOverride,
   ],
 };
