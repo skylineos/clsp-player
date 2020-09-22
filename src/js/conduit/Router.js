@@ -64,7 +64,7 @@ export default function (Paho) {
     this.logId = logId;
 
     try {
-      this.logger = options.Logger.factory(`Router ${this.logId}`);
+      this.logger = options.Logger.factory(`Router ${this.logId}`, 'background-color: maroon; color: white;');
     }
     catch (error) {
       console.error(error);
@@ -217,6 +217,9 @@ export default function (Paho) {
     // Triggered when trying to subscribe to a topic fails.
     // Can only be triggered when a subscribe is attempted.
     SUBSCRIBE_FAILURE: 'clsp_router_subscribe_failure',
+    // When successfully unsubscribed from a topic
+    // Can only be triggered when an unsubscribe is attempted.
+    UNSUBSCRIBE_SUCCESS: 'clsp_router_unsubscribe_success',
     // When trying to unsubscribe from a topic fails.
     // Can only be triggered when an unsubscribe is attempted.
     UNSUBSCRIBE_FAILURE: 'clsp_router_unsubscribe_failure',
@@ -646,8 +649,13 @@ export default function (Paho) {
    * @returns {void}
    */
   Router.prototype._unsubscribe_onSuccess = function (topic, response) {
-    this.logger.debug('Successfully unsubscribed from topic "' + topic + '"');
-    // @todo
+    this.logger.info('Successfully unsubscribed from topic "' + topic + '"');
+
+    this._sendToParentWindow({
+      event: Router.events.UNSUBSCRIBE_SUCCESS,
+      topic: topic,
+      response: response,
+    });
   };
 
   /**
@@ -666,7 +674,7 @@ export default function (Paho) {
    * @returns {void}
    */
   Router.prototype._unsubscribe_onFailure = function (topic, response) {
-    this.logger.debug('Failed to unsubscribe from topic "' + topic + '"');
+    this.logger.warn('Failed to unsubscribe from topic "' + topic + '"');
 
     this._sendToParentWindow({
       event: Router.events.UNSUBSCRIBE_FAILURE,
@@ -687,7 +695,7 @@ export default function (Paho) {
    * @returns {void}
    */
   Router.prototype._unsubscribe = function (topic) {
-    this.logger.debug('Unsubscribing from topic "' + topic + '"');
+    this.logger.info('Unsubscribing from topic "' + topic + '"');
 
     if (!topic) {
       throw new Error('topic is a required argument when unsubscribing');

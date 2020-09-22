@@ -120,7 +120,7 @@ export default class Conduit {
     this.streamName = this.streamConfiguration.streamName;
     this.guid = null;
 
-    this.logger = Logger().factory(`Conduit ${this.logId}`);
+    this.logger = Logger().factory(`Conduit ${this.logId}`, 'background-color: orange; color: white;');
     this.logger.debug('Constructing...');
 
     this.statsMsg = {
@@ -725,17 +725,17 @@ export default class Conduit {
    */
 
   /**
-   * @todo - provide method description
+   * Subscribe to a CLSP "resync" topic that will be called if the stream with
+   * this guid dies and has to be restarted.
    *
-   * @todo - return a Promise
+   * On this event, the caller should restart the stream.
+   *
+   * @todo - make this an event
    *
    * @param {Conduit-resyncStreamCb} onResync
    *   The callback for the resync operation
    */
   resyncStream (onResync) {
-    // subscribe to a sync topic that will be called if the stream that is
-    // feeding the mse service dies and has to be restarted that this player
-    // should restart the stream
     this.subscribe(`iov/video/${this.guid}/resync`, onResync);
   }
 
