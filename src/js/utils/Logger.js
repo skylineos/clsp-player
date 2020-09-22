@@ -10,7 +10,7 @@
  */
 
 module.exports = function (logLevel) {
-  function Logger (prefix) {
+  function Logger (prefix, prefixStyle) {
     if (logLevel === undefined && typeof window !== 'undefined') {
       // The logLevel may be set in localstorage
       // e.g. localStorage.setItem('skylineos.clsp-player.logLevel', 3), then refresh
@@ -23,6 +23,7 @@ module.exports = function (logLevel) {
 
     this.logLevel = logLevel;
     this.prefix = prefix;
+    this.prefixStyle = prefixStyle;
   }
 
   Logger.logLevels = [
@@ -33,25 +34,39 @@ module.exports = function (logLevel) {
     'silly',
   ];
 
-  Logger.factory = function (prefix) {
-    return new Logger(prefix || '');
+  Logger.factory = function (prefix, prefixStyle) {
+    return new Logger(prefix || '', prefixStyle);
   };
 
   Logger.prototype._constructMessage = function (type, message) {
     var logMessage = '(' + type + ')' + ' --> ' + message;
 
-    if (this.prefix) {
-      logMessage = this.prefix + ' ' + logMessage;
+    // @see - https://developers.google.com/web/tools/chrome-devtools/console/console-write#string_substitution_and_formatting
+    if (this.prefix && this.prefixStyle && this.logLevel > 1) {
+      return [
+        '%c' + this.prefix,
+        this.prefixStyle,
+        logMessage,
+      ];
     }
 
-    return logMessage;
+    if (this.prefix) {
+      return [
+        this.prefix,
+        logMessage,
+      ];
+    }
+
+    return [
+      logMessage,
+    ];
   };
 
   Logger.prototype.silly = function (message) {
     var sillyIndex = 4;
 
     if (this.logLevel >= sillyIndex) {
-      console.log(this._constructMessage(Logger.logLevels[sillyIndex], message));
+      console.log.apply(console, this._constructMessage(Logger.logLevels[sillyIndex], message));
     }
   };
 
@@ -59,7 +74,7 @@ module.exports = function (logLevel) {
     var debugIndex = 3;
 
     if (this.logLevel >= debugIndex) {
-      console.log(this._constructMessage(Logger.logLevels[debugIndex], message));
+      console.log.apply(console, this._constructMessage(Logger.logLevels[debugIndex], message));
     }
   };
 
@@ -67,7 +82,7 @@ module.exports = function (logLevel) {
     var infoIndex = 2;
 
     if (this.logLevel >= infoIndex) {
-      console.log(this._constructMessage(Logger.logLevels[infoIndex], message));
+      console.log.apply(console, this._constructMessage(Logger.logLevels[infoIndex], message));
     }
   };
 
@@ -75,14 +90,14 @@ module.exports = function (logLevel) {
     var warnIndex = 1;
 
     if (this.logLevel >= warnIndex) {
-      console.warn(this._constructMessage(Logger.logLevels[warnIndex], message));
+      console.warn.apply(console, this._constructMessage(Logger.logLevels[warnIndex], message));
     }
   };
 
   Logger.prototype.error = function (message) {
     var errorIndex = 0;
 
-    console.error(this._constructMessage(Logger.logLevels[errorIndex], message));
+    console.error.apply(console, this._constructMessage(Logger.logLevels[errorIndex], message));
   };
 
   return Logger;
