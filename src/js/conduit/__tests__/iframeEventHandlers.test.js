@@ -8,9 +8,9 @@ const {
 } = require('../../../../test/jest/utils');
 
 const _iframeEventHandlers = require('../iframeEventHandlers');
-const Router = require('../Router/Router');
+const Router = require('../../Router/Router');
 
-jest.mock('../Router/Router');
+jest.mock('../../Router/Router');
 
 describe('iframeEventHandlers', () => {
   function generateLogId () {
@@ -61,13 +61,14 @@ describe('iframeEventHandlers', () => {
 
     it('should construct the router', () => {
       const logId = generateLogId();
+      const clientId = generateLogId();
       const config = generateRouterConfig();
 
       const {
         onload,
       } = _iframeEventHandlers.default();
 
-      const router = onload(logId, Router, config);
+      const router = onload(logId, clientId, Router, config);
 
       expect(Router.factory.mock.calls).toHaveLength(1);
       expect(Router.factory.mock.calls[0][0]).toEqual(config.logId);
@@ -95,13 +96,14 @@ describe('iframeEventHandlers', () => {
 
     it('should let the parent window know the router was successfully instantiated', () => {
       const logId = generateLogId();
+      const clientId = generateLogId();
       const config = generateRouterConfig();
 
       const {
         onload,
       } = _iframeEventHandlers.default();
 
-      const router = onload(logId, Router, config);
+      const router = onload(logId, clientId, Router, config);
 
       expect(router._sendToParentWindow.mock.calls).toHaveLength(1);
       expect(router._sendToParentWindow.mock.calls[0][0]).toBeObject();
@@ -114,6 +116,7 @@ describe('iframeEventHandlers', () => {
     it('should let the parent window know if an error was encountered during instantiation', () => {
       const restoreConsole = mockConsole();
       const logId = generateLogId();
+      const clientId = generateLogId();
       const config = generateRouterConfig();
 
       const {
@@ -130,7 +133,7 @@ describe('iframeEventHandlers', () => {
       const originalPostMessage = window.parent.postMessage;
       window.parent.postMessage = jest.fn();
 
-      expect(() => onload(logId, Router, config)).not.toThrow();
+      expect(() => onload(logId, clientId, Router, config)).not.toThrow();
       expect(console.error.mock.calls).toHaveLength(2);
       expect(console.error.mock.calls[0][0]).toInclude(logId);
       expect(console.error.mock.calls[1][0]).toEqual(onloadError);
@@ -155,12 +158,13 @@ describe('iframeEventHandlers', () => {
           const restoreConsole = mockConsole();
 
           const logId = generateLogId();
+          const clientId = generateLogId();
 
           const {
             onunload,
           } = _iframeEventHandlers.default();
 
-          expect(() => onunload(logId)).not.toThrow();
+          expect(() => onunload(logId, clientId)).not.toThrow();
           expect(console.warn).toHaveBeenCalled();
           expect(console.warn.mock.calls[0][0]).toInclude(logId);
 
@@ -175,6 +179,7 @@ describe('iframeEventHandlers', () => {
 
         it('should destroy the router', () => {
           const logId = generateLogId();
+          const clientId = generateLogId();
 
           const {
             onunload,
@@ -182,7 +187,7 @@ describe('iframeEventHandlers', () => {
 
           const router = new Router();
 
-          onunload(logId, router);
+          onunload(logId, clientId, router);
 
           expect(router.destroy.mock.calls).toHaveLength(1);
           expect(router.logger.info.mock.calls).toHaveLength(2);
@@ -192,6 +197,7 @@ describe('iframeEventHandlers', () => {
 
         it('should log any unexpected error and does not throw', () => {
           const logId = generateLogId();
+          const clientId = generateLogId();
 
           const {
             onunload,
@@ -205,7 +211,7 @@ describe('iframeEventHandlers', () => {
             throw routerDestroyError;
           });
 
-          onunload(logId, router);
+          onunload(logId, clientId, router);
 
           expect(router.destroy.mock.calls).toHaveLength(1);
           expect(router.logger.error.mock.calls).toHaveLength(2);
