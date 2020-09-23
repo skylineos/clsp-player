@@ -1,5 +1,6 @@
 import Conduit from './Conduit';
 import Paho from './Paho';
+import RouterBaseManager from '../Router/RouterBaseManager';
 import utils from '../utils/utils';
 
 import Logger from '../utils/Logger';
@@ -90,7 +91,10 @@ export default class ConduitCollection {
     // communication are fine, but the moofs occur at a rate that will exhaust
     // the browser tab resources, ultimately resulting in a crash given enough
     // time.
-    if (document[utils.windowStateNames.hiddenStateName] && eventType === Conduit.routerEvents.DATA_RECEIVED) {
+    if (
+      document[utils.windowStateNames.hiddenStateName] &&
+      eventType === RouterBaseManager.routerEvents.DATA_RECEIVED
+    ) {
       return;
     }
 
