@@ -108,7 +108,6 @@ export default class ConduitCollection {
     clientId,
     streamConfiguration,
     containerElement,
-    onReconnect,
     onMessageError,
   ) {
     this.logger.debug(`creating a conduit with logId ${logId} and clientId ${clientId}`);
@@ -118,7 +117,6 @@ export default class ConduitCollection {
       clientId,
       streamConfiguration,
       containerElement,
-      onReconnect,
       onMessageError,
     );
 

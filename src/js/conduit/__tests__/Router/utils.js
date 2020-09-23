@@ -20,7 +20,6 @@ module.exports = function ({
           KEEP_ALIVE_INTERVAL: utils.generateUniqueString(),
           PUBLISH_TIMEOUT: utils.generateUniqueString(),
           Logger,
-          conduitCommands: {},
         },
       };
 

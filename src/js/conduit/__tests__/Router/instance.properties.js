@@ -31,16 +31,6 @@ module.exports = function ({
         expect(router.logger.error).toBeFunction();
       });
     });
-    describe('conduitCommands', () => {
-      it('should be properly initialized by the constructor', () => {
-        const config = utils.generateRouterConfig();
-        const Router = _Router.default(Paho.Paho);
-
-        const router = new Router(...config.asArray);
-
-        expect(router.conduitCommands).toEqual(config.asObject.options.conduitCommands);
-      });
-    });
     describe('clientId', () => {
       it('should be properly initialized by the constructor', () => {
         const config = utils.generateRouterConfig();

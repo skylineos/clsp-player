@@ -28,7 +28,6 @@ describe('iframeEventHandlers', () => {
       KEEP_ALIVE_INTERVAL: generateUniqueString(),
       PUBLISH_TIMEOUT: generateUniqueString(),
       Logger: generateUniqueString(),
-      conduitCommands: generateUniqueString(),
     };
   }
 
@@ -82,13 +81,11 @@ describe('iframeEventHandlers', () => {
         'KEEP_ALIVE_INTERVAL',
         'PUBLISH_TIMEOUT',
         'Logger',
-        'conduitCommands',
       ]);
       expect(Router.factory.mock.calls[0][5].CONNECTION_TIMEOUT).toEqual(config.CONNECTION_TIMEOUT);
       expect(Router.factory.mock.calls[0][5].KEEP_ALIVE_INTERVAL).toEqual(config.KEEP_ALIVE_INTERVAL);
       expect(Router.factory.mock.calls[0][5].PUBLISH_TIMEOUT).toEqual(config.PUBLISH_TIMEOUT);
       expect(Router.factory.mock.calls[0][5].Logger).toEqual(config.Logger);
-      expect(Router.factory.mock.calls[0][5].conduitCommands).toEqual(config.conduitCommands);
 
       expect(router).not.toBeNil();
 

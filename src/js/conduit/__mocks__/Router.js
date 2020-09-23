@@ -23,7 +23,7 @@ RouterMock.events = {
   CREATE_FAILURE: generateUniqueString(),
   DATA_RECEIVED: generateUniqueString(),
   PUBLISH_SUCCESS: generateUniqueString(),
-  PUBLISH_FAIL: generateUniqueString(),
+  PUBLISH_FAILURE: generateUniqueString(),
   CONNECT_SUCCESS: generateUniqueString(),
   CONNECT_FAILURE: generateUniqueString(),
   CONNECTION_LOST: generateUniqueString(),

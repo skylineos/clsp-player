@@ -155,22 +155,6 @@ module.exports = function ({
           new Router(...config.asArray);
         }).toThrow('options.Logger');
       });
-      it('should throw if options.conduitCommands is not an object', () => {
-        const config = utils.generateRouterConfig();
-        const Router = _Router.default(Paho.Paho);
-
-        config.asArray[5].conduitCommands = undefined;
-
-        expect(() => {
-          new Router(...config.asArray);
-        }).toThrow('options.conduitCommands');
-      });
-      it.todo('should throw if options.conduitCommands.SUBSCRIBE is undefined');
-      it.todo('should throw if options.conduitCommands.UNSUBSCRIBE is undefined');
-      it.todo('should throw if options.conduitCommands.PUBLISH is undefined');
-      it.todo('should throw if options.conduitCommands.CONNECT is undefined');
-      it.todo('should throw if options.conduitCommands.DISCONNECT is undefined');
-      it.todo('should throw if options.conduitCommands.SEND is undefined');
       it('should throw if options.CONNECTION_TIMEOUT is not an object', () => {
         const config = utils.generateRouterConfig();
         const Router = _Router.default(Paho.Paho);

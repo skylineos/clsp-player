@@ -50,7 +50,6 @@ export default function () {
             KEEP_ALIVE_INTERVAL: config.KEEP_ALIVE_INTERVAL,
             PUBLISH_TIMEOUT: config.PUBLISH_TIMEOUT,
             Logger: config.Logger,
-            conduitCommands: config.conduitCommands,
           },
         );
 
