@@ -103,6 +103,7 @@ export default class Conduit {
     this.logger.debug('Constructing...');
 
     this.isDestroyed = false;
+    this.isDestroyComplete = false;
     this.isInitialized = false;
 
     // These can be configured manually after construction
@@ -338,6 +339,8 @@ export default class Conduit {
 
     // @todo - can this be safely dereferenced?
     // this._onMessageError = null;
+
+    this.isDestroyComplete = true;
   }
 
   /**
@@ -480,7 +483,7 @@ export default class Conduit {
 
     // @todo - this MUST be temporary - it is hiding the error resulting from
     // improper async logic handling!
-    if (this.isDestroyed) {
+    if (this.isDestroyComplete) {
       console.warn('Cannot send message via destroyed iframe', message);
       return;
     }

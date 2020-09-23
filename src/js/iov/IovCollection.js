@@ -114,16 +114,16 @@ export default class IovCollection {
    *
    * @returns {this}
    */
-  remove (id) {
+  async remove (id) {
     const iov = this.get(id);
 
     if (!iov) {
       return;
     }
 
-    delete this.iovs[id];
+    await iov.destroy();
 
-    iov.destroy();
+    delete this.iovs[id];
 
     return this;
   }
@@ -133,7 +133,7 @@ export default class IovCollection {
    *
    * @returns {void}
    */
-  destroy () {
+  async destroy () {
     if (this.destroyed) {
       return;
     }
@@ -143,7 +143,13 @@ export default class IovCollection {
     window.removeEventListener('message', this._onWindowMessage);
 
     for (const id in this.iovs) {
-      this.remove(id);
+      try {
+        await this.remove(id);
+      }
+      catch (error) {
+        this.logger.error(`Error while removing IOV ${id} while destroying`);
+        this.logger.error(error);
+      }
     }
 
     this.iovs = null;
