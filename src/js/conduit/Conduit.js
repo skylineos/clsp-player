@@ -31,6 +31,7 @@ export default class Conduit {
     containerElement,
     onReconnect,
     onMessageError,
+    onIframeDestroyedExternally,
   ) {
     return new Conduit(
       logId,
@@ -39,6 +40,7 @@ export default class Conduit {
       containerElement,
       onReconnect,
       onMessageError,
+      onIframeDestroyedExternally,
     );
   }
 
@@ -67,6 +69,7 @@ export default class Conduit {
     containerElement,
     onReconnect = () => {},
     onMessageError = () => {},
+    onIframeDestroyedExternally = () => {},
   ) {
     if (!logId) {
       throw new Error('logId is required to construct a new Conduit instance.');
@@ -92,12 +95,18 @@ export default class Conduit {
       throw new Error('onMessageError must be a function to construct a new Conduit instance');
     }
 
+    if (typeof onIframeDestroyedExternally !== 'function') {
+      throw new Error('onIframeDestroyedExternally must be a function to construct a new Conduit instance');
+    }
+
     this.logId = logId;
     this.clientId = clientId;
     this.streamConfiguration = streamConfiguration;
     this.containerElement = containerElement;
     this._onReconnect = onReconnect;
     this._onMessageError = onMessageError;
+    this._onIframeDestroyedExternally = onIframeDestroyedExternally;
+
 
     this.logger = Logger().factory(`Conduit ${this.logId}`, 'color: orange;');
     this.logger.debug('Constructing...');
@@ -289,58 +298,42 @@ export default class Conduit {
     this.logger.info('Stopping stream...');
 
     this.routerTransactionManager.halt();
-    await this.routerStreamManager.stop();
-    await this.routerConnectionManager.disconnect();
-  }
 
-  /**
-   * @async
-   *
-   * Clean up and dereference the necessary properties.  Will also disconnect
-   * and destroy the iframe.
-   *
-   * @returns {void}
-   */
-  async destroy () {
-    this.logger.debug('Destroying...');
-
-    if (this.isDestroyed) {
-      return;
+    try {
+      await this.routerStreamManager.stop();
+    }
+    catch (error) {
+      if (!this.iframe.contentWindow) {
+        // In the normal course of operation, sometimes other libraries or
+        // implementations will delete the iframe or a parent component
+        // rather than letting the CLSP Player manage it.  In this instance,
+        // we recognize that this happened, but do not show nor throw an error.
+        this.logger.info('Iframe destroyed externally!');
+        this._onIframeDestroyedExternally();
+      }
+      else {
+        this.logger.error('Error while stopping while destroying');
+        this.logger.error(error);
+      }
     }
 
-    this.isDestroyed = true;
-
-    if (this._onRouterCreate) {
-      window.removeEventListener('message', this._onRouterCreate);
-      this._onRouterCreate = null;
+    try {
+      await this.routerConnectionManager.disconnect();
     }
-
-    // order matters here
-    await this.stop();
-    await this.routerStreamManager.destroy();
-    await this.routerConnectionManager.destroy();
-    this.routerTransactionManager.destroy();
-
-    this.routerStreamManager = null;
-    this.routerConnectionManager = null;
-    this.routerTransactionManager = null;
-
-    this.clientId = null;
-    // The caller must destroy the streamConfiguration
-    this.streamConfiguration = null;
-    this.containerElement = null;
-
-    // The Router will be destroyed along with the iframe
-    this.iframe.parentNode.removeChild(this.iframe);
-    this.iframe.srcdoc = '';
-    this.iframe = null;
-    // Calling this doesn't seem to work...
-    // this.iframe.remove();
-
-    // @todo - can this be safely dereferenced?
-    // this._onMessageError = null;
-
-    this.isDestroyComplete = true;
+    catch (error) {
+      if (!this.iframe.contentWindow) {
+        // In the normal course of operation, sometimes other libraries or
+        // implementations will delete the iframe or a parent component
+        // rather than letting the CLSP Player manage it.  In this instance,
+        // we recognize that this happened, but do not show nor throw an error.
+        this.logger.info('Iframe destroyed externally!');
+        this._onIframeDestroyedExternally();
+      }
+      else {
+        this.logger.error('Error while stopping while destroying');
+        this.logger.error(error);
+      }
+    }
   }
 
   /**
@@ -484,7 +477,17 @@ export default class Conduit {
     // @todo - this MUST be temporary - it is hiding the error resulting from
     // improper async logic handling!
     if (this.isDestroyComplete) {
-      console.warn('Cannot send message via destroyed iframe', message);
+      this.logger.warn('Cannot send message via destroyed iframe', message);
+      return;
+    }
+
+    if (!this.iframe.contentWindow) {
+      // In the normal course of operation, sometimes other libraries or
+      // implementations will delete the iframe or a parent component
+      // rather than letting the CLSP Player manage it.  In this instance,
+      // we recognize that this happened, but do not show nor throw an error.
+      this.logger.info('Iframe destroyed externally!');
+      this._onIframeDestroyedExternally();
       return;
     }
 
@@ -499,5 +502,78 @@ export default class Conduit {
       // eslint-disable-next-line no-console
       console.error(error);
     }
+  }
+
+  /**
+   * @async
+   *
+   * Clean up and dereference the necessary properties.  Will also disconnect
+   * and destroy the iframe.
+   *
+   * @returns {void}
+   */
+  async destroy () {
+    this.logger.debug('Destroying...');
+
+    if (this.isDestroyed) {
+      return;
+    }
+
+    this.isDestroyed = true;
+
+    if (this._onRouterCreate) {
+      window.removeEventListener('message', this._onRouterCreate);
+      this._onRouterCreate = null;
+    }
+
+    // order matters here
+    try {
+      await this.stop();
+    }
+    catch (error) {
+      this.logger.error('Error while stopping while destroying');
+      this.logger.error(error);
+    }
+
+    try {
+      await this.routerStreamManager.destroy();
+    }
+    catch (error) {
+      this.logger.error('Error while destroying routerStreamManager while destroying');
+      this.logger.error(error);
+    }
+
+    try {
+      await this.routerConnectionManager.destroy();
+    }
+    catch (error) {
+      this.logger.error('Error while destroying routerConnectionManager while destroying');
+      this.logger.error(error);
+    }
+
+    this.routerTransactionManager.destroy();
+
+    this.routerStreamManager = null;
+    this.routerConnectionManager = null;
+    this.routerTransactionManager = null;
+
+    this.clientId = null;
+    // The caller must destroy the streamConfiguration
+    this.streamConfiguration = null;
+    this.containerElement = null;
+
+    // The Router will be destroyed along with the iframe
+    this.iframe.parentNode.removeChild(this.iframe);
+    this.iframe.srcdoc = '';
+    this.iframe = null;
+    // Calling this doesn't seem to work...
+    // this.iframe.remove();
+
+    // @todo - can this be safely dereferenced?
+    // this._onMessageError = null;
+
+    this.isDestroyComplete = true;
+
+    this.logger.info('destroy complete');
   }
 }

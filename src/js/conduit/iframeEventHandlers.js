@@ -19,6 +19,9 @@
  *   tag of the iframe.
  */
 export default function () {
+  // @todo - if we can somehow get an event to fire from here when the iframe
+  // is unloaded, it would make the iframe handling in the conduit significantly
+  // more elegant and resilient...
   return {
     /**
      * The `onload` event handler for the `<body> onload` event.  This event

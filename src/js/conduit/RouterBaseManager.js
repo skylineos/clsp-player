@@ -77,5 +77,7 @@ export default class RouterBaseManager {
     this.events = null;
 
     this.isDestroyComplete = true;
+
+    this.logger.info('destroy complete');
   }
 }
