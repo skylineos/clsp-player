@@ -2,6 +2,7 @@
 
 import Iov from './Iov';
 import Logger from '../utils/Logger';
+import IovPlayer from './IovPlayer';
 
 // @todo - this could cause an overflow!
 let totalIovCount = 0;
@@ -56,6 +57,10 @@ export default class IovCollection {
         id: (++totalIovCount).toString(),
       },
     );
+
+    iov.on('IframeDestroyedExternally', () => {
+      this.remove(iov.id);
+    });
 
     this.add(iov);
 

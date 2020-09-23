@@ -358,6 +358,10 @@ export default class RouterConnectionManager extends RouterBaseManager {
       return;
     }
 
+    if (!this.isConnected) {
+      return;
+    }
+
     this.logger.info('Disconnecting...');
 
     this.isDisconnecting = true;
@@ -370,14 +374,13 @@ export default class RouterConnectionManager extends RouterBaseManager {
       }
     }
     catch (error) {
-      this.logger.error('Error while disconnecting:');
-      this.logger.error(error);
-
       if (emit) {
         this.events.emit(RouterConnectionManager.events.DISCONNECT_FAILED, {
           error,
         });
       }
+
+      throw error;
     }
     finally {
       this.isDisconnecting = false;
@@ -407,9 +410,34 @@ export default class RouterConnectionManager extends RouterBaseManager {
     this.statsManager.stop();
 
     return new Promise((resolve, reject) => {
-      if (this.isConnected) {
+      if (!this.isConnected) {
         return resolve();
       }
+
+      const disconnectTimeout = 5 * 1000;
+      let hasFinished = false;
+
+      const disconnectTimer = setTimeout(() => {
+        finished(new Error(`the disconnect operation timed out after ${disconnectTimeout} seconds`));
+      }, disconnectTimeout);
+
+      const finished = (error) => {
+        clearTimeout(disconnectTimer);
+
+        if (hasFinished) {
+          return;
+        }
+
+        hasFinished = true;
+        this.isConnected = false;
+        this.isDisconnecting = false;
+
+        if (error) {
+          return reject(error);
+        }
+
+        resolve();
+      };
 
       this._onDisconnect = async (event) => {
         const isValidEvent = this._isValidEvent(event, [
@@ -432,13 +460,11 @@ export default class RouterConnectionManager extends RouterBaseManager {
         if (eventType === RouterConnectionManager.routerEvents.DISCONNECT_FAILURE) {
           this.logger.error(new Error(event.data.reason));
 
-          return reject(new Error('Failed to disconnect'));
+          return finished(new Error('Failed to disconnect'));
         }
 
-        this.isConnected = false;
-        this.isDisconnecting = false;
 
-        resolve();
+        finished();
       };
 
       window.addEventListener('message', this._onDisconnect);

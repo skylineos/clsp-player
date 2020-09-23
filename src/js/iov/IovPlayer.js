@@ -31,6 +31,7 @@ export default class IovPlayer {
     'firstFrameShown',
     'videoReceived',
     'videoInfoReceived',
+    'IframeDestroyedExternally',
   ];
 
   static METRIC_TYPES = [
@@ -216,6 +217,10 @@ export default class IovPlayer {
     this.logger.error(error);
   };
 
+  onIframeDestroyedExternally = () => {
+    this.trigger('IframeDestroyedExternally');
+  };
+
   async initialize (streamConfiguration = this.streamConfiguration) {
     if (!StreamConfiguration.isStreamConfiguration(streamConfiguration)) {
       throw new Error('streamConfiguration is not valid');
@@ -252,6 +257,7 @@ export default class IovPlayer {
       this.videoElement.parentNode,
       this.onConduitReconnect,
       this.onConduitMessageError,
+      this.onIframeDestroyedExternally,
     );
 
     await this.conduit.initialize();
@@ -534,7 +540,7 @@ export default class IovPlayer {
       }
 
       if (!this.mseWrapper) {
-        this.logger.debug('stop succeeded asynchronously...');
+        this.logger.debug('stop succeeded...');
         return;
       }
 
@@ -544,10 +550,10 @@ export default class IovPlayer {
 
       this.mseWrapper = null;
 
-      this.logger.debug('stop succeeded asynchronously...');
+      this.logger.debug('stop succeeded...');
     }
     catch (error) {
-      this.logger.error('stop failed asynchronously...');
+      this.logger.error('stop failed...');
 
       throw error;
     }

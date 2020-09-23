@@ -62,6 +62,29 @@ function registerHandlers () {
     iov = null;
   }
 
+  function hardDestroy1 () {
+    // Perform the destroy without waiting for it to finish.  This will test
+    // whether or not the destroy logic will attempt to finish wihtout error
+    // even though the iframe has been destroyed prematurely
+    destroy();
+    $('.clsp-player-container').remove();
+  }
+
+  function hardDestroy2 () {
+    // Perform the destroy without waiting for it to finish.  This will test
+    // whether or not the destroy logic will attempt to finish wihtout error
+    // even though the iframe has been destroyed prematurely
+    $('.clsp-player-container').remove();
+    destroy();
+  }
+
+  function hardDestroy3 () {
+    // Perform the destroy without waiting for it to finish.  This will test
+    // whether or not the destroy logic will attempt to finish wihtout error
+    // even though the iframe has been destroyed prematurely
+    $('.clsp-player-container').remove();
+  }
+
   function changeSrc () {
     const streamUrl = document.getElementById('stream-src').value;
 
@@ -73,6 +96,9 @@ function registerHandlers () {
     stop: stop,
     fullscreen: fullscreen,
     destroy: destroy,
+    hardDestroy1: hardDestroy1,
+    hardDestroy2: hardDestroy2,
+    hardDestroy3: hardDestroy3,
     changeSrc: changeSrc,
   };
 }

@@ -23,6 +23,7 @@ export default class Iov {
     'firstFrameShown',
     'videoReceived',
     'videoInfoReceived',
+    'IframeDestroyedExternally',
   ];
 
   static METRIC_TYPES = [];
@@ -226,6 +227,10 @@ export default class Iov {
 
     iovPlayer.on('videoInfoReceived', () => {
       this.trigger('videoInfoReceived');
+    });
+
+    iovPlayer.on('IframeDestroyedExternally', () => {
+      this.trigger('IframeDestroyedExternally');
     });
   }
 
@@ -500,5 +505,7 @@ export default class Iov {
 
     this.events = null;
     this.metrics = null;
+
+    this.logger.info('destroy complete');
   }
 }

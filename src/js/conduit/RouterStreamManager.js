@@ -64,6 +64,8 @@ export default class RouterStreamManager extends RouterBaseManager {
 
     this.firstMoofTimeout = null;
     this.moofTimeout = null;
+
+    this.isPlaying = false;
   }
 
   /**
@@ -119,6 +121,8 @@ export default class RouterStreamManager extends RouterBaseManager {
       // Set up the listener for the moofs
       await this.requestMoofs(onMoof);
 
+      this.isPlaying = true;
+
       return {
         guid,
         mimeCodec,
@@ -143,6 +147,14 @@ export default class RouterStreamManager extends RouterBaseManager {
    * @returns {void}
    */
   async stop () {
+    if (this.isDestroyComplete) {
+      return;
+    }
+
+    if (!this.isPlaying) {
+      return;
+    }
+
     this.clearFirstMoofTimeout();
     this.clearMoofTimeout();
 
@@ -152,34 +164,63 @@ export default class RouterStreamManager extends RouterBaseManager {
       return;
     }
 
-    const results = await Promise.allSettled([
-      // Stop listening for the moov
-      await this.routerTransactionManager.unsubscribe(this.moovRequestTopic),
-      // Stop listening for moofs
-      await this.routerTransactionManager.unsubscribe(`iov/video/${this.guid}/live`),
-      // Stop listening for resync events
-      await this.routerTransactionManager.unsubscribe(`iov/video/${this.guid}/resync`),
-      // Tell the server we've stopped
-      await this.routerTransactionManager.publish(`iov/video/${this.guid}/stop`, {
-        clientId: this.clientId,
-      }),
-    ]);
+    return new Promise(async (resolve, reject) => {
+      const stopTimeout = 5 * 1000;
+      let hasFinished = false;
 
-    const errors = results.reduce((acc, cur) => {
-      if (cur.status !== 'fulfilled') {
-        acc.push(cur);
+      const stopTimer = setTimeout(() => {
+        finished(new Error(`the stop operation timed out after ${stopTimeout} seconds`));
+      }, stopTimeout);
+
+      const finished = (error) => {
+        clearTimeout(stopTimer);
+
+        if (hasFinished) {
+          return;
+        }
+
+        hasFinished = true;
+        this.isPlaying = false;
+
+        if (error) {
+          return reject(error);
+        }
+
+        resolve();
+      };
+
+      const results = await Promise.allSettled([
+        // Stop listening for the moov
+        await this.routerTransactionManager.unsubscribe(this.moovRequestTopic),
+        // Stop listening for moofs
+        await this.routerTransactionManager.unsubscribe(`iov/video/${this.guid}/live`),
+        // Stop listening for resync events
+        await this.routerTransactionManager.unsubscribe(`iov/video/${this.guid}/resync`),
+        // Tell the server we've stopped
+        await this.routerTransactionManager.publish(`iov/video/${this.guid}/stop`, {
+          clientId: this.clientId,
+        }),
+      ]);
+
+      const errors = results.reduce((acc, cur) => {
+        if (cur.status !== 'fulfilled') {
+          acc.push(cur);
+        }
+
+        return acc;
+      }, []);
+
+      if (errors.length) {
+        this.logger.warn('Error(s) encountered while stopping:');
+        this.logger.error(errors);
+
+        // @todo - is there a better way to do this?
+        finished(errors[0]);
       }
-
-      return acc;
-    }, []);
-
-    if (errors.length) {
-      this.logger.warn('Error(s) encountered while stopping:');
-      this.logger.error(errors);
-
-      // @todo - is there a better way to do this?
-      throw errors[0];
-    }
+      else {
+        finished();
+      }
+    });
   }
 
   /**
