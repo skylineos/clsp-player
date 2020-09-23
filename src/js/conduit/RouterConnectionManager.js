@@ -463,7 +463,6 @@ export default class RouterConnectionManager extends RouterBaseManager {
           return finished(new Error('Failed to disconnect'));
         }
 
-
         finished();
       };
 
