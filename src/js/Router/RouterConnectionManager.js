@@ -1,6 +1,9 @@
 import {
   sleepSeconds,
 } from 'sleepjs';
+import {
+  timeout as PromiseTimeout,
+} from 'promise-timeout';
 
 import RouterBaseManager from './RouterBaseManager';
 import RouterStatsManager from './RouterStatsManager';
@@ -20,6 +23,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
    * The events that this RouterConnectionManager will emit.
    */
   static events = {
+    // Emitted when a connection attempt
     DID_CONNECT: 'did-connect',
     CONNECT_FAILED: 'connect-failed',
     DID_RECONNECT: 'did-reconnect',
@@ -158,19 +162,19 @@ export default class RouterConnectionManager extends RouterBaseManager {
    *   Rejects upon failure to connect after a number of retries.
    */
   _connect () {
-    if (this.isDestroyed) {
-      this.logger.info('Tried to _connect on destroyed RouterConnectionManager');
-      return;
-    }
-
-    if (this.isDisconnecting) {
-      this.logger.info('Tried to _connect while there was a disconnection in progress');
-      return;
-    }
-
-    this.logger.debug('Connecting to CLSP server...');
-
     return new Promise((resolve, reject) => {
+      this.logger.debug('Connecting to CLSP server...');
+
+      if (this.isDestroyed) {
+        this.logger.info('Tried to _connect on destroyed RouterConnectionManager');
+        return resolve();
+      }
+
+      if (this.isDisconnecting) {
+        this.logger.info('Tried to _connect while there was a disconnection in progress');
+        return resolve();
+      }
+
       if (this.isConnected) {
         return resolve();
       }
@@ -189,27 +193,15 @@ export default class RouterConnectionManager extends RouterBaseManager {
 
         this.logger.debug(`connect "${eventType}" event`);
 
-        // Whether success or failure, remove the event listener
-        window.removeEventListener('message', this._onConnect);
-        this._onConnect = null;
-
-        if (eventType === RouterConnectionManager.routerEvents.CONNECT_FAILURE) {
-          this.logger.error(new Error(event.data.reason));
-
-          return reject(new Error('Failed to connect'));
+        if (eventType === RouterConnectionManager.routerEvents.CONNECT_SUCCESS) {
+          return resolve();
         }
 
-        this.isConnected = true;
-
-        // As soon as the connection is made, start publishing stats
-        this.statsManager.start();
-
-        resolve();
+        reject(new Error(event.data.reason));
       };
 
       window.addEventListener('message', this._onConnect);
 
-      // @todo - what happens in the event of a timeout?
       this.routerTransactionManager.issueCommand(RouterConnectionManager.routerCommands.CONNECT);
     });
   }
@@ -317,12 +309,27 @@ export default class RouterConnectionManager extends RouterBaseManager {
 
     try {
       await this.disconnect(false);
-      await this._connect();
+
+      // @todo - This seems like it's doing too much.  Maybe there should be an
+      // additional `connect` layer, e.g:
+      // connect -> reconnect -> _connect -> __connect ?
+      try {
+        await PromiseTimeout(this._connect(), this.IMMEDIATE_RECONNECTION_DELAY);
+
+        this.isConnected = true;
+
+        // As soon as the connection is made, start publishing stats
+        this.statsManager.start();
+      }
+      finally {
+        if (this._onConnect) {
+          // Whether success or failure, remove the event listener
+          window.removeEventListener('message', this._onConnect);
+          this._onConnect = null;
+        }
+      }
 
       this.logger.info(`Reconnected successfully after ${reconnectionAttempts} attempts`);
-
-      // If the call to `connect` was successful, we're done here
-      return;
     }
     catch (error) {
       this.logger.error('Error while trying to reconnect:');
@@ -367,7 +374,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
     this.isDisconnecting = true;
 
     try {
-      await this._disconnect();
+      await PromiseTimeout(this._disconnect(), this.IMMEDIATE_RECONNECTION_DELAY);
 
       if (emit) {
         this.events.emit(RouterConnectionManager.events.DID_DISCONNECT);
@@ -383,7 +390,15 @@ export default class RouterConnectionManager extends RouterBaseManager {
       throw error;
     }
     finally {
+      // @todo - is this correct in the event of an error while disconnecting?
+      this.isConnected = false;
       this.isDisconnecting = false;
+
+      if (this._onDisconnect) {
+        // Whether success or failure, remove the event listener
+        window.removeEventListener('message', this._onDisconnect);
+        this._onDisconnect = null;
+      }
     }
   }
 
@@ -394,50 +409,25 @@ export default class RouterConnectionManager extends RouterBaseManager {
    * Do not call this method directly!  Only use the `disconnect` method.
    */
   _disconnect () {
-    if (this.isDestroyComplete) {
-      this.logger.info('Tried to _disconnect on a destroyed RouterConnectionManager');
-      return;
-    }
-
-    // If a connection is in progress, cancel it
-    if (this._onConnect) {
-      window.removeEventListener('message', this._onConnect);
-      this._onConnect = null;
-    }
-
-    // when a stream fails, it no longer needs to send stats to the
-    // server, and it may not even be connected to the server
-    this.statsManager.stop();
-
     return new Promise((resolve, reject) => {
-      if (!this.isConnected) {
+      if (this.isDestroyComplete) {
+        this.logger.info('Tried to _disconnect on a destroyed RouterConnectionManager');
         return resolve();
       }
 
-      const disconnectTimeout = 5 * 1000;
-      let hasFinished = false;
+      // If a connection is in progress, cancel it
+      if (this._onConnect) {
+        window.removeEventListener('message', this._onConnect);
+        this._onConnect = null;
+      }
 
-      const disconnectTimer = setTimeout(() => {
-        finished(new Error(`the disconnect operation timed out after ${disconnectTimeout} seconds`));
-      }, disconnectTimeout);
+      // when a stream fails, it no longer needs to send stats to the
+      // server, and it may not even be connected to the server
+      this.statsManager.stop();
 
-      const finished = (error) => {
-        clearTimeout(disconnectTimer);
-
-        if (hasFinished) {
-          return;
-        }
-
-        hasFinished = true;
-        this.isConnected = false;
-        this.isDisconnecting = false;
-
-        if (error) {
-          return reject(error);
-        }
-
-        resolve();
-      };
+      if (!this.isConnected) {
+        return resolve();
+      }
 
       this._onDisconnect = async (event) => {
         const isValidEvent = this._isValidEvent(event, [
@@ -453,22 +443,15 @@ export default class RouterConnectionManager extends RouterBaseManager {
 
         this.logger.debug(`disconnect "${eventType}" event`);
 
-        // Whether success or failure, remove the event listener
-        window.removeEventListener('message', this._onDisconnect);
-        this._onDisconnect = null;
-
-        if (eventType === RouterConnectionManager.routerEvents.DISCONNECT_FAILURE) {
-          this.logger.error(new Error(event.data.reason));
-
-          return finished(new Error('Failed to disconnect'));
+        if (eventType === RouterConnectionManager.routerEvents.DISCONNECT_SUCCESS) {
+          return resolve();
         }
 
-        finished();
+        reject(new Error(event.data.reason));
       };
 
       window.addEventListener('message', this._onDisconnect);
 
-      // @todo - what happens in the event of a timeout?
       this.routerTransactionManager.issueCommand(RouterConnectionManager.routerCommands.DISCONNECT);
     });
   }

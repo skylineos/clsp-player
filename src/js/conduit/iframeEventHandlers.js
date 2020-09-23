@@ -90,6 +90,10 @@ export default function () {
      * @returns {void}
      */
     onunload: function (logId, router) {
+      window.parent.postMessage({
+        event: 'iframe-onunload',
+      }, '*');
+
       if (!router) {
         // eslint-disable-next-line no-console
         console.warn(logId + ' onunload - Router not instantiated, exiting...');

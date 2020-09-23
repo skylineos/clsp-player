@@ -23,7 +23,7 @@ module.exports = (api) => {
     // only, to be as light-weight as possible.  Therefore, no tranforms need to
     // be done on it.
     ignore: [
-      'src/js/conduit/Router.js',
+      'src/js/Router/Router.js',
       'src/js/conduit/iframeEventHandlers.js',
     ],
     presets: [
