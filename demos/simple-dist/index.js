@@ -33,6 +33,32 @@ function destroy () {
   window.iov = null;
 }
 
+function hardDestroy1 () {
+  // Perform the destroy without waiting for it to finish.  This will test
+  // whether or not the destroy logic will attempt to finish wihtout error
+  // even though the iframe has been destroyed prematurely
+  destroy();
+  var container = document.querySelector('.clsp-player-container');
+  container.parentNode.removeChild(container);
+}
+
+function hardDestroy2 () {
+  // Perform the destroy without waiting for it to finish.  This will test
+  // whether or not the destroy logic will attempt to finish wihtout error
+  // even though the iframe has been destroyed prematurely
+  var container = document.querySelector('.clsp-player-container');
+  container.parentNode.removeChild(container);
+  destroy();
+}
+
+function hardDestroy3 () {
+  // Perform the destroy without waiting for it to finish.  This will test
+  // whether or not the destroy logic will attempt to finish wihtout error
+  // even though the iframe has been destroyed prematurely
+  var container = document.querySelector('.clsp-player-container');
+  container.parentNode.removeChild(container);
+}
+
 function changeSrc () {
   var streamUrl = document.getElementById('stream-src').value;
 
@@ -66,6 +92,9 @@ window.clspPlayerControls = {
   stop: stop,
   fullscreen: fullscreen,
   destroy: destroy,
+  hardDestroy1: hardDestroy1,
+  hardDestroy2: hardDestroy2,
+  hardDestroy3: hardDestroy3,
   changeSrc: changeSrc,
   initialize: initialize,
 };
