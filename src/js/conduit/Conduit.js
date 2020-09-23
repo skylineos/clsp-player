@@ -445,11 +445,13 @@ export default class Conduit {
         <body
           onload="window.router = window.iframeEventHandlers.onload(
             '${this.logId}',
+            '${this.clientId}',
             window.Router,
             window.clspRouterConfig
           );"
           onunload="window.iframeEventHandlers.onunload(
             '${this.logId}',
+            '${this.clientId}',
             window.router
           );"
         >

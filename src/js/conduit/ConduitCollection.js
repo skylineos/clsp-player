@@ -71,6 +71,12 @@ export default class ConduitCollection {
         return;
       }
 
+      // @todo - use this to detect an externally destroyed iframe
+      // if (eventType === 'iframe-onunload') {
+      //   console.log(event);
+      //   return;
+      // }
+
       // Don't show an error for iovs that have been deleted
       if (this.deletedConduitClientIds.includes(clientId)) {
         this.logger.warn(`Received a message for deleted conduit ${clientId}`);
