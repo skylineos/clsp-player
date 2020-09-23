@@ -49,7 +49,6 @@ RouterMock.commands = {
   SEND: generateUniqueString(),
 };
 
-
 // @todo - would it be useful or practical to mock the export format of the
 // `Router.js` file?   Or is having the `Router` class mock good enough?
 //
