@@ -40,8 +40,9 @@ export default function () {
      * @returns {Router|null}
      *   The instantiated router, or `null` if an error is encountered
      */
-    onload: function (logId, Router, config) {
+    onload: function (logId, clientId, Router, config) {
       try {
+        // @todo - validate arguments
         var router = Router.factory(
           config.logId,
           config.clientId,
@@ -89,10 +90,14 @@ export default function () {
      *
      * @returns {void}
      */
-    onunload: function (logId, router) {
-      window.parent.postMessage({
-        event: 'iframe-onunload',
-      }, '*');
+    onunload: function (logId, clientId, router) {
+      // @todo - use this to detect an externally destroyed iframe
+      // window.parent.postMessage({
+      //   clientId: clientId,
+      //   event: 'iframe-onunload',
+      // }, '*');
+
+      // @todo - validate arguments
 
       if (!router) {
         // eslint-disable-next-line no-console
