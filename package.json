@@ -18,7 +18,7 @@
     "serve": "./scripts/serve/serve.sh",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix",
-    "prepack": "yarn run build",
+    "prepack": "NODE_ENV=production yarn run build",
     "postpack": "./scripts/build/pre-build.sh",
     "preversion": "./scripts/version.sh --pre",
     "version": "./scripts/version.sh",
@@ -32,8 +32,10 @@
   "dependencies": {
     "@babel/runtime-corejs3": "7.11.2",
     "debug": "4.2.0",
+    "eventemitter3": "4.0.7",
     "lodash": "4.17.20",
     "paho-mqtt": "1.1.0",
+    "sleepjs": "4.0.2",
     "srcdoc-polyfill": "1.0.0",
     "uuid": "8.3.0"
   },

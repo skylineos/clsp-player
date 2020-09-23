@@ -307,7 +307,7 @@ export default class IovPlayer {
             this.logger.silly('On Append Start...');
 
             // onAppendStart
-            this.conduit.segmentUsed(byteArray);
+            this.conduit.routerStreamManager.segmentUsed(byteArray);
           },
           onAppendFinish: (info) => {
             this.logger.silly('On Append Finish...');
@@ -504,7 +504,7 @@ export default class IovPlayer {
 
     await this.reinitializeMseWrapper(mimeCodec);
 
-    this.conduit.resyncStream(() => {
+    this.conduit.routerStreamManager.resyncStream(() => {
       // console.log('sync received re-initialize media source buffer');
       this.reinitializeMseWrapper(mimeCodec);
     });

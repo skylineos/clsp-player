@@ -64,14 +64,12 @@ export default function (Paho) {
     this.logId = logId;
 
     try {
-      this.logger = options.Logger.factory(`Router ${this.logId}`, 'background-color: maroon; color: white;');
+      this.logger = options.Logger.factory(`Router ${this.logId}`, 'color: maroon;');
     }
     catch (error) {
       console.error(error);
       throw new Error('Error while constructing Logger!');
     }
-
-    this.conduitCommands = options.conduitCommands;
 
     this.clientId = clientId;
 
@@ -166,9 +164,6 @@ export default function (Paho) {
     if (options.Logger === undefined) {
       throw new Error('`options.Logger` is required to construct a Router');
     }
-    if (typeof options.conduitCommands !== 'object') {
-      throw new Error('`options.conduitCommands` is required to construct a Router');
-    }
     if (options.CONNECTION_TIMEOUT === undefined) {
       throw new Error('`options.CONNECTION_TIMEOUT` is required to construct a Router');
     }
@@ -201,7 +196,7 @@ export default function (Paho) {
     PUBLISH_SUCCESS: 'clsp_router_publish_success',
     // Triggered when a message fails to be published to the server
     // Can only be triggered on publish
-    PUBLISH_FAIL: 'clsp_router_publish_failure',
+    PUBLISH_FAILURE: 'clsp_router_publish_failure',
     // Triggered when the connection to the CLSP server is established.
     // Can only be triggered at time of connection.
     CONNECT_SUCCESS: 'clsp_router_connect_success',
@@ -214,6 +209,7 @@ export default function (Paho) {
     // Triggered when the connection to the CLSP server is terminated normally.
     // Can only be triggered at time of disconnection.
     DISCONNECT_SUCCESS: 'clsp_router_disconnect_success',
+    DISCONNECT_FAILURE: 'clsp_router_disconnect_failure',
     // Triggered when trying to subscribe to a topic fails.
     // Can only be triggered when a subscribe is attempted.
     SUBSCRIBE_FAILURE: 'clsp_router_subscribe_failure',
@@ -226,6 +222,15 @@ export default function (Paho) {
     // Triggered when an error is encountered while processing window messages.
     // Can be triggered any time.
     WINDOW_MESSAGE_FAIL: 'clsp_router_window_message_fail',
+  };
+
+  Router.commands = {
+    CONNECT: 'connect',
+    DISCONNECT: 'disconnect',
+    PUBLISH: 'publish',
+    SUBSCRIBE: 'subscribe',
+    UNSUBSCRIBE: 'unsubscribe',
+    SEND: 'send',
   };
 
   Router.factory = function (
@@ -286,6 +291,16 @@ export default function (Paho) {
 
         break;
       }
+      case Router.events.UNSUBSCRIBE_SUCCESS: {
+        if (!Object.prototype.hasOwnProperty.call(message, 'event') ||
+          !Object.prototype.hasOwnProperty.call(message, 'topic') ||
+          !Object.prototype.hasOwnProperty.call(message, 'response')
+        ) {
+          throw new Error('improperly formatted "unsubscribe success" message sent to _sendToParentWindow');
+        }
+
+        break;
+      }
       case Router.events.CONNECT_FAILURE:
       case Router.events.CONNECTION_LOST:
       case Router.events.SUBSCRIBE_FAILURE:
@@ -308,7 +323,7 @@ export default function (Paho) {
 
         break;
       }
-      case Router.events.PUBLISH_FAIL: {
+      case Router.events.PUBLISH_FAILURE: {
         if (!message.publishId) {
           throw new Error('publish message must contain a publishId');
         }
@@ -462,15 +477,15 @@ export default function (Paho) {
 
     try {
       switch (method) {
-        case this.conduitCommands.SUBSCRIBE: {
+        case Router.commands.SUBSCRIBE: {
           this._subscribe(message.topic);
           break;
         }
-        case this.conduitCommands.UNSUBSCRIBE: {
+        case Router.commands.UNSUBSCRIBE: {
           this._unsubscribe(message.topic);
           break;
         }
-        case this.conduitCommands.PUBLISH: {
+        case Router.commands.PUBLISH: {
           var payload = null;
 
           try {
@@ -486,21 +501,25 @@ export default function (Paho) {
           }
 
           this._publish(
-            message.publishId, message.topic, payload,
+            message.publishId,
+            message.topic,
+            payload,
           );
           break;
         }
-        case this.conduitCommands.CONNECT: {
+        case Router.commands.CONNECT: {
           this.connect();
           break;
         }
-        case this.conduitCommands.DISCONNECT: {
+        case Router.commands.DISCONNECT: {
           this.disconnect();
           break;
         }
-        case this.conduitCommands.SEND: {
+        case Router.commands.SEND: {
           this._publish(
-            message.publishId, message.topic, message.byteArray,
+            message.publishId,
+            message.topic,
+            message.byteArray,
           );
           break;
         }
@@ -722,7 +741,9 @@ export default function (Paho) {
    * @returns {void}
    */
   Router.prototype._publish = function (
-    publishId, topic, payload,
+    publishId,
+    topic,
+    payload,
   ) {
     this.logger.debug('Publishing to topic "' + topic + '"');
 
@@ -752,7 +773,7 @@ export default function (Paho) {
       publishTimeout = null;
 
       self._sendToParentWindow({
-        event: Router.events.PUBLISH_FAIL,
+        event: Router.events.PUBLISH_FAILURE,
         publishId: publishId,
         reason: 'publish operation for "' + topic + '" timed out after ' + self.PUBLISH_TIMEOUT + ' seconds.',
       });
@@ -842,7 +863,18 @@ export default function (Paho) {
     this.logger.info('Disconnecting');
 
     try {
-      this.clspClient.disconnect();
+      // Note we have to handle this condition manually.  If you try to
+      // disconnect from the clspClient while it isn't connected, it will never
+      // call the _onConnectionLost callback...
+      if (!this.clspClient.isConnected()) {
+        // Spoof the clspClient response...
+        this._onConnectionLost({
+          errorCode: 0,
+        });
+      }
+      else {
+        this.clspClient.disconnect();
+      }
     }
     catch (error) {
       if (error.message.startsWith(Router.pahoErrorCodes.NOT_CONNECTED)) {
