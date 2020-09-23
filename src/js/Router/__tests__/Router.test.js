@@ -8,11 +8,11 @@ const staticMethodsTests = require('./Router/static.methods');
 const instancePropertiesTests = require('./Router/instance.properties');
 const instanceMethodsTests = require('./Router/instance.methods');
 
-const Paho = require('../Conduit/Paho');
+const Paho = require('../../conduit/Paho');
 const _Router = require('../Router');
 const Logger = require('../../utils/Logger');
 
-jest.mock('../Conduit/Paho');
+jest.mock('../../conduit/Paho');
 jest.mock('../../utils/Logger');
 
 describe('Router', () => {
