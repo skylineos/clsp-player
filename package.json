@@ -23,11 +23,11 @@
     "preversion": "./scripts/version.sh --pre",
     "version": "./scripts/version.sh",
     "postversion": "./scripts/version.sh --post",
-    "test:ts": "tsc index.d.ts",
     "test:jest": "jest && ./test/jest/scripts/echo-coverage-hyperlink.sh",
-    "test": "yarn run test:ts && yarn run test:jest",
+    "test": "yarn run validate:ts && yarn run test:jest",
     "test:dev": "jest --coverage=false",
-    "test:watch": "yarn run test:dev --watch"
+    "test:watch": "yarn run test:dev --watch",
+    "validate:ts": "tsc index.d.ts"
   },
   "dependencies": {
     "@babel/runtime-corejs3": "7.11.2",
