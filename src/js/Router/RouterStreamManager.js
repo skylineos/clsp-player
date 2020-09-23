@@ -534,8 +534,11 @@ export default class RouterStreamManager extends RouterBaseManager {
       await this.stop();
     }
     catch (error) {
-      this.logger.error('Failed to stop when destroying!');
-      this.logger.error(error);
+      // @todo - we should not be hiding these errors, but they appear
+      // unnecessarily when the iframe is destroyed externally.  How can we
+      // account for that condition?
+      // this.logger.error('Failed to stop when destroying!');
+      // this.logger.error(error);
     }
 
     this.streamConfiguration = null;
