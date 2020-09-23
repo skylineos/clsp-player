@@ -2,7 +2,6 @@
 
 import Iov from './Iov';
 import Logger from '../utils/Logger';
-import IovPlayer from './IovPlayer';
 
 // @todo - this could cause an overflow!
 let totalIovCount = 0;

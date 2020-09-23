@@ -107,7 +107,6 @@ export default class Conduit {
     this._onMessageError = onMessageError;
     this._onIframeDestroyedExternally = onIframeDestroyedExternally;
 
-
     this.logger = Logger().factory(`Conduit ${this.logId}`, 'color: orange;');
     this.logger.debug('Constructing...');
 
