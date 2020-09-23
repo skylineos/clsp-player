@@ -462,11 +462,11 @@ export default class Iov {
    *
    * @returns {Promise}
    */
-  destroy () {
+  async destroy () {
     this.logger.debug('destroy');
 
     if (this.destroyed) {
-      return Promise.resolve();
+      return;
     }
 
     this.destroyed = true;
@@ -482,9 +482,15 @@ export default class Iov {
     window.removeEventListener('online', this.onConnectionChange);
     window.removeEventListener('offline', this.onConnectionChange);
 
-    const iovPlayerDestroyPromise = this.iovPlayer
-      ? this.iovPlayer.destroy()
-      : Promise.resolve();
+    if (this.iovPlayer) {
+      try {
+        await this.iovPlayer.destroy();
+      }
+      catch (error) {
+        this.logger.error('Error while destroying IOV Player while destroying IOV');
+        this.logger.error(error);
+      }
+    }
 
     this.iovPlayer = null;
     this.streamConfiguration = null;
@@ -494,7 +500,5 @@ export default class Iov {
 
     this.events = null;
     this.metrics = null;
-
-    return iovPlayerDestroyPromise;
   }
 }

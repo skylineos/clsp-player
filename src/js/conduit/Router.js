@@ -102,7 +102,7 @@ export default function (Paho) {
       );
     }
     catch (error) {
-      console.error(error);
+      this.logger.error(error);
       throw new Error('Error while constructing Paho Client!');
     }
 

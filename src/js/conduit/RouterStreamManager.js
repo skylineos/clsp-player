@@ -449,6 +449,11 @@ export default class RouterStreamManager extends RouterBaseManager {
    * @param {*} message
    */
   _onClspData (message) {
+    if (this.isDestroyed) {
+      this.logger.info('Tried to handle CLSP data while destroyed');
+      return;
+    }
+
     const topic = message.destinationName;
 
     this.logger.debug(`Handling message for topic "${topic}"`);
@@ -460,7 +465,10 @@ export default class RouterStreamManager extends RouterBaseManager {
     const handler = this.routerTransactionManager.subscribeHandlers[topic];
 
     if (!handler) {
-      throw new Error(`No handler for ${topic}`);
+      // This could hide a legit error...
+      // @todo - figure out what the race condition is when destroying
+      this.logger.info(`No handler for ${topic}`);
+      return;
     }
 
     handler(message);

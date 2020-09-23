@@ -426,6 +426,7 @@ export default class IovPlayer {
 
     if (needToReinitialize) {
       if (this.conduit) {
+        // @todo - do we need to await this?
         ConduitCollection.asSingleton().remove(this.clientId);
       }
 
@@ -513,52 +514,43 @@ export default class IovPlayer {
   /**
    * @returns {Promise}
    */
-  stop () {
+  async stop () {
     this.logger.debug('stop...');
 
     if (this.stopped) {
-      return Promise.resolve();
+      return;
     }
 
     this.stopped = true;
     this.moov = null;
 
-    this.logger.debug('stop about to finish synchronous operations and return promise...');
-
-    // The logic above MUST be run synchronously when called, therefore,
-    // we cannot use async to define the stop method, and must return a
-    // promise here rather than using await.  We return this promise so
-    // that the caller has the option of waiting, but is not forced to
-    // wait.
-    return new Promise(async (resolve, reject) => {
+    try {
       try {
-        try {
-          await this.conduit.stop();
-        }
-        catch (error) {
-          this.logger.error('failed to stop the conduit');
-          this.logger.error(error);
-        }
-
-        if (!this.mseWrapper) {
-          this.logger.debug('stop succeeded asynchronously...');
-          return resolve();
-        }
-
-        // Don't wait until the next play event or the destruction of this player
-        // to clear the MSE
-        await this.mseWrapper.destroy();
-
-        this.mseWrapper = null;
-
-        this.logger.debug('stop succeeded asynchronously...');
-        resolve();
+        await this.conduit.stop();
       }
       catch (error) {
-        this.logger.error('stop failed asynchronously...');
-        reject(error);
+        this.logger.error('failed to stop the conduit');
+        this.logger.error(error);
       }
-    });
+
+      if (!this.mseWrapper) {
+        this.logger.debug('stop succeeded asynchronously...');
+        return;
+      }
+
+      // Don't wait until the next play event or the destruction of this player
+      // to clear the MSE
+      await this.mseWrapper.destroy();
+
+      this.mseWrapper = null;
+
+      this.logger.debug('stop succeeded asynchronously...');
+    }
+    catch (error) {
+      this.logger.error('stop failed asynchronously...');
+
+      throw error;
+    }
   }
 
   getSegmentIntervalMetrics () {
@@ -613,10 +605,46 @@ export default class IovPlayer {
     }
   }
 
-  _freeAllResources () {
-    this.logger.debug('_freeAllResources...');
+  /**
+   * @returns {Promise}
+   */
+  async destroy () {
+    this.logger.debug('destroy...');
 
-    ConduitCollection.asSingleton().remove(this.clientId);
+    if (this.destroyed) {
+      return;
+    }
+
+    this.destroyed = true;
+
+    // Note that we DO NOT wait for the stop command to finish execution,
+    // because this destroy method MUST be treated as a synchronous operation
+    // to ensure that the caller is not forced to wait on destruction.  This
+    // allows us to properly support client side libraries and frameworks that
+    // do not support asynchronous destruction.  See the comments in the destroy
+    // method on the MSEWrapper for a more detailed explanation.
+    this.logger.debug('about to stop...');
+
+    try {
+      await this.stop();
+    }
+    catch (error) {
+      this.logger.error('Error encountered while trying to stop during Iov Player destroy, continuing with destroy...');
+      this.logger.error(error);
+    }
+
+    // Setting the src of the video element to an empty string is
+    // the only reliable way we have found to ensure that MediaSource,
+    // SourceBuffer, and various Video elements are properly dereferenced
+    // to avoid memory leaks
+    // @todo - should these occur after stop? is there a reason they're done
+    // in this order?
+    this.videoElement.src = '';
+    this.videoElement.parentNode.removeChild(this.videoElement);
+    this.videoElement.remove();
+    this.videoElement = null;
+
+    await ConduitCollection.asSingleton().remove(this.clientId);
 
     this.conduit = null;
     // The caller must destroy the streamConfiguration
@@ -636,57 +664,5 @@ export default class IovPlayer {
     this.segmentIntervals = null;
 
     this.moov = null;
-
-    this.logger.debug('_freeAllResources finished...');
-  }
-
-  /**
-   * @returns {Promise}
-   */
-  destroy () {
-    this.logger.debug('destroy...');
-
-    if (this.destroyed) {
-      return Promise.resolve();
-    }
-
-    this.destroyed = true;
-
-    // Note that we DO NOT wait for the stop command to finish execution,
-    // because this destroy method MUST be treated as a synchronous operation
-    // to ensure that the caller is not forced to wait on destruction.  This
-    // allows us to properly support client side libraries and frameworks that
-    // do not support asynchronous destruction.  See the comments in the destroy
-    // method on the MSEWrapper for a more detailed explanation.
-    this.logger.debug('about to stop...');
-
-    const stopPromise = this.stop();
-
-    // Setting the src of the video element to an empty string is
-    // the only reliable way we have found to ensure that MediaSource,
-    // SourceBuffer, and various Video elements are properly dereferenced
-    // to avoid memory leaks
-    // @todo - should these occur after stop? is there a reason they're done
-    // in this order?
-    this.videoElement.src = '';
-    this.videoElement.parentNode.removeChild(this.videoElement);
-    this.videoElement.remove();
-    this.videoElement = null;
-
-    this.logger.debug('exiting destroy, asynchronous destroy logic in progress...');
-
-    return stopPromise
-      .then(() => {
-        this.logger.debug('stopped successfully...');
-        this._freeAllResources();
-        this.logger.debug('destroy successfully finished...');
-      })
-      .catch((error) => {
-        this.logger.debug('stopped unsuccessfully...');
-        this.logger.error('Error while destroying the iov player!');
-        this.logger.error(error);
-        this._freeAllResources();
-        this.logger.debug('destroy unsuccessfully finished...');
-      });
   }
 }

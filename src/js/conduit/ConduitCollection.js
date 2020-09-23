@@ -71,11 +71,6 @@ export default class ConduitCollection {
         return;
       }
 
-      // Do not throw an error on disconnection
-      if (eventType === Conduit.routerEvents.DISCONNECT_SUCCESS) {
-        return;
-      }
-
       // Don't show an error for iovs that have been deleted
       if (this.deletedConduitClientIds.includes(clientId)) {
         this.logger.warn(`Received a message for deleted conduit ${clientId}`);
@@ -181,16 +176,16 @@ export default class ConduitCollection {
    *
    * @returns {this}
    */
-  remove (clientId) {
+  async remove (clientId) {
     const conduit = this.get(clientId);
 
     if (!conduit) {
       return;
     }
 
-    delete this.conduits[clientId];
+    await conduit.destroy();
 
-    conduit.destroy();
+    delete this.conduits[clientId];
 
     this.deletedConduitClientIds.push(clientId);
 
@@ -202,7 +197,7 @@ export default class ConduitCollection {
    *
    * @returns {void}
    */
-  destroy () {
+  async destroy () {
     if (this.destroyed) {
       return;
     }
@@ -212,7 +207,13 @@ export default class ConduitCollection {
     window.removeEventListener('message', this._onWindowMessage);
 
     for (const clientId in this.conduits) {
-      this.remove(clientId);
+      try {
+        await this.remove(clientId);
+      }
+      catch (error) {
+        this.logger.error(`Error while removing conduit ${clientId} while destroying`);
+        this.logger.error(error);
+      }
     }
 
     this.conduits = null;

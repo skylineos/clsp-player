@@ -358,7 +358,7 @@ export default class TourController {
   /**
    * Destroy this tour and all associated streamConfigurations and iovs
    */
-  destroy () {
+  async destroy () {
     if (this.destroyed) {
       return;
     }
@@ -376,7 +376,14 @@ export default class TourController {
     this.streamConfigurations = null;
 
     if (this.iov) {
-      this.iovCollection.remove(this.iov.id);
+      try {
+        await this.iovCollection.remove(this.iov.id);
+      }
+      catch (error) {
+        this.logger.error(`Error while removing IOV ${this.iov.id} while destroying`);
+        this.logger.error(error);
+      }
+
       this.iov = null;
     }
 
