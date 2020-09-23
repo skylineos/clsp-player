@@ -8,10 +8,10 @@
  */
 
 import utils from '../utils/utils';
-import RouterBaseManager from './RouterBaseManager';
-import RouterTransactionManager from './RouterTransactionManager';
-import RouterStreamManager from './RouterStreamManager';
-import RouterConnectionManager from './RouterConnectionManager';
+import RouterBaseManager from '../Router/RouterBaseManager';
+import RouterTransactionManager from '../Router/RouterTransactionManager';
+import RouterStreamManager from '../Router/RouterStreamManager';
+import RouterConnectionManager from '../Router/RouterConnectionManager';
 import iframeEventHandlers from './iframeEventHandlers';
 import Logger from '../utils/Logger';
 import StreamConfiguration from '../iov/StreamConfiguration';
@@ -473,8 +473,6 @@ export default class Conduit {
   _command (message) {
     this.logger.debug('Sending a message to the iframe...');
 
-    // @todo - this MUST be temporary - it is hiding the error resulting from
-    // improper async logic handling!
     if (this.isDestroyComplete) {
       this.logger.warn('Cannot send message via destroyed iframe', message);
       return;

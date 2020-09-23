@@ -8,9 +8,9 @@ const {
 } = require('../../../../test/jest/utils');
 
 const _iframeEventHandlers = require('../iframeEventHandlers');
-const Router = require('../Router');
+const Router = require('../Router/Router');
 
-jest.mock('../Router');
+jest.mock('../Router/Router');
 
 describe('iframeEventHandlers', () => {
   function generateLogId () {
