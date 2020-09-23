@@ -617,6 +617,7 @@ export default class IovPlayer {
     this.logger.debug('_freeAllResources...');
 
     ConduitCollection.asSingleton().remove(this.clientId);
+
     this.conduit = null;
     // The caller must destroy the streamConfiguration
     this.streamConfiguration = null;
