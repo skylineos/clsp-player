@@ -314,7 +314,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
       // additional `connect` layer, e.g:
       // connect -> reconnect -> _connect -> __connect ?
       try {
-        await PromiseTimeout(this._connect(), this.IMMEDIATE_RECONNECTION_DELAY);
+        await PromiseTimeout(this._connect(), this.IMMEDIATE_RECONNECTION_DELAY * 1000);
 
         this.isConnected = true;
 
@@ -374,7 +374,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
     this.isDisconnecting = true;
 
     try {
-      await PromiseTimeout(this._disconnect(), this.IMMEDIATE_RECONNECTION_DELAY);
+      await PromiseTimeout(this._disconnect(), this.IMMEDIATE_RECONNECTION_DELAY * 1000);
 
       if (emit) {
         this.events.emit(RouterConnectionManager.events.DID_DISCONNECT);

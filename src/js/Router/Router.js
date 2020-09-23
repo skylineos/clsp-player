@@ -647,6 +647,9 @@ export default function (Paho) {
       throw new Error('topic is a required argument when subscribing');
     }
 
+    // @todo - unsubscribe and publish have a check for isConnected - is that
+    // needed here, too?
+
     this.clspClient.subscribe(topic, {
       onSuccess: this._subscribe_onSuccess.bind(this, topic),
       onFailure: this._subscribe_onFailure.bind(this, topic),
@@ -720,9 +723,34 @@ export default function (Paho) {
       throw new Error('topic is a required argument when unsubscribing');
     }
 
+    // Paho doesn't seem to handle unsubscribe while disconnected gracefully
+    if (!this.clspClient.isConnected()) {
+      return this._unsubscribe_onSuccess(topic);
+    }
+
     this.clspClient.unsubscribe(topic, {
       onSuccess: this._unsubscribe_onSuccess.bind(this, topic),
       onFailure: this._unsubscribe_onFailure.bind(this, topic),
+    });
+  };
+
+  Router.prototype._publish_onSuccess = function (publishId, topic) {
+    this.logger.info('Successfully published topic "' + topic + '" with id "' + publishId + '"');
+
+    this._sendToParentWindow({
+      event: Router.events.PUBLISH_SUCCESS,
+      publishId: publishId,
+      topic: topic,
+    });
+  };
+
+  Router.prototype._publish_onFailure = function (publishId, topic, reason) {
+    this.logger.info('Successfully published topic "' + topic + '" with id "' + publishId + '"');
+
+    this._sendToParentWindow({
+      event: Router.events.PUBLISH_FAILURE,
+      publishId: publishId,
+      reason: reason,
     });
   };
 
@@ -755,6 +783,11 @@ export default function (Paho) {
       throw new Error('topic is a required argument when publishing');
     }
 
+    // Paho doesn't seem to handle publish while disconnected gracefully
+    if (!this.clspClient.isConnected()) {
+      return this._publish_onSuccess(publishId, topic);
+    }
+
     var self = this;
 
     var clspMessage = new Paho.MQTT.Message(payload);
@@ -772,11 +805,9 @@ export default function (Paho) {
       clearTimeout(publishTimeout);
       publishTimeout = null;
 
-      self._sendToParentWindow({
-        event: Router.events.PUBLISH_FAILURE,
-        publishId: publishId,
-        reason: 'publish operation for "' + topic + '" timed out after ' + self.PUBLISH_TIMEOUT + ' seconds.',
-      });
+      var reason = 'publish operation for "' + topic + '" timed out after ' + self.PUBLISH_TIMEOUT + ' seconds.';
+
+      self._publish_onFailure(publishId, topic, reason);
     }, this.PUBLISH_TIMEOUT * 1000);
 
     // custom property
@@ -789,11 +820,7 @@ export default function (Paho) {
       clearTimeout(publishTimeout);
       publishTimeout = null;
 
-      self._sendToParentWindow({
-        event: Router.events.PUBLISH_SUCCESS,
-        publishId: publishId,
-        topic: topic,
-      });
+      self._publish_onSuccess(publishId, topic);
     };
 
     // @todo - this can fail if the client is not connected

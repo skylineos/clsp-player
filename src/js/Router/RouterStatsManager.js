@@ -48,6 +48,7 @@ export default class RouterStatsManager extends RouterBaseManager {
     };
 
     this.publishInterval = null;
+    this.isStopped = true;
 
     // configurable state
     this.PUBLISH_STATS_INTERVAL = DEFAULT_PUBLISH_STATS_INTERVAL;
@@ -87,6 +88,8 @@ export default class RouterStatsManager extends RouterBaseManager {
     this.publishInterval = setInterval(() => {
       this._publishStats();
     }, this.PUBLISH_STATS_INTERVAL * 1000);
+
+    this.isStopped = false;
   }
 
   /**
@@ -105,6 +108,8 @@ export default class RouterStatsManager extends RouterBaseManager {
       clearInterval(this.publishInterval);
       this.publishInterval = null;
     }
+
+    this.isStopped = true;
   }
 
   /**
@@ -131,16 +136,20 @@ export default class RouterStatsManager extends RouterBaseManager {
       this.logger.debug('iov status', this.statsMsg);
     }
     catch (error) {
-      this.logger.error('Error while publishing stats!');
-      this.logger.error(error);
+      // This prevents the errors from displaying when stopped, e.g. after the
+      // iframe has been destroyed
+      if (!this.isStopped) {
+        this.logger.error('Error while publishing stats!');
+        this.logger.error(error);
 
-      this.events.emit(RouterStatsManager.events.PUBLISH_FAILURE, {
-        error,
-      });
+        this.events.emit(RouterStatsManager.events.PUBLISH_FAILURE, {
+          error,
+        });
 
-      // If any publish operation fails, do not continue to try to send stats
-      // messages.  It is up to the caller how to respond.
-      this.stop();
+        // If any publish operation fails, do not continue to try to send stats
+        // messages.  It is up to the caller how to respond.
+        this.stop();
+      }
     }
   }
 

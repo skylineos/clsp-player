@@ -195,9 +195,11 @@ export default class RouterTransactionManager extends RouterBaseManager {
       throw error;
     }
     finally {
-      // Whether success or failure, remove the event listener
-      window.removeEventListener('message', this.publishHandlers[publishId]);
-      delete this.publishHandlers[publishId];
+      if (this.publishHandlers[publishId]) {
+        // Whether success or failure, remove the event listener
+        window.removeEventListener('message', this.publishHandlers[publishId]);
+        delete this.publishHandlers[publishId];
+      }
     }
   }
 
@@ -289,9 +291,11 @@ export default class RouterTransactionManager extends RouterBaseManager {
       throw error;
     }
     finally {
-      // Whether success or failure, remove the event listener
-      window.removeEventListener('message', this.unsubscribeHandlers[topic]);
-      delete this.unsubscribeHandlers[topic];
+      if (this.unsubscribeHandlers[topic]) {
+        // Whether success or failure, remove the event listener
+        window.removeEventListener('message', this.unsubscribeHandlers[topic]);
+        delete this.unsubscribeHandlers[topic];
+      }
     }
   }
 
