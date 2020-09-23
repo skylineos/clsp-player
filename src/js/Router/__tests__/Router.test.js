@@ -20,12 +20,6 @@ describe('Router', () => {
     Logger,
   });
 
-  beforeEach(() => {
-    Paho.Paho.MQTT.Client.mockClear();
-    Paho.Paho.MQTT.Message.mockClear();
-    Logger.mockClear();
-  });
-
   describe('exports', () => {
     it('should have a default property that is a function', () => {
       expect(_Router).toBeObject();
