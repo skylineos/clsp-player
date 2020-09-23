@@ -55,10 +55,6 @@ describe('iframeEventHandlers', () => {
   });
 
   describe('onload', () => {
-    beforeEach(() => {
-      Router.mockClear();
-    });
-
     it('should construct the router', () => {
       const logId = generateLogId();
       const clientId = generateLogId();
@@ -173,10 +169,6 @@ describe('iframeEventHandlers', () => {
       });
 
       describe('when the router has been instantiated', () => {
-        beforeEach(() => {
-          Router.mockClear();
-        });
-
         it('should destroy the router', () => {
           const logId = generateLogId();
           const clientId = generateLogId();
