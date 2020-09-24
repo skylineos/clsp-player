@@ -14,7 +14,7 @@ export default class RouterStreamManager extends RouterBaseManager {
    * The events that this RouterConnectionManager will emit.
    */
   static events = {
-    SEGMENT_USED: 'segment-used',
+    RESYNC_STREAM_COMPLETE: 'resync-stream-complete',
   }
 
   static factory (
@@ -100,7 +100,7 @@ export default class RouterStreamManager extends RouterBaseManager {
         this.streamConfiguration.tokenConfig.hash &&
         this.streamConfiguration.tokenConfig.hash.length > 0
     ) {
-      this.streamName = await this.validateHash();
+      this.streamName = await this._validateHash();
     }
 
     this.logger.info('Play is requesting stream...');
@@ -109,17 +109,23 @@ export default class RouterStreamManager extends RouterBaseManager {
       const {
         guid,
         mimeCodec,
-      } = await this.requestStreamData();
+      } = await this._requestStreamData();
 
       this.guid = guid;
+
+      this.routerTransactionManager.subscribe(`iov/video/${this.guid}/resync`, () => {
+        // @todo - what about a resync stream error?  is there any data that can
+        // be passed with the event?
+        this.events.emit(RouterStreamManager.events.RESYNC_STREAM_COMPLETE);
+      });
 
       // Get the moov first
       const {
         moov,
-      } = await this.requestMoov();
+      } = await this._requestMoov();
 
       // Set up the listener for the moofs
-      await this.requestMoofs(onMoof);
+      await this._requestMoofs(onMoof);
 
       this.isPlaying = true;
 
@@ -155,8 +161,8 @@ export default class RouterStreamManager extends RouterBaseManager {
       return;
     }
 
-    this.clearFirstMoofTimeout();
-    this.clearMoofTimeout();
+    this._clearFirstMoofTimeout();
+    this._clearMoofTimeout();
 
     if (!this.guid) {
       // @todo - is this condition a symptom of a problem?
@@ -195,45 +201,6 @@ export default class RouterStreamManager extends RouterBaseManager {
   }
 
   /**
-   * To be called when a segment / moof is "shown".  In realistic terms, this is
-   * meant to be called when the moof is appended to the MSE SourceBuffer.  This
-   * method is meant to update stats.
-   *
-   * @param {Array} byteArray
-   *   The raw segment / moof
-   */
-  segmentUsed (byteArray) {
-    // @todo - it appears that this is never used!
-    if ((this.LogSourceBuffer === true) && (this.LogSourceBufferTopic !== null)) {
-      this.routerTransactionManager.directSend(this.LogSourceBufferTopic, byteArray);
-    }
-
-    this.events.emit(RouterStreamManager.events.SEGMENT_USED, {
-      byteArray,
-    });
-  }
-
-  /**
-   * @callback Conduit-resyncStreamCb
-   * @param {any} - @todo - document this
-   */
-
-  /**
-   * Subscribe to a CLSP "resync" topic that will be called if the stream with
-   * this guid dies and has to be restarted.
-   *
-   * On this event, the caller should restart the stream.
-   *
-   * @todo - emit an event rather than taking a callback
-   *
-   * @param {Conduit-resyncStreamCb} onResync
-   *   The callback for the resync operation
-   */
-  resyncStream (onResync) {
-    this.routerTransactionManager.subscribe(`iov/video/${this.guid}/resync`, onResync);
-  }
-
-  /**
    * @async
    *
    * Get the list of available CLSP streams from the SFS
@@ -243,7 +210,7 @@ export default class RouterStreamManager extends RouterBaseManager {
    * @returns {Object}
    *   @todo
    */
-  async getStreamList (cb) {
+  async getStreamList () {
     this.logger.debug('Getting Stream List...');
 
     const {
@@ -254,6 +221,8 @@ export default class RouterStreamManager extends RouterBaseManager {
   }
 
   /**
+   * @private
+   *
    * @async
    *
    * Validate the hash that this conduit was constructed with.
@@ -261,7 +230,7 @@ export default class RouterStreamManager extends RouterBaseManager {
    * @returns {String}
    *   the stream name
    */
-  async validateHash () {
+  async _validateHash () {
     this.logger.debug('Validating Hash...');
 
     // response ->  {"status": 200, "target_url": "clsp://sfs1/fakestream", "error": null}
@@ -305,6 +274,8 @@ export default class RouterStreamManager extends RouterBaseManager {
   }
 
   /**
+   * @private
+   *
    * @async
    *
    * Get the `guid` and `mimeCodec` for the stream.  The guid serves as a stream
@@ -314,7 +285,7 @@ export default class RouterStreamManager extends RouterBaseManager {
    * @returns {Object}
    *   The video metadata, including the `guid` and `mimeCodec` properties.
    */
-  async requestStreamData () {
+  async _requestStreamData () {
     this.logger.debug('Requesting Stream...');
 
     const {
@@ -339,14 +310,14 @@ export default class RouterStreamManager extends RouterBaseManager {
     return videoMetaData;
   }
 
-  clearFirstMoofTimeout () {
+  _clearFirstMoofTimeout () {
     if (this.firstMoofTimeout) {
       clearTimeout(this.firstMoofTimeout);
       this.firstMoofTimeout = null;
     }
   }
 
-  clearMoofTimeout () {
+  _clearMoofTimeout () {
     if (this.moofTimeout) {
       clearTimeout(this.moofTimeout);
       this.moofTimeout = null;
@@ -354,6 +325,8 @@ export default class RouterStreamManager extends RouterBaseManager {
   }
 
   /**
+   * @private
+   *
    * @async
    *
    * Request the moov from the SFS
@@ -361,7 +334,7 @@ export default class RouterStreamManager extends RouterBaseManager {
    * @returns {Object}
    *   The moov
    */
-  async requestMoov () {
+  async _requestMoov () {
     this.logger.info('Requesting the moov...');
 
     if (!this.guid) {
@@ -387,6 +360,10 @@ export default class RouterStreamManager extends RouterBaseManager {
   }
 
   /**
+   * @private
+   *
+   * @async
+   *
    * Request moofs from the SFS.  Should only be called after getting the moov.
    *
    * @param {Function} onMoof
@@ -397,7 +374,7 @@ export default class RouterStreamManager extends RouterBaseManager {
    *   * Rejects if the first moof is not received within the time defined by
    *     FIRST_MOOF_TIMEOUT_DURATION
    */
-  async requestMoofs (onMoof = () => {}) {
+  async _requestMoofs (onMoof = () => {}) {
     this.logger.info('Setting up moof listener...');
 
     if (!this.guid) {
@@ -415,7 +392,7 @@ export default class RouterStreamManager extends RouterBaseManager {
 
         hasFirstMoofTimedOut = true;
 
-        this.clearFirstMoofTimeout();
+        this._clearFirstMoofTimeout();
 
         reject(new Error(`First moof for stream ${this.streamName} timed out after ${this.FIRST_MOOF_TIMEOUT_DURATION} seconds`));
       }, this.FIRST_MOOF_TIMEOUT_DURATION * 1000);
@@ -433,17 +410,19 @@ export default class RouterStreamManager extends RouterBaseManager {
 
           // If the firstMoofTimeout still exists, cancel it, since the request
           // did not timeout
-          this.clearFirstMoofTimeout();
+          this._clearFirstMoofTimeout();
 
           // Since this is the first moof, resolve
           hasReceivedFirstMoof = true;
 
+          // Resolve here the first time, but keep going to actually process
+          // the moof.
           resolve({
             moofReceivedTopic,
           });
         }
 
-        this.clearMoofTimeout();
+        this._clearMoofTimeout();
 
         this.moofTimeout = setTimeout(() => {
           this.routerConnectionManager.reconnect();
@@ -452,38 +431,6 @@ export default class RouterStreamManager extends RouterBaseManager {
         onMoof(clspMessage);
       });
     });
-  }
-
-  /**
-   * Every time a segment / moof is received from the server, it should be
-   * passed to this method
-   *
-   * @param {*} message
-   */
-  _onClspData (message) {
-    if (this.isDestroyed) {
-      this.logger.info('Tried to handle CLSP data while destroyed');
-      return;
-    }
-
-    const topic = message.destinationName;
-
-    this.logger.debug(`Handling message for topic "${topic}"`);
-
-    if (!topic) {
-      throw new Error('Message contained no topic to handle!');
-    }
-
-    const handler = this.routerTransactionManager.subscribeHandlers[topic];
-
-    if (!handler) {
-      // This could hide a legit error...
-      // @todo - figure out what the race condition is when destroying
-      this.logger.info(`No handler for ${topic}`);
-      return;
-    }
-
-    handler(message);
   }
 
   /**

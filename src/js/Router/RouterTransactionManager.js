@@ -65,6 +65,25 @@ export default class RouterTransactionManager extends RouterBaseManager {
     });
   }
 
+  _formatTransactionResponsePayload (response) {
+    const payloadString = response.payloadString;
+
+    // @todo - why is this necessary?  and why is this only ever necessary
+    // in a transaction?  Is this only for moovs or something?
+    if (response.payloadString) {
+      try {
+        response.payloadString = JSON.parse(payloadString) || {};
+      }
+      catch (error) {
+        this.logger.warn('Failed to parse payloadString');
+        this.logger.warn(error);
+        response.payloadString = payloadString;
+      }
+    }
+
+    return response;
+  }
+
   /**
    * Request
    *
@@ -86,17 +105,22 @@ export default class RouterTransactionManager extends RouterBaseManager {
    *   Rejects if there is any error or timeout during the transaction
    */
   transaction (
-    topic,
+    requestTopic,
     messageData = {},
     timeoutDuration = this.TRANSACTION_TIMEOUT,
-    subscribeTopic,
+    responseTopic,
   ) {
-    this.logger.debug(`transaction for ${topic}...`);
+    this.logger.debug(`transaction for ${requestTopic}...`);
 
     const transactionId = uuidv4();
 
-    if (!subscribeTopic) {
-      subscribeTopic = messageData.resp_topic = `${this.clientId}/response/${transactionId}`;
+    // @todo - this responseTopic override is only ever used for getting a
+    // moov for a stream.  In that use case, the resp_topic is never specified
+    // in the message.  This condition and workflow works, but seems less
+    // elegant than it could be.
+    if (!responseTopic) {
+      responseTopic = `${this.clientId}/transaction/${transactionId}`;
+      messageData.resp_topic = responseTopic;
     }
 
     this.pendingTransactions[transactionId] = {
@@ -107,7 +131,17 @@ export default class RouterTransactionManager extends RouterBaseManager {
 
     return new Promise(async (resolve, reject) => {
       const finished = async (error, response) => {
-        await this.unsubscribe(subscribeTopic);
+        // Step 3:
+        // At this point, we defined a responseTopic that we want the CLSP
+        // server to broadcast on, we subscribed to that responseTopic, then
+        // we published to the actual requestTopic, which included telling the
+        // server what responseTopic to broadcast the response on.  Assuming
+        // things went well, the server broadcast the response to the
+        // responseTopic, and we received it in the subscribe handler.  Since
+        // this operation was meant to be a "transaction", meaning we only
+        // needed a single response to our requestTopic, we can unsubscribe
+        // from our responseTopic.
+        await this.unsubscribe(responseTopic);
 
         if (this.pendingTransactions[transactionId].timeout) {
           clearTimeout(this.pendingTransactions[transactionId].timeout);
@@ -118,39 +152,41 @@ export default class RouterTransactionManager extends RouterBaseManager {
           return reject(error);
         }
 
-        const payloadString = response.payloadString;
-
-        // @todo - why is this necessary?
-        if (response.payloadString) {
-          try {
-            response.payloadString = JSON.parse(payloadString) || {};
-          }
-          catch (error) {
-            this.logger.warn('Failed to parse payloadString');
-            this.logger.warn(error);
-            response.payloadString = payloadString;
-          }
-        }
-
-        resolve(response);
+        resolve(this._formatTransactionResponsePayload(response));
       };
 
-      this.pendingTransactions[transactionId].timeout = setTimeout(() => {
-        if (this.pendingTransactions[transactionId].hasTimedOut) {
-          return;
-        }
-
-        this.pendingTransactions[transactionId].hasTimedOut = true;
-
-        finished(new Error(`Transaction for ${topic} timed out after ${timeoutDuration} seconds`));
-      }, timeoutDuration * 1000);
-
-      this.subscribe(subscribeTopic, (response) => {
-        finished(null, response);
-      });
-
       try {
-        await this.publish(topic, messageData);
+        this.pendingTransactions[transactionId].timeout = setTimeout(() => {
+          if (this.pendingTransactions[transactionId].hasTimedOut) {
+            return;
+          }
+
+          this.pendingTransactions[transactionId].hasTimedOut = true;
+
+          finished(new Error(`Transaction for ${requestTopic} timed out after ${timeoutDuration} seconds`));
+        }, timeoutDuration * 1000);
+
+        // Step 1:
+        // We subscribe to the responseTopic, which we are going to pass to the
+        // server in the next step.  When the server starts broadcasting the
+        // response to our request on this responseTopic, we will already be
+        // listening.  We have to be listening first because, since this is a
+        // transaction, the server will only broadcast the response once.
+        this.subscribe(responseTopic, (response) => {
+          console.log(`performed transaction for ${requestTopic}`, response);
+          finished(null, response);
+        });
+
+        // Step 2:
+        // We publish to the requestTopic, which is like a CLSP server REST
+        // endpoint.  The server has to know how to respond to the specific
+        // requestTopic, but our subscriptionTopic (which is also defined in
+        // `message.resp_topic`) is arbitrary and defined by us (the client),
+        // though in order to be useful, it must be globally unique.  Once we
+        // publish to the requestTopic and the server successfully receives and
+        // processes the request, it will start broadcasting on the resp_topic
+        // we defined, which we subscribed to in the previous step.
+        await this.publish(requestTopic, messageData);
       }
       catch (error) {
         finished(error);
@@ -191,15 +227,8 @@ export default class RouterTransactionManager extends RouterBaseManager {
       this.logger.info(`Successfully published to topic "${topic}" with id "${publishId}"`);
     }
     catch (error) {
-      this.logger.info(`Failed to publish to topic "${topic}" with id "${publishId}"`);
+      this.logger.error(`Failed to publish to topic "${topic}" with id "${publishId}"`);
       throw error;
-    }
-    finally {
-      if (this.publishHandlers[publishId]) {
-        // Whether success or failure, remove the event listener
-        window.removeEventListener('message', this.publishHandlers[publishId]);
-        delete this.publishHandlers[publishId];
-      }
     }
   }
 
@@ -208,33 +237,22 @@ export default class RouterTransactionManager extends RouterBaseManager {
    */
   _publish (publishId, topic, data) {
     return new Promise((resolve, reject) => {
-      this.publishHandlers[publishId] = (event) => {
-        const isValidEvent = this._isValidEvent(event, [
-          RouterTransactionManager.routerEvents.PUBLISH_SUCCESS,
-          RouterTransactionManager.routerEvents.PUBLISH_FAILURE,
-        ]);
+      this.publishHandlers[publishId] = {
+        onSuccess: (event) => {
+          this.logger.info(`Successfully published to topic "${topic}" with publishId "${publishId}"`);
 
-        if (!isValidEvent) {
-          return;
-        }
+          delete this.publishHandlers[publishId];
 
-        // Filter out messages that are for a different publish event
-        if (event.data.publishId !== publishId) {
-          return;
-        }
+          resolve();
+        },
+        onFailure: (event) => {
+          this.logger.error(`Failed to publish to topic "${topic}" with publishId "${publishId}"`);
 
-        const eventType = event.data.event;
+          delete this.publishHandlers[publishId];
 
-        this.logger.debug(`publish "${eventType}" event`);
-
-        if (eventType === RouterTransactionManager.routerEvents.PUBLISH_SUCCESS) {
-          return resolve();
-        }
-
-        reject(new Error(event.data.reason));
+          reject(new Error(event.data.reason));
+        },
       };
-
-      window.addEventListener('message', this.publishHandlers[publishId]);
 
       this.issueCommand(RouterTransactionManager.routerCommands.PUBLISH, {
         publishId,
@@ -244,9 +262,37 @@ export default class RouterTransactionManager extends RouterBaseManager {
     });
   }
 
+  hasPublishHandler (publishId) {
+    if (this.isDestroyComplete) {
+      // @todo - should this throw?
+      return false;
+    }
+
+    if (!publishId) {
+      // @todo - should this throw?
+      return false;
+    }
+
+    if (!this.publishHandlers) {
+      // @todo - should this throw?
+      return false;
+    }
+
+    if (!this.publishHandlers[publishId]) {
+      return false;
+    }
+
+    return true;
+  }
+
   /**
    * Register a handler that will being listening to a topic until that topic
    * is unsubscribed from.
+   *
+   * Note that currently, the only use cases for a "persistent" subscription
+   * are stream resync and the actual stream itself.  All other subscribe use
+   * cases are transactional, and therefore use the `transaction` method.  Use
+   * this `subscribe` method cautiously / sparingly.
    *
    * @param {String} topic
    *   The topic to subscribe to
@@ -263,6 +309,29 @@ export default class RouterTransactionManager extends RouterBaseManager {
     });
   }
 
+  hasSubscribeHandler (topic) {
+    if (this.isDestroyComplete) {
+      // @todo - should this throw?
+      return false;
+    }
+
+    if (!topic) {
+      // @todo - should this throw?
+      return false;
+    }
+
+    if (!this.subscribeHandlers) {
+      // @todo - should this throw?
+      return false;
+    }
+
+    if (!this.subscribeHandlers[topic]) {
+      return false;
+    }
+
+    return true;
+  }
+
   /**
    * @async
    *
@@ -274,14 +343,6 @@ export default class RouterTransactionManager extends RouterBaseManager {
   async unsubscribe (topic, timeout = this.TRANSACTION_TIMEOUT) {
     this.logger.debug(`Unsubscribing from topic "${topic}"`);
 
-    // unsubscribes can occur asynchronously, so ensure the handlers object
-    // still exists
-    if (this.subscribeHandlers) {
-      // When data is received for a topic that is subscribed to, but that we
-      // are about to unsubscribe from, don't process that topic data.
-      delete this.subscribeHandlers[topic];
-    }
-
     try {
       await PromiseTimeout(this._unsubscribe(topic), timeout * 1000);
       this.logger.info(`Successfully unsubscribed from topic "${topic}"`);
@@ -290,13 +351,6 @@ export default class RouterTransactionManager extends RouterBaseManager {
       this.logger.info(`Failed to unsubscribe from topic "${topic}"`);
       throw error;
     }
-    finally {
-      if (this.unsubscribeHandlers[topic]) {
-        // Whether success or failure, remove the event listener
-        window.removeEventListener('message', this.unsubscribeHandlers[topic]);
-        delete this.unsubscribeHandlers[topic];
-      }
-    }
   }
 
   /**
@@ -304,38 +358,56 @@ export default class RouterTransactionManager extends RouterBaseManager {
    */
   _unsubscribe (topic) {
     return new Promise((resolve, reject) => {
-      this.unsubscribeHandlers[topic] = (event) => {
-        const isValidEvent = this._isValidEvent(event, [
-          RouterTransactionManager.routerEvents.UNSUBSCRIBE_SUCCESS,
-          RouterTransactionManager.routerEvents.UNSUBSCRIBE_FAILURE,
-        ]);
+      this.unsubscribeHandlers[topic] = {
+        onSuccess: (event) => {
+          this.logger.info(`Successfully unsubscribed from topic ${topic}`);
 
-        if (!isValidEvent) {
-          return;
-        }
+          delete this.unsubscribeHandlers[topic];
 
-        // Filter out unsubscribe messages that are for a different topic
-        if (event.data.topic !== topic) {
-          return;
-        }
+          resolve();
+        },
+        onFailure: (event) => {
+          this.logger.error(`Failed to unsubscribe from topic "${topic}"!`);
 
-        const eventType = event.data.event;
+          delete this.unsubscribeHandlers[topic];
 
-        this.logger.debug(`unsubscribe "${eventType}" event`);
-
-        if (eventType === RouterTransactionManager.routerEvents.UNSUBSCRIBE_SUCCESS) {
-          return resolve();
-        }
-
-        reject(new Error(event.data.reason));
+          reject(new Error(event.data.reason));
+        },
       };
 
-      window.addEventListener('message', this.unsubscribeHandlers[topic]);
+      if (this.hasSubscribeHandler(topic)) {
+        // When data is received for a topic that is subscribed to, but that we
+        // are about to unsubscribe from, stop processing that topic data.
+        delete this.subscribeHandlers[topic];
+      }
 
       this.issueCommand(RouterTransactionManager.routerCommands.UNSUBSCRIBE, {
         topic,
       });
     });
+  }
+
+  hasUnsubscribeHandler (topic) {
+    if (this.isDestroyComplete) {
+      // @todo - should this throw?
+      return false;
+    }
+
+    if (!topic) {
+      // @todo - should this throw?
+      return false;
+    }
+
+    if (!this.unsubscribeHandlers) {
+      // @todo - should this throw?
+      return false;
+    }
+
+    if (!this.unsubscribeHandlers[topic]) {
+      return false;
+    }
+
+    return true;
   }
 
   halt () {
@@ -349,17 +421,7 @@ export default class RouterTransactionManager extends RouterBaseManager {
     }
 
     this.pendingTransactions = {};
-
-    for (const topic in this.unsubscribeHandlers) {
-      window.removeEventListener('message', this.unsubscribeHandlers[topic]);
-    }
-
     this.unsubscribeHandlers = {};
-
-    for (const publishId in this.publishHandlers) {
-      window.removeEventListener('message', this.publishHandlers[publishId]);
-    }
-
     this.publishHandlers = {};
 
     // @todo - do these all need to be unsubscribed from?
@@ -383,26 +445,6 @@ export default class RouterTransactionManager extends RouterBaseManager {
       topic,
       byteArray,
     });
-  }
-
-  onMessage (eventType, event) {
-    try {
-      switch (eventType) {
-        case RouterTransactionManager.routerEvents.UNSUBSCRIBE_SUCCESS:
-        case RouterTransactionManager.routerEvents.UNSUBSCRIBE_FAILURE:
-        case RouterTransactionManager.routerEvents.PUBLISH_SUCCESS:
-        case RouterTransactionManager.routerEvents.PUBLISH_FAILURE: {
-          break;
-        }
-        default: {
-          this.logger.info(`RouterTransactionManager called with unknown eventType: ${eventType}`);
-        }
-      }
-    }
-    catch (error) {
-      this.logger.error('Error while receiving message from Router:');
-      this.logger.error(error);
-    }
   }
 
   destroy () {

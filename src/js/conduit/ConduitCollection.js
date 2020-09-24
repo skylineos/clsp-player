@@ -36,6 +36,8 @@ export default class ConduitCollection {
 
     Paho.register();
 
+    // This is the Window Message listener for EVERY Conduit / Router on the
+    // page (assuming you are using the singleton pattern)
     window.addEventListener('message', this._routeWindowMessageToTargetConduit);
   }
 

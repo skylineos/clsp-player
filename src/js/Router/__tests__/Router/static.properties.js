@@ -29,7 +29,7 @@ module.exports = function ({
         expect(Router.events).toContainAllKeys([
           'CREATE_SUCCESS',
           'CREATE_FAILURE',
-          'DATA_RECEIVED',
+          'MESSAGE_ARRIVED',
           'PUBLISH_SUCCESS',
           'PUBLISH_FAILURE',
           'CONNECT_SUCCESS',
@@ -44,7 +44,7 @@ module.exports = function ({
         ]);
         expect(Router.events.CREATE_SUCCESS).toEqual('clsp_router_create_success');
         expect(Router.events.CREATE_FAILURE).toEqual('clsp_router_create_failure');
-        expect(Router.events.DATA_RECEIVED).toEqual('clsp_router_clsp_data');
+        expect(Router.events.MESSAGE_ARRIVED).toEqual('clsp_router_message_arrived');
         expect(Router.events.PUBLISH_SUCCESS).toEqual('clsp_router_publish_success');
         expect(Router.events.PUBLISH_FAILURE).toEqual('clsp_router_publish_failure');
         expect(Router.events.CONNECT_SUCCESS).toEqual('clsp_router_connect_success');
