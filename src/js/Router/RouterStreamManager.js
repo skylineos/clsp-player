@@ -487,35 +487,6 @@ export default class RouterStreamManager extends RouterBaseManager {
   }
 
   /**
-   * When the Router sends a message back from its iframe, the Conduit
-   * Collection handles it.  If the message was meant for this Conduit, the
-   * Conduit Collection will call this method with the event data.
-   *
-   * @param {Object} event
-   *   We expect event to have "data.event", which represents the event that
-   *   occurred relative to the clsp stream.  "ready" means the stream is ready,
-   *   "fail" means there was an error, "data" means a video segment / moof was
-   *   sent.
-   */
-  onMessage (eventType, event) {
-    try {
-      switch (eventType) {
-        case RouterStreamManager.routerEvents.DATA_RECEIVED: {
-          this._onClspData(event.data);
-          break;
-        }
-        default: {
-          this.logger.info(`RouterStreamManager called with unknown eventType: ${eventType}`);
-        }
-      }
-    }
-    catch (error) {
-      this.logger.error('Error while receiving message from Router:');
-      this.logger.error(error);
-    }
-  }
-
-  /**
    * @async
    *
    * Clean up and dereference the necessary properties.  Will also stop the

@@ -5,6 +5,7 @@ import {
 } from 'uuid';
 
 import ConduitCollection from '../conduit/ConduitCollection';
+import Conduit from '../conduit/Conduit';
 import MSEWrapper from './MSEWrapper';
 import Logger from '../utils/Logger';
 import StreamConfiguration from './StreamConfiguration';
@@ -196,29 +197,9 @@ export default class IovPlayer {
     return `${this.logId}.conduit:${++this.conduitCount}`;
   }
 
-  onConduitReconnect = (error) => {
-    if (error) {
-      this.logger.error(error);
-      // @todo - should we do anything else on error?
-      return;
-    }
-
-    // @todo - is there a more performant way to do this?
-    this.restart();
-  };
-
   onPlayerError = (error) => {
     this.logger.error('Player Error!');
     this.logger.error(error);
-  };
-
-  onConduitMessageError = (error) => {
-    this.logger.error('Conduit Message Error!');
-    this.logger.error(error);
-  };
-
-  onIframeDestroyedExternally = () => {
-    this.trigger('IframeDestroyedExternally');
   };
 
   async initialize (streamConfiguration = this.streamConfiguration) {
@@ -255,10 +236,27 @@ export default class IovPlayer {
       this.clientId,
       this.streamConfiguration,
       this.videoElement.parentNode,
-      this.onConduitReconnect,
-      this.onConduitMessageError,
-      this.onIframeDestroyedExternally,
     );
+
+    this.conduit.events.on(Conduit.events.RECONNECT_SUCCESS, () => {
+      this.logger.info('Conduit reconnected, restarting...');
+      // @todo - is there a more performant way to do this?
+      this.restart();
+    });
+
+    this.conduit.events.on(Conduit.events.RECONNECT_FAILURE, (data) => {
+      this.logger.error('Conduit Reconnect Failure!');
+      this.logger.error(data.error);
+    });
+
+    this.conduit.events.on(Conduit.events.ON_MESSAGE_ERROR, (data) => {
+      this.logger.error('Conduit Message Error!');
+      this.logger.error(data.error);
+    });
+
+    this.conduit.events.on(Conduit.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+      this.trigger('IframeDestroyedExternally');
+    });
 
     await this.conduit.initialize();
   }

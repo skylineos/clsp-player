@@ -184,7 +184,7 @@ export default function (Paho) {
   Router.events = {
     // Triggered when the Router is successfully instantiated.
     // Can only be triggered at time of router instantiation.
-    CREATED: 'clsp_router_created',
+    CREATE_SUCCESS: 'clsp_router_create_success',
     // Triggered when there is an error during Router instantiation.
     // Can only be triggered at time of router instantiation.
     CREATE_FAILURE: 'clsp_router_create_failure',
@@ -275,7 +275,7 @@ export default function (Paho) {
     message.clientId = this.clientId;
 
     switch (message.event) {
-      case Router.events.CREATED:
+      case Router.events.CREATE_SUCCESS:
       case Router.events.CONNECT_SUCCESS:
       case Router.events.DISCONNECT_SUCCESS: {
         // no validation needed

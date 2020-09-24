@@ -24,7 +24,7 @@ RouterMock.pahoErrorCodes = {
 };
 
 RouterMock.events = {
-  CREATED: generateUniqueString(),
+  CREATE_SUCCESS: generateUniqueString(),
   CREATE_FAILURE: generateUniqueString(),
   DATA_RECEIVED: generateUniqueString(),
   PUBLISH_SUCCESS: generateUniqueString(),

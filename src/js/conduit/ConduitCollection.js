@@ -1,6 +1,5 @@
 import Conduit from './Conduit';
 import Paho from './Paho';
-import RouterBaseManager from '../Router/RouterBaseManager';
 import utils from '../utils/utils';
 
 import Logger from '../utils/Logger';
@@ -32,9 +31,12 @@ export default class ConduitCollection {
     this.conduits = {};
     this.deletedConduitClientIds = [];
 
+    this.destroyed = false;
+    this.isDestroyComplete = false;
+
     Paho.register();
 
-    window.addEventListener('message', this._onWindowMessage);
+    window.addEventListener('message', this._routeWindowMessageToTargetConduit);
   }
 
   /**
@@ -51,23 +53,24 @@ export default class ConduitCollection {
    *
    * @returns {void}
    */
-  _onWindowMessage = (event) => {
+  _routeWindowMessageToTargetConduit = (event) => {
     const clientId = event.data.clientId;
-    const eventType = event.data.event;
 
     if (!clientId) {
       // A window message was received that is not related to CLSP
       return;
     }
 
-    this.logger.debug('window on message');
+    this.logger.debug(`Received Window Message event for ${clientId}`);
+
+    const eventType = event.data.event;
 
     if (!this.has(clientId)) {
       // When the CLSP connection is interupted due to a listener being removed,
       // a fail event is always sent.  It is not necessary to log this as an error
       // in the console, because it is not an error.
-      // @todo - the fail event no longer exists - what is the name of the new
-      // corresponding event?
+      // @todo - the fail event no longer exists (or is it from Paho or
+      // something?) - what is the name of the new corresponding event?
       if (eventType === 'fail') {
         return;
       }
@@ -87,20 +90,11 @@ export default class ConduitCollection {
       throw new Error(`Unable to route message of type ${eventType} for Conduit with clientId "${clientId}".  A Conduit with that clientId does not exist.`);
     }
 
-    // If the document is hidden, don't pass on the moofs.  All other forms of
-    // communication are fine, but the moofs occur at a rate that will exhaust
-    // the browser tab resources, ultimately resulting in a crash given enough
-    // time.
-    if (
-      document[utils.windowStateNames.hiddenStateName] &&
-      eventType === RouterBaseManager.routerEvents.DATA_RECEIVED
-    ) {
-      return;
-    }
-
-    const conduit = this.get(clientId);
-
-    conduit.onMessage(event);
+    // Pass the Window Message event to the proper Conduit instance.  All we've
+    // done at this point is pass the event to the Conduit that it was intended
+    // for.  At this point, the Conduit is responsible for taking the necessary
+    // action based on the eventType
+    this.get(clientId).onRouterEvent(eventType, event);
   };
 
   /**
@@ -113,9 +107,6 @@ export default class ConduitCollection {
     clientId,
     streamConfiguration,
     containerElement,
-    onReconnect,
-    onMessageError,
-    onIframeDestroyedExternally,
   ) {
     this.logger.debug(`creating a conduit with logId ${logId} and clientId ${clientId}`);
 
@@ -124,9 +115,6 @@ export default class ConduitCollection {
       clientId,
       streamConfiguration,
       containerElement,
-      onReconnect,
-      onMessageError,
-      onIframeDestroyedExternally,
     );
 
     this._add(conduit);
@@ -218,7 +206,7 @@ export default class ConduitCollection {
 
     this.destroyed = true;
 
-    window.removeEventListener('message', this._onWindowMessage);
+    window.removeEventListener('message', this._routeWindowMessageToTargetConduit);
 
     for (const clientId in this.conduits) {
       try {
@@ -232,5 +220,8 @@ export default class ConduitCollection {
 
     this.conduits = null;
     this.deletedConduitClientIds = null;
+
+    this.isDestroyComplete = true;
+    this.logger.info('destroy complete');
   }
 }

@@ -6,6 +6,7 @@
  * This code is a layer of abstraction on top of the CLSP router, and the
  * controller of the iframe that contains the router.
  */
+import EventEmitter from 'eventemitter3';
 
 import utils from '../utils/utils';
 import RouterBaseManager from '../Router/RouterBaseManager';
@@ -24,23 +25,36 @@ const DEFAULT_ROUTER_KEEP_ALIVE_INTERVAL = 30;
 const DEFAULT_ROUTER_PUBLISH_TIMEOUT = utils.DEFAULT_STREAM_TIMEOUT;
 
 export default class Conduit {
+  /**
+   * @static
+   *
+   * The events that this RouterStatsManager will emit.
+   */
+  static events = {
+    RECONNECT_SUCCESS: 'reconnect-success',
+    RECONNECT_FAILURE: 'reconnect-failure',
+    ON_MESSAGE_ERROR: 'onMessage-error',
+    IFRAME_DESTROYED_EXTERNALLY: 'iframe-destroyed-externally',
+  }
+
+  /**
+   * @static
+   *
+   * The events that the Router will broadcast via Window Messages
+   */
+  static routerEvents = RouterBaseManager.routerEvents;
+
   static factory (
     logId,
     clientId,
     streamConfiguration,
     containerElement,
-    onReconnect,
-    onMessageError,
-    onIframeDestroyedExternally,
   ) {
     return new Conduit(
       logId,
       clientId,
       streamConfiguration,
       containerElement,
-      onReconnect,
-      onMessageError,
-      onIframeDestroyedExternally,
     );
   }
 
@@ -56,20 +70,12 @@ export default class Conduit {
    * @param {Element} containerElement
    *   The container of the video element and where the Conduit's iframe will be
    *   inserted
-   * @param {Function} onReconnect
-   *   The action to perform when a reconnection attempt is successful
-   * @param {Function} onMessageError
-   *   The action to perform when an error is encountered between the Router
-   *   and Conduit instances
    */
   constructor (
     logId,
     clientId,
     streamConfiguration,
     containerElement,
-    onReconnect = () => {},
-    onMessageError = () => {},
-    onIframeDestroyedExternally = () => {},
   ) {
     if (!logId) {
       throw new Error('logId is required to construct a new Conduit instance.');
@@ -87,32 +93,19 @@ export default class Conduit {
       throw new Error('containerElement is required to construct a new Conduit instance');
     }
 
-    if (typeof onReconnect !== 'function') {
-      throw new Error('onReconnect must be a function to construct a new Conduit instance');
-    }
-
-    if (typeof onMessageError !== 'function') {
-      throw new Error('onMessageError must be a function to construct a new Conduit instance');
-    }
-
-    if (typeof onIframeDestroyedExternally !== 'function') {
-      throw new Error('onIframeDestroyedExternally must be a function to construct a new Conduit instance');
-    }
-
     this.logId = logId;
     this.clientId = clientId;
     this.streamConfiguration = streamConfiguration;
     this.containerElement = containerElement;
-    this._onReconnect = onReconnect;
-    this._onMessageError = onMessageError;
-    this._onIframeDestroyedExternally = onIframeDestroyedExternally;
 
     this.logger = Logger().factory(`Conduit ${this.logId}`, 'color: orange;');
     this.logger.debug('Constructing...');
 
+    this.events = new EventEmitter();
+
+    this.isInitialized = false;
     this.isDestroyed = false;
     this.isDestroyComplete = false;
-    this.isInitialized = false;
 
     // These can be configured manually after construction
     this.ROUTER_CONNECTION_TIMEOUT = DEFAULT_ROUTER_CONNECTION_TIMEOUT;
@@ -140,8 +133,11 @@ export default class Conduit {
     );
 
     // Allow the caller to react every time there is a reconnection event
-    this.routerConnectionManager.events.on(RouterConnectionManager.events.DID_RECONNECT, () => {
-      this._onReconnect();
+    this.routerConnectionManager.events.on(RouterConnectionManager.events.RECONNECT_SUCCESS, () => {
+      this.events.emit(Conduit.events.RECONNECT_SUCCESS);
+    });
+    this.routerConnectionManager.events.on(RouterConnectionManager.events.RECONNECT_FAILURE, (data) => {
+      this.events.emit(Conduit.events.RECONNECT_FAILURE, data);
     });
 
     this.routerStreamManager = RouterStreamManager.factory(
@@ -166,54 +162,27 @@ export default class Conduit {
    *   Rejects upon failure to create the Router.
    */
   initialize () {
+    if (this.isInitialized) {
+      this.logger.warn('Conduit already initialized...');
+      return;
+    }
+
     this.logger.debug('Initializing...');
 
     return new Promise((resolve, reject) => {
-      this._onRouterCreate = (event) => {
-        const clientId = event.data.clientId;
-
-        // A window message was received that is not related to CLSP
-        if (!clientId) {
-          return;
-        }
-
-        // This message was intended for another Conduit instance
-        if (this.clientId !== clientId) {
-          return;
-        }
-
-        const eventType = event.data.event;
-
-        // Filter out all other window messages from the Router
-        if (
-          eventType !== RouterBaseManager.routerEvents.CREATED &&
-          eventType !== RouterBaseManager.routerEvents.CREATE_FAILURE
-        ) {
-          return;
-        }
-
-        this.logger.debug(`initialize "${eventType}" event`);
-
-        // Whether success or failure, remove the event listener
-        window.removeEventListener('message', this._onRouterCreate);
-
-        // Once the event listener is removed, remove the listener handler,
-        // since it will not be used again and to prevent the `destroy` method
-        // from trying to unregister it.
-        this._onRouterCreate = null;
-
-        if (eventType === RouterBaseManager.routerEvents.CREATE_FAILURE) {
-          return reject(event.data.reason);
-        }
+      this._onRouterCreateSuccess = (event) => {
+        this.logger.debug('Router created successfully');
 
         this.isInitialized = true;
 
         resolve();
       };
 
-      // When the Router in the iframe connects, it will broadcast a message
-      // letting us know it connected, or letting us know it failed.
-      window.addEventListener('message', this._onRouterCreate);
+      this._onRouterCreateFailure = (event) => {
+        this.logger.debug('Failed to create Router!');
+
+        reject(event.data.reason);
+      };
 
       this.iframe = this._generateIframe();
 
@@ -308,7 +277,7 @@ export default class Conduit {
         // rather than letting the CLSP Player manage it.  In this instance,
         // we recognize that this happened, but do not show nor throw an error.
         this.logger.info('Iframe destroyed externally!');
-        this._onIframeDestroyedExternally();
+        this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
       }
       else {
         this.logger.error('Error while stopping while destroying');
@@ -326,7 +295,7 @@ export default class Conduit {
         // rather than letting the CLSP Player manage it.  In this instance,
         // we recognize that this happened, but do not show nor throw an error.
         this.logger.info('Iframe destroyed externally!');
-        this._onIframeDestroyedExternally();
+        this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
       }
       else {
         this.logger.error('Error while stopping while destroying');
@@ -346,43 +315,51 @@ export default class Conduit {
    *   "fail" means there was an error, "data" means a video segment / moof was
    *   sent.
    */
-  onMessage (event) {
-    const eventType = event.data.event;
-
+  onRouterEvent (eventType, event) {
     this.logger.debug(`Message received for "${eventType}" event`);
 
     try {
       switch (eventType) {
-        // The events in the cases below are handled by RouterTransactionManager
-        case RouterTransactionManager.routerEvents.UNSUBSCRIBE_SUCCESS:
-        case RouterTransactionManager.routerEvents.UNSUBSCRIBE_FAILURE:
-        case RouterTransactionManager.routerEvents.PUBLISH_SUCCESS:
-        case RouterTransactionManager.routerEvents.PUBLISH_FAILURE: {
+        // ---------------------------------------------------------------------
+        // These events are handled by RouterTransactionManager
+        // ---------------------------------------------------------------------
+        case Conduit.routerEvents.UNSUBSCRIBE_SUCCESS:
+        case Conduit.routerEvents.UNSUBSCRIBE_FAILURE:
+        case Conduit.routerEvents.PUBLISH_SUCCESS:
+        case Conduit.routerEvents.PUBLISH_FAILURE: {
           this.routerTransactionManager.onMessage(eventType, event);
           break;
         }
-        // The events in the cases below are handled by RouterConnectionManager
-        case RouterConnectionManager.routerEvents.CONNECT_SUCCESS:
-        case RouterConnectionManager.routerEvents.CONNECT_FAILURE:
-        case RouterConnectionManager.routerEvents.DISCONNECT_SUCCESS:
-        case RouterConnectionManager.routerEvents.DISCONNECT_FAILURE:
-        case RouterConnectionManager.routerEvents.CONNECTION_LOST: {
+        case Conduit.routerEvents.CONNECT_SUCCESS:
+        case Conduit.routerEvents.CONNECT_FAILURE:
+        case Conduit.routerEvents.DISCONNECT_SUCCESS:
+        case Conduit.routerEvents.DISCONNECT_FAILURE:
+        case Conduit.routerEvents.CONNECTION_LOST: {
           this.routerConnectionManager.onMessage(eventType, event);
           break;
         }
-        // The events in the cases below are handled by RouterStreamManager
-        case RouterStreamManager.routerEvents.DATA_RECEIVED: {
-          this.routerStreamManager.onMessage(eventType, event);
+        case Conduit.routerEvents.DATA_RECEIVED: {
+          // If the document is hidden, don't pass the moofs to the appropriate
+          // handler. The moofs occur at a rate that will exhaust the browser
+          // tab resources, ultimately resulting in a crash if given enough time.
+          if (document[utils.windowStateNames.hiddenStateName]) {
+            break;
+          }
+
+          this.routerStreamManager._onClspData(event.data);
           break;
         }
-        // The events in the cases below are handled by the conduit
-        case RouterBaseManager.routerEvents.CREATED:
-        case RouterBaseManager.routerEvents.CREATE_FAILURE: {
-          // these are handled in initialize
+        case Conduit.routerEvents.CREATE_SUCCESS: {
+          this._onRouterCreateSuccess(event);
           break;
         }
-        case RouterBaseManager.routerEvents.WINDOW_MESSAGE_FAIL: {
-          // @todo - do we really need to disconnect? should we reconnect?
+        case Conduit.routerEvents.CREATE_FAILURE: {
+          this._onRouterCreateFailure(event);
+          break;
+        }
+        case Conduit.routerEvents.WINDOW_MESSAGE_FAIL: {
+          // @todo - is disconnecting really the best response to this event?
+          // we could broadcast or reconnect or something...
           this.routerConnectionManager.disconnect();
           break;
         }
@@ -393,10 +370,12 @@ export default class Conduit {
       }
     }
     catch (error) {
-      this.logger.debug('onMessageError');
+      this.logger.error('onMessageError');
       this.logger.error(error);
 
-      this._onMessageError(error);
+      this.events.emit(Conduit.events.ON_MESSAGE_ERROR, {
+        error,
+      });
     }
   }
 
@@ -486,7 +465,7 @@ export default class Conduit {
       // rather than letting the CLSP Player manage it.  In this instance,
       // we recognize that this happened, but do not show nor throw an error.
       this.logger.info('Iframe destroyed externally!');
-      this._onIframeDestroyedExternally();
+      this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
       return;
     }
 
@@ -519,11 +498,6 @@ export default class Conduit {
     }
 
     this.isDestroyed = true;
-
-    if (this._onRouterCreate) {
-      window.removeEventListener('message', this._onRouterCreate);
-      this._onRouterCreate = null;
-    }
 
     // order matters here
     try {
@@ -568,8 +542,10 @@ export default class Conduit {
     // Calling this doesn't seem to work...
     // this.iframe.remove();
 
-    // @todo - can this be safely dereferenced?
-    // this._onMessageError = null;
+    this.isDestroyComplete = true;
+
+    this.events.removeAllListeners();
+    this.events = null;
 
     this.isDestroyComplete = true;
 

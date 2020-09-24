@@ -24,12 +24,12 @@ export default class RouterConnectionManager extends RouterBaseManager {
    */
   static events = {
     // Emitted when a connection attempt
-    DID_CONNECT: 'did-connect',
-    CONNECT_FAILED: 'connect-failed',
-    DID_RECONNECT: 'did-reconnect',
-    RECONNECT_FAILED: 'reconnect-failed',
-    DID_DISCONNECT: 'did-disconnect',
-    DISCONNECT_FAILED: 'disconnect-failed',
+    CONNECT_SUCCESS: 'connect-success',
+    CONNECT_FAILURE: 'connect-failure',
+    RECONNECT_SUCCESS: 'reconnect-success',
+    RECONNECT_FAILURE: 'reconnect-failure',
+    DISCONNECT_SUCCESS: 'disconnect-success',
+    DISCONNECT_FAILURE: 'disconnect-failure',
   }
 
   static factory (
@@ -136,7 +136,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
       }
 
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.DID_CONNECT);
+        this.events.emit(RouterConnectionManager.events.CONNECT_SUCCESS);
       }
     }
     catch (error) {
@@ -144,7 +144,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
       this.logger.error(error);
 
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.CONNECT_FAILED, {
+        this.events.emit(RouterConnectionManager.events.CONNECT_FAILURE, {
           error,
         });
       }
@@ -259,14 +259,16 @@ export default class RouterConnectionManager extends RouterBaseManager {
       this.logger.info('Successfully reconnected!');
 
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.DID_RECONNECT);
+        this.events.emit(RouterConnectionManager.events.RECONNECT_SUCCESS);
       }
     }
     catch (error) {
       this.logger.error('Failed to reconnect');
 
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.RECONNECT_FAILED);
+        this.events.emit(RouterConnectionManager.events.RECONNECT_FAILURE, {
+          error,
+        });
       }
     }
     finally {
@@ -377,12 +379,12 @@ export default class RouterConnectionManager extends RouterBaseManager {
       await PromiseTimeout(this._disconnect(), this.IMMEDIATE_RECONNECTION_DELAY * 1000);
 
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.DID_DISCONNECT);
+        this.events.emit(RouterConnectionManager.events.DISCONNECT_SUCCESS);
       }
     }
     catch (error) {
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.DISCONNECT_FAILED, {
+        this.events.emit(RouterConnectionManager.events.DISCONNECT_FAILURE, {
           error,
         });
       }
@@ -477,7 +479,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
     // caller request the reconnect?  Should this emit a disconnect event
     // instead of trying to reconnect?
     this.reconnect();
-    // this.events.emit(RouterConnectionManager.events.DID_DISCONNECT, {
+    // this.events.emit(RouterConnectionManager.events.DISCONNECT_SUCCESS, {
     //   reason: event.data.reason,
     // });
   }

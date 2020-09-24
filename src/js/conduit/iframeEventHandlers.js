@@ -58,7 +58,7 @@ export default function () {
         );
 
         router._sendToParentWindow({
-          event: Router.events.CREATED,
+          event: Router.events.CREATE_SUCCESS,
         });
 
         router.logger.info(logId + ' onload - Router created');
