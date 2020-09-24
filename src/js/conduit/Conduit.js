@@ -167,6 +167,10 @@ export default class Conduit {
    *   Rejects upon failure to create the Router.
    */
   async initialize () {
+    if (this.isDestroyed) {
+      throw new Error('Tried to initialize a destroyed Conduit!');
+    }
+
     if (this.isInitialized) {
       this.logger.warn('Conduit already initialized...');
       return;
@@ -176,7 +180,6 @@ export default class Conduit {
 
     try {
       await PromiseTimeout(this._initialize(), 2 * 1000);
-
       this.logger.info('Router created successfully');
 
       this.isInitialized = true;
@@ -189,7 +192,7 @@ export default class Conduit {
 
   _initialize () {
     return new Promise((resolve, reject) => {
-      this._onRouterCreate = (error) => {
+      this._onRouterCreated = (error) => {
         if (error) {
           return reject(error);
         }
@@ -206,6 +209,35 @@ export default class Conduit {
       // iframes contained in a single parent.
       this.containerElement.appendChild(this.iframe);
     });
+  }
+
+  _handleRouterCreatedEvent (eventType, event) {
+    if (this.isDestroyed) {
+      throw new Error('Tried to create a Router for a destroyed Conduit!');
+    }
+
+    // @todo - a better check may be `!this.isInitializing`
+    if (!this._onRouterCreated) {
+      throw new Error('Tried to create Router prior to initialization!');
+    }
+
+    if (this.isInitialized) {
+      throw new Error('Tried to create Router after initialization!');
+    }
+
+    switch (eventType) {
+      case Conduit.routerEvents.CREATE_SUCCESS: {
+        this._onRouterCreated();
+        break;
+      }
+      case Conduit.routerEvents.CREATE_FAILURE: {
+        this._onRouterCreated(new Error(event.data.reason));
+        break;
+      }
+      default: {
+        throw new Error(`Unknown eventType: ${eventType}`);
+      }
+    }
   }
 
   /**
@@ -354,12 +386,9 @@ export default class Conduit {
 
     try {
       switch (eventType) {
-        case Conduit.routerEvents.CREATE_SUCCESS: {
-          this._onRouterCreate();
-          break;
-        }
+        case Conduit.routerEvents.CREATE_SUCCESS:
         case Conduit.routerEvents.CREATE_FAILURE: {
-          this._onRouterCreate(new Error(event.data.reason));
+          this._handleRouterCreatedEvent(eventType, event);
           break;
         }
         case Conduit.routerEvents.CONNECT_SUCCESS:
@@ -370,52 +399,14 @@ export default class Conduit {
           this.routerConnectionManager.onMessage(eventType, event);
           break;
         }
-        case Conduit.routerEvents.UNSUBSCRIBE_SUCCESS: {
-          const topic = event.data.topic;
-
-          if (!this.routerTransactionManager.hasUnsubscribeHandler(topic)) {
-            this.logger.warn(`No handler for topic "${topic}" for unsubscribe event "${eventType}"`);
-            return;
-          }
-
-          this.routerTransactionManager.unsubscribeHandlers[topic].onSuccess(event);
-
-          break;
-        }
+        case Conduit.routerEvents.UNSUBSCRIBE_SUCCESS:
         case Conduit.routerEvents.UNSUBSCRIBE_FAILURE: {
-          const topic = event.data.topic;
-
-          if (!this.routerTransactionManager.hasUnsubscribeHandler(topic)) {
-            this.logger.warn(`No handler for topic "${topic}" for unsubscribe event "${eventType}"`);
-            return;
-          }
-
-          this.routerTransactionManager.unsubscribeHandlers[topic].onFailure(event);
-
+          this.routerTransactionManager._handleRouterUnsubscribeEvent(eventType, event);
           break;
         }
-        case Conduit.routerEvents.PUBLISH_SUCCESS: {
-          const publishId = event.data.publishId;
-
-          if (!this.routerTransactionManager.hasPublishHandler(publishId)) {
-            this.logger.warn(`No handler for publishId "${publishId}" for publish event "${eventType}"`);
-            return;
-          }
-
-          this.routerTransactionManager.publishHandlers[publishId].onSuccess(event);
-
-          break;
-        }
+        case Conduit.routerEvents.PUBLISH_SUCCESS:
         case Conduit.routerEvents.PUBLISH_FAILURE: {
-          const publishId = event.data.publishId;
-
-          if (!this.routerTransactionManager.hasPublishHandler(publishId)) {
-            this.logger.warn(`No handler for publishId "${publishId}" for publish event "${eventType}"`);
-            return;
-          }
-
-          this.routerTransactionManager.publishHandlers[publishId].onFailure(event);
-
+          this.routerTransactionManager._handleRouterPublishEvent(eventType, event);
           break;
         }
         case Conduit.routerEvents.MESSAGE_ARRIVED: {
