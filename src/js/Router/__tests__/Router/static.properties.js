@@ -27,7 +27,7 @@ module.exports = function ({
 
         expect(Router.events).toBeObject();
         expect(Router.events).toContainAllKeys([
-          'CREATED',
+          'CREATE_SUCCESS',
           'CREATE_FAILURE',
           'DATA_RECEIVED',
           'PUBLISH_SUCCESS',
@@ -42,7 +42,7 @@ module.exports = function ({
           'UNSUBSCRIBE_FAILURE',
           'WINDOW_MESSAGE_FAIL',
         ]);
-        expect(Router.events.CREATED).toEqual('clsp_router_created');
+        expect(Router.events.CREATE_SUCCESS).toEqual('clsp_router_create_success');
         expect(Router.events.CREATE_FAILURE).toEqual('clsp_router_create_failure');
         expect(Router.events.DATA_RECEIVED).toEqual('clsp_router_clsp_data');
         expect(Router.events.PUBLISH_SUCCESS).toEqual('clsp_router_publish_success');

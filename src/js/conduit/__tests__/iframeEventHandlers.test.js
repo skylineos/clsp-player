@@ -106,7 +106,7 @@ describe('iframeEventHandlers', () => {
       expect(router._sendToParentWindow.mock.calls[0][0]).toContainAllKeys([
         'event',
       ]);
-      expect(router._sendToParentWindow.mock.calls[0][0].event).toEqual(Router.events.CREATED);
+      expect(router._sendToParentWindow.mock.calls[0][0].event).toEqual(Router.events.CREATE_SUCCESS);
     });
 
     it('should let the parent window know if an error was encountered during instantiation', () => {

@@ -36,6 +36,9 @@ export default class IovCollection {
     this.logger.debug('Constructing...');
 
     this.iovs = {};
+
+    this.destroyed = false;
+    this.isDestroyComplete = false;
   }
 
   /**
@@ -144,8 +147,6 @@ export default class IovCollection {
 
     this.destroyed = true;
 
-    window.removeEventListener('message', this._onWindowMessage);
-
     for (const id in this.iovs) {
       try {
         await this.remove(id);
@@ -157,5 +158,8 @@ export default class IovCollection {
     }
 
     this.iovs = null;
+
+    this.isDestroyComplete = true;
+    this.logger.info('destroy complete');
   }
 }
