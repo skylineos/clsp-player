@@ -7,6 +7,9 @@
  * controller of the iframe that contains the router.
  */
 import EventEmitter from 'eventemitter3';
+import {
+  timeout as PromiseTimeout,
+} from 'promise-timeout';
 
 import utils from '../utils/utils';
 import RouterBaseManager from '../Router/RouterBaseManager';
@@ -31,10 +34,11 @@ export default class Conduit {
    * The events that this RouterStatsManager will emit.
    */
   static events = {
-    RECONNECT_SUCCESS: 'reconnect-success',
-    RECONNECT_FAILURE: 'reconnect-failure',
     ON_MESSAGE_ERROR: 'onMessage-error',
     IFRAME_DESTROYED_EXTERNALLY: 'iframe-destroyed-externally',
+    RECONNECT_SUCCESS: RouterConnectionManager.events.RECONNECT_SUCCESS,
+    RECONNECT_FAILURE: RouterConnectionManager.events.RECONNECT_FAILURE,
+    RESYNC_STREAM_COMPLETE: RouterStreamManager.events.RESYNC_STREAM_COMPLETE,
   }
 
   /**
@@ -147,13 +151,14 @@ export default class Conduit {
       this.routerTransactionManager,
     );
 
-    // Every time a video segment is used / shown, the stats must be updated
-    this.routerStreamManager.events.on(RouterStreamManager.events.SEGMENT_USED, (data) => {
-      this.routerConnectionManager.statsManager.updateByteCount(data.byteArray);
+    this.routerStreamManager.events.on(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, () => {
+      this.events.emit(Conduit.events.RESYNC_STREAM_COMPLETE);
     });
   }
 
   /**
+   * @async
+   *
    * After constructing, call this to initialize the conduit, which will create
    * the iframe and the Router needed to get the stream from the server.
    *
@@ -161,7 +166,7 @@ export default class Conduit {
    *   Resolves when the Router has been successfully created.
    *   Rejects upon failure to create the Router.
    */
-  initialize () {
+  async initialize () {
     if (this.isInitialized) {
       this.logger.warn('Conduit already initialized...');
       return;
@@ -169,19 +174,27 @@ export default class Conduit {
 
     this.logger.debug('Initializing...');
 
-    return new Promise((resolve, reject) => {
-      this._onRouterCreateSuccess = (event) => {
-        this.logger.debug('Router created successfully');
+    try {
+      await PromiseTimeout(this._initialize(), 2 * 1000);
 
-        this.isInitialized = true;
+      this.logger.info('Router created successfully');
+
+      this.isInitialized = true;
+    }
+    catch (error) {
+      this.logger.error('Failed to create the Iframe/Router!');
+      this.logger.error(error);
+    }
+  }
+
+  _initialize () {
+    return new Promise((resolve, reject) => {
+      this._onRouterCreate = (error) => {
+        if (error) {
+          return reject(error);
+        }
 
         resolve();
-      };
-
-      this._onRouterCreateFailure = (event) => {
-        this.logger.debug('Failed to create Router!');
-
-        reject(event.data.reason);
       };
 
       this.iframe = this._generateIframe();
@@ -305,6 +318,27 @@ export default class Conduit {
   }
 
   /**
+   * To be called when a segment (moof) is shown (appended to the MSE buffer).
+   *
+   * In practical terms, this is meant to be called when the moof is appended
+   * to the MSE SourceBuffer.  This method is meant to update stats.
+   *
+   * @param {Array} byteArray
+   *   The raw segment / moof
+   */
+  segmentUsed (byteArray) {
+    // @todo - this is never used, but existed in the original implementation
+    // Used for determining the size of the internal buffer hidden from the MSE
+    // api by recording the size and time of each chunk of video upon buffer
+    // append and recording the time when the updateend event is called.
+    if ((this.shouldLogSourceBuffer) && (this.logSourceBufferTopic !== null)) {
+      this.routerTransactionManager.directSend(this.logSourceBufferTopic, byteArray);
+    }
+
+    this.routerConnectionManager.statsManager.updateByteCount(byteArray);
+  }
+
+  /**
    * When the Router sends a message back from its iframe, the Conduit
    * Collection handles it.  If the message was meant for this Conduit, the
    * Conduit Collection will call this method with the event data.
@@ -320,14 +354,12 @@ export default class Conduit {
 
     try {
       switch (eventType) {
-        // ---------------------------------------------------------------------
-        // These events are handled by RouterTransactionManager
-        // ---------------------------------------------------------------------
-        case Conduit.routerEvents.UNSUBSCRIBE_SUCCESS:
-        case Conduit.routerEvents.UNSUBSCRIBE_FAILURE:
-        case Conduit.routerEvents.PUBLISH_SUCCESS:
-        case Conduit.routerEvents.PUBLISH_FAILURE: {
-          this.routerTransactionManager.onMessage(eventType, event);
+        case Conduit.routerEvents.CREATE_SUCCESS: {
+          this._onRouterCreate();
+          break;
+        }
+        case Conduit.routerEvents.CREATE_FAILURE: {
+          this._onRouterCreate(new Error(event.data.reason));
           break;
         }
         case Conduit.routerEvents.CONNECT_SUCCESS:
@@ -338,23 +370,65 @@ export default class Conduit {
           this.routerConnectionManager.onMessage(eventType, event);
           break;
         }
-        case Conduit.routerEvents.DATA_RECEIVED: {
-          // If the document is hidden, don't pass the moofs to the appropriate
-          // handler. The moofs occur at a rate that will exhaust the browser
-          // tab resources, ultimately resulting in a crash if given enough time.
-          if (document[utils.windowStateNames.hiddenStateName]) {
-            break;
+        case Conduit.routerEvents.UNSUBSCRIBE_SUCCESS: {
+          const topic = event.data.topic;
+
+          if (!this.routerTransactionManager.hasUnsubscribeHandler(topic)) {
+            this.logger.warn(`No handler for topic "${topic}" for unsubscribe event "${eventType}"`);
+            return;
           }
 
-          this.routerStreamManager._onClspData(event.data);
+          this.routerTransactionManager.unsubscribeHandlers[topic].onSuccess(event);
+
           break;
         }
-        case Conduit.routerEvents.CREATE_SUCCESS: {
-          this._onRouterCreateSuccess(event);
+        case Conduit.routerEvents.UNSUBSCRIBE_FAILURE: {
+          const topic = event.data.topic;
+
+          if (!this.routerTransactionManager.hasUnsubscribeHandler(topic)) {
+            this.logger.warn(`No handler for topic "${topic}" for unsubscribe event "${eventType}"`);
+            return;
+          }
+
+          this.routerTransactionManager.unsubscribeHandlers[topic].onFailure(event);
+
           break;
         }
-        case Conduit.routerEvents.CREATE_FAILURE: {
-          this._onRouterCreateFailure(event);
+        case Conduit.routerEvents.PUBLISH_SUCCESS: {
+          const publishId = event.data.publishId;
+
+          if (!this.routerTransactionManager.hasPublishHandler(publishId)) {
+            this.logger.warn(`No handler for publishId "${publishId}" for publish event "${eventType}"`);
+            return;
+          }
+
+          this.routerTransactionManager.publishHandlers[publishId].onSuccess(event);
+
+          break;
+        }
+        case Conduit.routerEvents.PUBLISH_FAILURE: {
+          const publishId = event.data.publishId;
+
+          if (!this.routerTransactionManager.hasPublishHandler(publishId)) {
+            this.logger.warn(`No handler for publishId "${publishId}" for publish event "${eventType}"`);
+            return;
+          }
+
+          this.routerTransactionManager.publishHandlers[publishId].onFailure(event);
+
+          break;
+        }
+        case Conduit.routerEvents.MESSAGE_ARRIVED: {
+          const message = event.data;
+          const topic = message.destinationName;
+
+          if (!this.routerTransactionManager.hasSubscribeHandler(topic)) {
+            this.logger.warn(`No handler for subscribe topic "${topic}" for message event "${eventType}"`);
+            return;
+          }
+
+          this.routerTransactionManager.subscribeHandlers[topic](message, event);
+
           break;
         }
         case Conduit.routerEvents.WINDOW_MESSAGE_FAIL: {

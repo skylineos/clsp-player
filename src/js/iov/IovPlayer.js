@@ -89,12 +89,6 @@ export default class IovPlayer {
     this.firstFrameShown = false;
     this.stopped = false;
 
-    // Used for determining the size of the internal buffer hidden from the MSE
-    // api by recording the size and time of each chunk of video upon buffer append
-    // and recording the time when the updateend event is called.
-    this.LogSourceBuffer = false;
-    this.LogSourceBufferTopic = null;
-
     this.latestSegmentReceived = null;
     this.segmentIntervalAverage = null;
     this.segmentInterval = null;
@@ -258,6 +252,11 @@ export default class IovPlayer {
       this.trigger('IframeDestroyedExternally');
     });
 
+    this.conduit.events.on(Conduit.events.RESYNC_STREAM_COMPLETE, () => {
+      this.logger.warn('Resyncing stream...');
+      this.reinitializeMseWrapper(this.mimeCodec);
+    });
+
     await this.conduit.initialize();
   }
 
@@ -310,8 +309,7 @@ export default class IovPlayer {
           onAppendStart: (byteArray) => {
             this.logger.silly('On Append Start...');
 
-            // onAppendStart
-            this.conduit.routerStreamManager.segmentUsed(byteArray);
+            this.conduit.segmentUsed(byteArray);
           },
           onAppendFinish: (info) => {
             this.logger.silly('On Append Finish...');
@@ -464,6 +462,14 @@ export default class IovPlayer {
       return;
     }
 
+    // If the document is hidden, don't pass the moofs to the appropriate
+    // handler. The moofs occur at a rate that will exhaust the browser
+    // tab resources, ultimately resulting in a crash if given enough time.
+    // @todo - this check should probably be moved to the MSEWrapper
+    if (document[utils.windowStateNames.hiddenStateName]) {
+      return;
+    }
+
     this.mseWrapper.append(clspMessage.payloadBytes);
   };
 
@@ -506,13 +512,11 @@ export default class IovPlayer {
     }
 
     this.moov = moov;
+    // This is currently needed to be added to the iovPlayer instance for the
+    // resync stream event listener to work.
+    this.mimeCodec = mimeCodec;
 
     await this.reinitializeMseWrapper(mimeCodec);
-
-    this.conduit.routerStreamManager.resyncStream(() => {
-      // console.log('sync received re-initialize media source buffer');
-      this.reinitializeMseWrapper(mimeCodec);
-    });
   }
 
   /**
@@ -658,9 +662,6 @@ export default class IovPlayer {
 
     this.events = null;
     this.metrics = null;
-
-    this.LogSourceBuffer = null;
-    this.LogSourceBufferTopic = null;
 
     this.latestSegmentReceived = null;
     this.segmentIntervalAverage = null;

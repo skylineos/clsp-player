@@ -190,7 +190,7 @@ export default function (Paho) {
     CREATE_FAILURE: 'clsp_router_create_failure',
     // Triggered when a segment / moof is transmitted.
     // Can be triggered for as long as the connection is open.
-    DATA_RECEIVED: 'clsp_router_clsp_data',
+    MESSAGE_ARRIVED: 'clsp_router_message_arrived',
     // Triggered when a message is successfully published to the server
     // Can only be triggered on publish
     PUBLISH_SUCCESS: 'clsp_router_publish_success',
@@ -281,7 +281,7 @@ export default function (Paho) {
         // no validation needed
         break;
       }
-      case Router.events.DATA_RECEIVED: {
+      case Router.events.MESSAGE_ARRIVED: {
         if (!Object.prototype.hasOwnProperty.call(message, 'destinationName') ||
           !Object.prototype.hasOwnProperty.call(message, 'payloadString') ||
           !Object.prototype.hasOwnProperty.call(message, 'payloadBytes')
@@ -392,7 +392,7 @@ export default function (Paho) {
       }
 
       this._sendToParentWindow({
-        event: Router.events.DATA_RECEIVED,
+        event: Router.events.MESSAGE_ARRIVED,
         destinationName: clspMessage.destinationName,
         payloadString: payloadString, // @todo - why is this necessary when it doesn't exist?
         payloadBytes: clspMessage.payloadBytes || null,
@@ -457,6 +457,60 @@ export default function (Paho) {
     });
   };
 
+  Router.prototype._onCommandReceived = function (command, message, event) {
+    switch (command) {
+      case Router.commands.SUBSCRIBE: {
+        this._subscribe(message.topic);
+        break;
+      }
+      case Router.commands.UNSUBSCRIBE: {
+        this._unsubscribe(message.topic);
+        break;
+      }
+      case Router.commands.PUBLISH: {
+        var payload = null;
+
+        try {
+          payload = JSON.stringify(message.data);
+        }
+        catch (error) {
+          this.logger.error('ERROR: Unable to handle the "publish" window message event!');
+          this.logger.error('json stringify error: ' + message.data);
+
+          // @todo - should we throw here?
+          // throw error;
+          return;
+        }
+
+        this._publish(
+          message.publishId,
+          message.topic,
+          payload,
+        );
+        break;
+      }
+      case Router.commands.CONNECT: {
+        this.connect();
+        break;
+      }
+      case Router.commands.DISCONNECT: {
+        this.disconnect();
+        break;
+      }
+      case Router.commands.SEND: {
+        this._publish(
+          message.publishId,
+          message.topic,
+          message.byteArray,
+        );
+        break;
+      }
+      default: {
+        this.logger.error('Unknown Command: "' + command + '"');
+      }
+    }
+  };
+
   /**
    * @private
    *
@@ -471,62 +525,21 @@ export default function (Paho) {
    */
   Router.prototype._windowMessageEventHandler = function (event) {
     var message = event.data;
+
+    if (!message) {
+      return;
+    }
+
     var method = message.method;
+
+    if (!method) {
+      return;
+    }
 
     this.logger.debug('Handling incoming window message for "' + method + '"...');
 
     try {
-      switch (method) {
-        case Router.commands.SUBSCRIBE: {
-          this._subscribe(message.topic);
-          break;
-        }
-        case Router.commands.UNSUBSCRIBE: {
-          this._unsubscribe(message.topic);
-          break;
-        }
-        case Router.commands.PUBLISH: {
-          var payload = null;
-
-          try {
-            payload = JSON.stringify(message.data);
-          }
-          catch (error) {
-            this.logger.error('ERROR: Unable to handle the "publish" window message event!');
-            this.logger.error('json stringify error: ' + message.data);
-
-            // @todo - should we throw here?
-            // throw error;
-            return;
-          }
-
-          this._publish(
-            message.publishId,
-            message.topic,
-            payload,
-          );
-          break;
-        }
-        case Router.commands.CONNECT: {
-          this.connect();
-          break;
-        }
-        case Router.commands.DISCONNECT: {
-          this.disconnect();
-          break;
-        }
-        case Router.commands.SEND: {
-          this._publish(
-            message.publishId,
-            message.topic,
-            message.byteArray,
-          );
-          break;
-        }
-        default: {
-          this.logger.error('unknown message method: ' + method);
-        }
-      }
+      this._onCommandReceived(method, message, event);
     }
     catch (error) {
       this.logger.error(error);
