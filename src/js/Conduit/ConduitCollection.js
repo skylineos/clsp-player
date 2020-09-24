@@ -1,6 +1,5 @@
 import Conduit from './Conduit';
 import Paho from './Paho';
-import utils from '../utils/utils';
 
 import Logger from '../utils/Logger';
 

@@ -17,6 +17,13 @@ export default class RouterStreamManager extends RouterBaseManager {
     RESYNC_STREAM_COMPLETE: 'resync-stream-complete',
   }
 
+  /**
+   * @static
+   *
+   * The Router events that this Router Manager is responsible for
+   */
+  static routerEvents = {};
+
   static factory (
     logId,
     clientId,
@@ -71,7 +78,7 @@ export default class RouterStreamManager extends RouterBaseManager {
   /**
    * Called many times, each time a moof (segment) is received
    *
-   * @callback Conduit-onMoof
+   * @callback RouterStreamManager-onMoof
    * @param {any} moof - a stream segment
    */
 
@@ -79,11 +86,11 @@ export default class RouterStreamManager extends RouterBaseManager {
    * @async
    *
    * If the hash is valid or if we are not using a hash, perform the necessary
-   * conduit operations to retrieve stream segments (moofs).  The actual
-   * "playing" occurs in the player, since it involves taking those received
-   * stream segments and using MSE to display them.
+   * operations to retrieve stream segments (moofs).  The actual "playing"
+   * occurs in the player, since it involves taking those received stream
+   * segments and using MSE to display them.
    *
-   * @param {Conduit-onMoof} onMoof
+   * @param {RouterStreamManager-onMoof} onMoof
    *   the function that will handle the moof
    *
    * @returns {Promise}
@@ -225,7 +232,7 @@ export default class RouterStreamManager extends RouterBaseManager {
    *
    * @async
    *
-   * Validate the hash that this conduit was constructed with.
+   * Validate the hash that this instance was constructed with.
    *
    * @returns {String}
    *   the stream name

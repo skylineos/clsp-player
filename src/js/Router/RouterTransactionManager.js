@@ -13,30 +13,44 @@ export default class RouterTransactionManager extends RouterBaseManager {
   /**
    * @static
    *
-   * The events that this RouterConnectionManager will emit.
+   * The Router events that this Router Manager is responsible for
    */
-  static events = {
-    COMMAND_ISSUED: 'command-issued',
-  }
+  static routerEvents = {
+    PUBLISH_SUCCESS: RouterBaseManager.routerEvents.PUBLISH_SUCCESS,
+    PUBLISH_FAILURE: RouterBaseManager.routerEvents.PUBLISH_FAILURE,
+    UNSUBSCRIBE_SUCCESS: RouterBaseManager.routerEvents.UNSUBSCRIBE_SUCCESS,
+    UNSUBSCRIBE_FAILURE: RouterBaseManager.routerEvents.UNSUBSCRIBE_FAILURE,
+    MESSAGE_ARRIVED: RouterBaseManager.routerEvents.MESSAGE_ARRIVED,
+  };
 
   static factory (
     logId,
     clientId,
+    routerIframeManager,
   ) {
     return new RouterTransactionManager(
       logId,
       clientId,
+      routerIframeManager,
     );
   }
 
   constructor (
     logId,
     clientId,
+    routerIframeManager,
   ) {
     super(
       logId,
       clientId,
+      routerIframeManager,
     );
+
+    if (!routerIframeManager) {
+      throw new Error('Tried to instantiate a RouterTransactionManager without a routerIframeManager!');
+    }
+
+    this.routerIframeManager = routerIframeManager;
 
     this.publishHandlers = {};
     this.pendingTransactions = {};
@@ -51,7 +65,7 @@ export default class RouterTransactionManager extends RouterBaseManager {
    *
    * @param {*} type
    */
-  issueCommand (command, message = {}) {
+  issueCommand (command, data = {}) {
     if (this.isDestroyed) {
       this.logger.warn(`Cannot issue command "${command}" to Router after destruction`);
       return;
@@ -59,10 +73,7 @@ export default class RouterTransactionManager extends RouterBaseManager {
 
     this.logger.debug(`Issuing command ${command} to Router...`);
 
-    this.events.emit(RouterTransactionManager.events.COMMAND_ISSUED, {
-      command,
-      message,
-    });
+    this.routerIframeManager.command(command, data);
   }
 
   _formatTransactionResponsePayload (response) {
@@ -275,11 +286,7 @@ export default class RouterTransactionManager extends RouterBaseManager {
     return true;
   }
 
-  _handleRouterPublishEvent (eventType, event) {
-    if (this.isDestroyComplete) {
-      throw new Error('Tried to handle Router publish event after destroy was complete!');
-    }
-
+  _handlePublishRouterEvent (eventType, event) {
     const publishId = event.data.publishId;
 
     if (!this.hasPublishHandler(publishId)) {
@@ -315,7 +322,7 @@ export default class RouterTransactionManager extends RouterBaseManager {
    *
    * @param {String} topic
    *   The topic to subscribe to
-   * @param {Conduit-subscribeCb} cb
+   * @param {RouterTransactionManager-subscribeHandler} handler
    *   The callback for the subscribe operation
    */
   subscribe (topic, handler) {
@@ -349,6 +356,30 @@ export default class RouterTransactionManager extends RouterBaseManager {
     }
 
     return true;
+  }
+
+  _handleMessageArrivedRouterEvent (eventType, event) {
+    if (this.isDestroyComplete) {
+      throw new Error('Tried to handle Router message arrived event after destroy was complete!');
+    }
+
+    const message = event.data;
+    const topic = message.destinationName;
+
+    if (!this.hasSubscribeHandler(topic)) {
+      this.logger.warn(`No handler for subscribe topic "${topic}" for message event "${eventType}"`);
+      return;
+    }
+
+    switch (eventType) {
+      case RouterTransactionManager.routerEvents.MESSAGE_ARRIVED: {
+        this.subscribeHandlers[topic](message, event);
+        break;
+      }
+      default: {
+        throw new Error(`Unknown eventType: ${eventType}`);
+      }
+    }
   }
 
   /**
@@ -419,11 +450,7 @@ export default class RouterTransactionManager extends RouterBaseManager {
     return true;
   }
 
-  _handleRouterUnsubscribeEvent (eventType, event) {
-    if (this.isDestroyComplete) {
-      throw new Error('Tried to handle Router unsubscribe event after destroy was complete!');
-    }
-
+  _handleUnsubscribeRouterEvent (eventType, event) {
     const topic = event.data.topic;
 
     if (!this.hasUnsubscribeHandler(topic)) {
@@ -446,6 +473,32 @@ export default class RouterTransactionManager extends RouterBaseManager {
     }
 
     delete this.unsubscribeHandlers[topic];
+  }
+
+  onRouterEvent (eventType, event) {
+    if (this.isDestroyComplete) {
+      throw new Error(`Tried to handle Router event ${eventType} after destroy was complete!`);
+    }
+
+    switch (eventType) {
+      case RouterTransactionManager.routerEvents.PUBLISH_SUCCESS:
+      case RouterTransactionManager.routerEvents.PUBLISH_FAILURE: {
+        this._handlePublishRouterEvent(eventType, event);
+        break;
+      }
+      case RouterTransactionManager.routerEvents.UNSUBSCRIBE_SUCCESS:
+      case RouterTransactionManager.routerEvents.UNSUBSCRIBE_FAILURE: {
+        this._handleUnsubscribeRouterEvent(eventType, event);
+        break;
+      }
+      case RouterTransactionManager.routerEvents.MESSAGE_ARRIVED: {
+        this._handleMessageArrivedRouterEvent(eventType, event);
+        break;
+      }
+      default: {
+        throw new Error(`Unknown eventType: ${eventType}`);
+      }
+    }
   }
 
   halt () {

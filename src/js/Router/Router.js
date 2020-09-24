@@ -3,7 +3,7 @@
 /**
  * The Router contains the lowest-level logic of the actual CLSP connection.
  * The Router will manage a CLSP connection for a given clientId, and pass
- * the relevant data and messages back up to the Conduit.
+ * the relevant data and messages back up to the Iframe Manager.
  *
  * Note that this is the code that gets duplicated in each iframe.
  * Keep the contents of the exported function light and ES5 only.
@@ -16,7 +16,7 @@
  * minify it in a self-contained way at the time it is required so that we can
  * use ES6 and multiple files.
  *
- * @todo - should all thrown errors send a message to the parent Conduit?
+ * @todo - should all thrown errors send a message to the parent?
  *
  * @param {object} Paho
  *   The Paho instance to use for server communication.  This should be passed
@@ -28,9 +28,10 @@
 export default function (Paho) {
   /**
    * A Router that can be used to set up a CLSP connection to the specified
-   * host and port, using a Conduit-provided clientId that will be a part of
+   * host and port, using the provided clientId that will be a part of
    * every message that is passed from this iframe window to the parent window,
-   * so that the conduit can identify what client the message is for.
+   * so that the the Conduit Collection can identify what Conduit the message
+   * is for.
    *
    * @param {String} logId
    *   a string that identifies this router in log messages
@@ -188,15 +189,6 @@ export default function (Paho) {
     // Triggered when there is an error during Router instantiation.
     // Can only be triggered at time of router instantiation.
     CREATE_FAILURE: 'clsp_router_create_failure',
-    // Triggered when a segment / moof is transmitted.
-    // Can be triggered for as long as the connection is open.
-    MESSAGE_ARRIVED: 'clsp_router_message_arrived',
-    // Triggered when a message is successfully published to the server
-    // Can only be triggered on publish
-    PUBLISH_SUCCESS: 'clsp_router_publish_success',
-    // Triggered when a message fails to be published to the server
-    // Can only be triggered on publish
-    PUBLISH_FAILURE: 'clsp_router_publish_failure',
     // Triggered when the connection to the CLSP server is established.
     // Can only be triggered at time of connection.
     CONNECT_SUCCESS: 'clsp_router_connect_success',
@@ -210,6 +202,12 @@ export default function (Paho) {
     // Can only be triggered at time of disconnection.
     DISCONNECT_SUCCESS: 'clsp_router_disconnect_success',
     DISCONNECT_FAILURE: 'clsp_router_disconnect_failure',
+    // Triggered when a message is successfully published to the server
+    // Can only be triggered on publish
+    PUBLISH_SUCCESS: 'clsp_router_publish_success',
+    // Triggered when a message fails to be published to the server
+    // Can only be triggered on publish
+    PUBLISH_FAILURE: 'clsp_router_publish_failure',
     // Triggered when trying to subscribe to a topic fails.
     // Can only be triggered when a subscribe is attempted.
     SUBSCRIBE_FAILURE: 'clsp_router_subscribe_failure',
@@ -219,6 +217,9 @@ export default function (Paho) {
     // When trying to unsubscribe from a topic fails.
     // Can only be triggered when an unsubscribe is attempted.
     UNSUBSCRIBE_FAILURE: 'clsp_router_unsubscribe_failure',
+    // Triggered when a segment / moof is transmitted.
+    // Can be triggered for as long as the connection is open.
+    MESSAGE_ARRIVED: 'clsp_router_message_arrived',
     // Triggered when an error is encountered while processing window messages.
     // Can be triggered any time.
     WINDOW_MESSAGE_FAIL: 'clsp_router_window_message_fail',

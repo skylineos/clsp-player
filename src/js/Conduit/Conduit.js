@@ -7,25 +7,15 @@
  * controller of the iframe that contains the router.
  */
 import EventEmitter from 'eventemitter3';
-import {
-  timeout as PromiseTimeout,
-} from 'promise-timeout';
 
-import utils from '../utils/utils';
+import Logger from '../utils/Logger';
+
 import RouterBaseManager from '../Router/RouterBaseManager';
 import RouterTransactionManager from '../Router/RouterTransactionManager';
 import RouterStreamManager from '../Router/RouterStreamManager';
 import RouterConnectionManager from '../Router/RouterConnectionManager';
-import iframeEventHandlers from './iframeEventHandlers';
-import Logger from '../utils/Logger';
+import RouterIframeManager from '../Router/RouterIframeManager';
 import StreamConfiguration from '../iov/StreamConfiguration';
-
-const DEFAULT_ROUTER_CONNECTION_TIMEOUT = 120;
-// Setting this to half of the default value to help with SFS memory
-// management
-const DEFAULT_ROUTER_KEEP_ALIVE_INTERVAL = 30;
-// The number of seconds to wait for a "publish" message to be delivered
-const DEFAULT_ROUTER_PUBLISH_TIMEOUT = utils.DEFAULT_STREAM_TIMEOUT;
 
 export default class Conduit {
   /**
@@ -34,11 +24,11 @@ export default class Conduit {
    * The events that this RouterStatsManager will emit.
    */
   static events = {
-    ON_MESSAGE_ERROR: 'onMessage-error',
-    IFRAME_DESTROYED_EXTERNALLY: 'iframe-destroyed-externally',
+    ROUTER_EVENT_ERROR: 'router-event-error',
     RECONNECT_SUCCESS: RouterConnectionManager.events.RECONNECT_SUCCESS,
     RECONNECT_FAILURE: RouterConnectionManager.events.RECONNECT_FAILURE,
     RESYNC_STREAM_COMPLETE: RouterStreamManager.events.RESYNC_STREAM_COMPLETE,
+    IFRAME_DESTROYED_EXTERNALLY: RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY,
   }
 
   /**
@@ -111,24 +101,22 @@ export default class Conduit {
     this.isDestroyed = false;
     this.isDestroyComplete = false;
 
-    // These can be configured manually after construction
-    this.ROUTER_CONNECTION_TIMEOUT = DEFAULT_ROUTER_CONNECTION_TIMEOUT;
-    this.ROUTER_KEEP_ALIVE_INTERVAL = DEFAULT_ROUTER_KEEP_ALIVE_INTERVAL;
-    this.ROUTER_PUBLISH_TIMEOUT = DEFAULT_ROUTER_PUBLISH_TIMEOUT;
+    this.routerIframeManager = RouterIframeManager.factory(
+      this.logId,
+      this.clientId,
+      this.streamConfiguration,
+      this.containerElement,
+    );
+
+    this.routerIframeManager.events.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+      this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
+    });
 
     this.routerTransactionManager = RouterTransactionManager.factory(
       this.logId,
       this.clientId,
+      this.routerIframeManager,
     );
-
-    // This is how the RouterTransactionManager issues commands to the Router
-    // via the iframe
-    this.routerTransactionManager.events.on(RouterTransactionManager.events.COMMAND_ISSUED, (data) => {
-      this._command({
-        method: data.command,
-        ...data.message,
-      });
-    });
 
     this.routerConnectionManager = RouterConnectionManager.factory(
       this.logId,
@@ -156,87 +144,15 @@ export default class Conduit {
     });
   }
 
-  /**
-   * @async
-   *
-   * After constructing, call this to initialize the conduit, which will create
-   * the iframe and the Router needed to get the stream from the server.
-   *
-   * @returns Promise
-   *   Resolves when the Router has been successfully created.
-   *   Rejects upon failure to create the Router.
-   */
   async initialize () {
-    if (this.isDestroyed) {
-      throw new Error('Tried to initialize a destroyed Conduit!');
-    }
-
-    if (this.isInitialized) {
-      this.logger.warn('Conduit already initialized...');
-      return;
-    }
-
-    this.logger.debug('Initializing...');
-
     try {
-      await PromiseTimeout(this._initialize(), 2 * 1000);
-      this.logger.info('Router created successfully');
+      await this.routerIframeManager.create();
 
       this.isInitialized = true;
     }
     catch (error) {
-      this.logger.error('Failed to create the Iframe/Router!');
+      this.logger.error('Error while initializing!');
       this.logger.error(error);
-    }
-  }
-
-  _initialize () {
-    return new Promise((resolve, reject) => {
-      this._onRouterCreated = (error) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve();
-      };
-
-      this.iframe = this._generateIframe();
-
-      // @todo - if the Iov were to create a wrapper around the video element
-      // that it manages (rather than expecting one to already be there), each
-      // video element and iframe could be contained in a single container,
-      // rather than potentially having multiple video elements and multiple
-      // iframes contained in a single parent.
-      this.containerElement.appendChild(this.iframe);
-    });
-  }
-
-  _handleRouterCreatedEvent (eventType, event) {
-    if (this.isDestroyed) {
-      throw new Error('Tried to create a Router for a destroyed Conduit!');
-    }
-
-    // @todo - a better check may be `!this.isInitializing`
-    if (!this._onRouterCreated) {
-      throw new Error('Tried to create Router prior to initialization!');
-    }
-
-    if (this.isInitialized) {
-      throw new Error('Tried to create Router after initialization!');
-    }
-
-    switch (eventType) {
-      case Conduit.routerEvents.CREATE_SUCCESS: {
-        this._onRouterCreated();
-        break;
-      }
-      case Conduit.routerEvents.CREATE_FAILURE: {
-        this._onRouterCreated(new Error(event.data.reason));
-        break;
-      }
-      default: {
-        throw new Error(`Unknown eventType: ${eventType}`);
-      }
     }
   }
 
@@ -316,15 +232,10 @@ export default class Conduit {
       await this.routerStreamManager.stop();
     }
     catch (error) {
-      if (!this.iframe.contentWindow) {
-        // In the normal course of operation, sometimes other libraries or
-        // implementations will delete the iframe or a parent component
-        // rather than letting the CLSP Player manage it.  In this instance,
-        // we recognize that this happened, but do not show nor throw an error.
-        this.logger.info('Iframe destroyed externally!');
-        this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
-      }
-      else {
+      // @todo - this is too tightly coupled - the iframe manager should emit
+      // an event when this external destruction happens, not expect the caller
+      // to check for it...
+      if (!this.routerIframeManager.wasIframeDestroyedExternally()) {
         this.logger.error('Error while stopping while destroying');
         this.logger.error(error);
       }
@@ -334,15 +245,10 @@ export default class Conduit {
       await this.routerConnectionManager.disconnect();
     }
     catch (error) {
-      if (!this.iframe.contentWindow) {
-        // In the normal course of operation, sometimes other libraries or
-        // implementations will delete the iframe or a parent component
-        // rather than letting the CLSP Player manage it.  In this instance,
-        // we recognize that this happened, but do not show nor throw an error.
-        this.logger.info('Iframe destroyed externally!');
-        this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
-      }
-      else {
+      // @todo - this is too tightly coupled - the iframe manager should emit
+      // an event when this external destruction happens, not expect the caller
+      // to check for it...
+      if (!this.routerIframeManager.wasIframeDestroyedExternally()) {
         this.logger.error('Error while stopping while destroying');
         this.logger.error(error);
       }
@@ -386,40 +292,25 @@ export default class Conduit {
 
     try {
       switch (eventType) {
-        case Conduit.routerEvents.CREATE_SUCCESS:
-        case Conduit.routerEvents.CREATE_FAILURE: {
-          this._handleRouterCreatedEvent(eventType, event);
+        case RouterIframeManager.routerEvents.CREATE_SUCCESS:
+        case RouterIframeManager.routerEvents.CREATE_FAILURE: {
+          this.routerIframeManager._handleRouterCreatedEvent(eventType, event);
           break;
         }
-        case Conduit.routerEvents.CONNECT_SUCCESS:
-        case Conduit.routerEvents.CONNECT_FAILURE:
-        case Conduit.routerEvents.DISCONNECT_SUCCESS:
-        case Conduit.routerEvents.DISCONNECT_FAILURE:
-        case Conduit.routerEvents.CONNECTION_LOST: {
-          this.routerConnectionManager.onMessage(eventType, event);
+        case RouterConnectionManager.routerEvents.CONNECT_SUCCESS:
+        case RouterConnectionManager.routerEvents.CONNECT_FAILURE:
+        case RouterConnectionManager.routerEvents.DISCONNECT_SUCCESS:
+        case RouterConnectionManager.routerEvents.DISCONNECT_FAILURE:
+        case RouterConnectionManager.routerEvents.CONNECTION_LOST: {
+          this.routerConnectionManager.onRouterEvent(eventType, event);
           break;
         }
-        case Conduit.routerEvents.UNSUBSCRIBE_SUCCESS:
-        case Conduit.routerEvents.UNSUBSCRIBE_FAILURE: {
-          this.routerTransactionManager._handleRouterUnsubscribeEvent(eventType, event);
-          break;
-        }
-        case Conduit.routerEvents.PUBLISH_SUCCESS:
-        case Conduit.routerEvents.PUBLISH_FAILURE: {
-          this.routerTransactionManager._handleRouterPublishEvent(eventType, event);
-          break;
-        }
-        case Conduit.routerEvents.MESSAGE_ARRIVED: {
-          const message = event.data;
-          const topic = message.destinationName;
-
-          if (!this.routerTransactionManager.hasSubscribeHandler(topic)) {
-            this.logger.warn(`No handler for subscribe topic "${topic}" for message event "${eventType}"`);
-            return;
-          }
-
-          this.routerTransactionManager.subscribeHandlers[topic](message, event);
-
+        case RouterTransactionManager.routerEvents.UNSUBSCRIBE_SUCCESS:
+        case RouterTransactionManager.routerEvents.UNSUBSCRIBE_FAILURE:
+        case RouterTransactionManager.routerEvents.PUBLISH_SUCCESS:
+        case RouterTransactionManager.routerEvents.PUBLISH_FAILURE:
+        case RouterTransactionManager.routerEvents.MESSAGE_ARRIVED: {
+          this.routerTransactionManager.onRouterEvent(eventType, event);
           break;
         }
         case Conduit.routerEvents.WINDOW_MESSAGE_FAIL: {
@@ -438,112 +329,9 @@ export default class Conduit {
       this.logger.error('onMessageError');
       this.logger.error(error);
 
-      this.events.emit(Conduit.events.ON_MESSAGE_ERROR, {
+      this.events.emit(Conduit.events.ROUTER_EVENT_ERROR, {
         error,
       });
-    }
-  }
-
-  /**
-   * @private
-   *
-   * Generate an iframe with an embedded CLSP Router.  The Router will receive
-   * commands from this Conduit via Router Manager command events.
-   *
-   * @returns Element
-   */
-  _generateIframe () {
-    this.logger.debug('Generating Iframe...');
-
-    const iframe = document.createElement('iframe');
-
-    iframe.setAttribute('id', this.clientId);
-
-    // This iframe should be invisible
-    iframe.width = 0;
-    iframe.height = 0;
-    iframe.setAttribute('style', 'display:none;');
-
-    iframe.srcdoc = `
-      <html>
-        <head>
-          <script type="text/javascript">
-
-            // Configure the CLSP properties
-            window.clspRouterConfig = {
-              logId: '${this.logId}',
-              clientId: '${this.clientId}',
-              host: '${this.streamConfiguration.host}',
-              port: ${this.streamConfiguration.port},
-              useSSL: ${this.streamConfiguration.useSSL},
-              CONNECTION_TIMEOUT: ${this.ROUTER_CONNECTION_TIMEOUT},
-              KEEP_ALIVE_INTERVAL: ${this.ROUTER_KEEP_ALIVE_INTERVAL},
-              PUBLISH_TIMEOUT: ${this.ROUTER_PUBLISH_TIMEOUT},
-              Logger: (${Logger.toString()})(),
-            };
-
-            window.Router = ${RouterBaseManager.Router.toString()}(window.parent.Paho);
-            window.iframeEventHandlers = ${iframeEventHandlers.toString()}();
-          </script>
-        </head>
-        <body
-          onload="window.router = window.iframeEventHandlers.onload(
-            '${this.logId}',
-            '${this.clientId}',
-            window.Router,
-            window.clspRouterConfig
-          );"
-          onunload="window.iframeEventHandlers.onunload(
-            '${this.logId}',
-            '${this.clientId}',
-            window.router
-          );"
-        >
-          <div id="message"></div>
-        </body>
-      </html>
-    `;
-
-    return iframe;
-  }
-
-  /**
-   * @private
-   *
-   * Pass a Router command to the iframe.  Should only ever be invoked in
-   * response to a Router Manager command event.
-   *
-   * @param {Object} message
-   *   The message / event data to send with the command
-   */
-  _command (message) {
-    this.logger.debug('Sending a message to the iframe...');
-
-    if (this.isDestroyComplete) {
-      this.logger.warn('Cannot send message via destroyed iframe', message);
-      return;
-    }
-
-    if (!this.iframe.contentWindow) {
-      // In the normal course of operation, sometimes other libraries or
-      // implementations will delete the iframe or a parent component
-      // rather than letting the CLSP Player manage it.  In this instance,
-      // we recognize that this happened, but do not show nor throw an error.
-      this.logger.info('Iframe destroyed externally!');
-      this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
-      return;
-    }
-
-    try {
-      // @todo - we should not be dispatching to '*' - we should provide the SFS
-      // host here instead
-      // @see - https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
-      this.iframe.contentWindow.postMessage(message, '*');
-    }
-    catch (error) {
-      // @todo - we should probably throw here...
-      // eslint-disable-next-line no-console
-      console.error(error);
     }
   }
 
@@ -591,23 +379,18 @@ export default class Conduit {
 
     this.routerTransactionManager.destroy();
 
+    // Destruction of the iframe must come last
+    this.routerIframeManager.destroy();
+
     this.routerStreamManager = null;
     this.routerConnectionManager = null;
     this.routerTransactionManager = null;
+    this.routerIframeManager = null;
 
     this.clientId = null;
     // The caller must destroy the streamConfiguration
     this.streamConfiguration = null;
     this.containerElement = null;
-
-    // The Router will be destroyed along with the iframe
-    this.iframe.parentNode.removeChild(this.iframe);
-    this.iframe.srcdoc = '';
-    this.iframe = null;
-    // Calling this doesn't seem to work...
-    // this.iframe.remove();
-
-    this.isDestroyComplete = true;
 
     this.events.removeAllListeners();
     this.events = null;

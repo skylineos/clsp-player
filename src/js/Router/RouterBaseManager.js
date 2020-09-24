@@ -16,17 +16,6 @@ const {
 
 export default class RouterBaseManager {
   /**
-   * The exported Router function.
-   *
-   * Suggested use in the iframe:
-   *
-   * `window.Router = ${RouterBaseManager.Router.toString()}(window.parent.Paho);`
-   *
-   * @see - src/js/conduit/Conduit.js#_generateIframe
-   */
-  static Router = Router;
-
-  /**
    * @static
    *
    * The commands that can be issued to the Router via Window Messages
@@ -69,54 +58,6 @@ export default class RouterBaseManager {
     // state flags
     this.isDestroyed = false;
     this.isDestroyComplete = false;
-  }
-
-  /**
-   * Most of the Window Message handling is done via the Conduit Collection
-   * class.  However, there are currently some use cases for a Router Manager
-   * to add its own Window Message listener.  Since all generic window messages
-   * (of which there will be many, e.g. one for every video frame for every
-   * Router instance page-wide!) will trigger the Router Manager Window Message
-   * listeners to fire every time, those listeners will need to filter out all
-   * messages that they don't care about.  Use this helper method can to
-   * validate that the event type (if it exists) is one that the caller cares
-   * about.
-   *
-   * @param {object} event
-   *   The event from the Router via Window Message
-   *   @see - https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage
-   *   @see - src/js/conduit/ConduitCollection.js#_onWindowMessage
-   *
-   * @param {Array} validTypes
-   *   An array of event types (event.data.event as defined by the Router) that
-   *   are considered valid by the caller
-   *
-   * @returns {boolean}
-   *   - true if the event type matches one of the validTypes
-   *   - false if the event was for a different Router/Conduit or does not match
-   *     one of the validTypes
-   */
-  _isValidEvent (event, validTypes) {
-    const clientId = event.data.clientId;
-
-    // A window message was received that is not related to CLSP
-    if (!clientId) {
-      return false;
-    }
-
-    // This message was intended for another conduit
-    if (this.clientId !== clientId) {
-      return false;
-    }
-
-    const eventType = event.data.event;
-
-    // Filter out all other window messages
-    if (!validTypes.includes(eventType)) {
-      return false;
-    }
-
-    return true;
   }
 
   /**
