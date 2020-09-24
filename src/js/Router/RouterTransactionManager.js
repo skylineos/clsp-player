@@ -173,7 +173,6 @@ export default class RouterTransactionManager extends RouterBaseManager {
         // listening.  We have to be listening first because, since this is a
         // transaction, the server will only broadcast the response once.
         this.subscribe(responseTopic, (response) => {
-          console.log(`performed transaction for ${requestTopic}`, response);
           finished(null, response);
         });
 
@@ -237,21 +236,12 @@ export default class RouterTransactionManager extends RouterBaseManager {
    */
   _publish (publishId, topic, data) {
     return new Promise((resolve, reject) => {
-      this.publishHandlers[publishId] = {
-        onSuccess: (event) => {
-          this.logger.info(`Successfully published to topic "${topic}" with publishId "${publishId}"`);
+      this.publishHandlers[publishId] = (error) => {
+        if (error) {
+          return reject(error);
+        }
 
-          delete this.publishHandlers[publishId];
-
-          resolve();
-        },
-        onFailure: (event) => {
-          this.logger.error(`Failed to publish to topic "${topic}" with publishId "${publishId}"`);
-
-          delete this.publishHandlers[publishId];
-
-          reject(new Error(event.data.reason));
-        },
+        resolve();
       };
 
       this.issueCommand(RouterTransactionManager.routerCommands.PUBLISH, {
@@ -283,6 +273,35 @@ export default class RouterTransactionManager extends RouterBaseManager {
     }
 
     return true;
+  }
+
+  _handleRouterPublishEvent (eventType, event) {
+    if (this.isDestroyComplete) {
+      throw new Error('Tried to handle Router publish event after destroy was complete!');
+    }
+
+    const publishId = event.data.publishId;
+
+    if (!this.hasPublishHandler(publishId)) {
+      this.logger.warn(`No handler for publishId "${publishId}" for publish event "${eventType}"`);
+      return;
+    }
+
+    switch (eventType) {
+      case RouterTransactionManager.routerEvents.PUBLISH_SUCCESS: {
+        this.publishHandlers[publishId]();
+        break;
+      }
+      case RouterTransactionManager.routerEvents.PUBLISH_FAILURE: {
+        this.publishHandlers[publishId](new Error(event.data.reason));
+        break;
+      }
+      default: {
+        throw new Error(`Unknown eventType: ${eventType}`);
+      }
+    }
+
+    delete this.publishHandlers[publishId];
   }
 
   /**
@@ -358,21 +377,12 @@ export default class RouterTransactionManager extends RouterBaseManager {
    */
   _unsubscribe (topic) {
     return new Promise((resolve, reject) => {
-      this.unsubscribeHandlers[topic] = {
-        onSuccess: (event) => {
-          this.logger.info(`Successfully unsubscribed from topic ${topic}`);
+      this.unsubscribeHandlers[topic] = (error) => {
+        if (error) {
+          return reject(error);
+        }
 
-          delete this.unsubscribeHandlers[topic];
-
-          resolve();
-        },
-        onFailure: (event) => {
-          this.logger.error(`Failed to unsubscribe from topic "${topic}"!`);
-
-          delete this.unsubscribeHandlers[topic];
-
-          reject(new Error(event.data.reason));
-        },
+        resolve();
       };
 
       if (this.hasSubscribeHandler(topic)) {
@@ -389,8 +399,7 @@ export default class RouterTransactionManager extends RouterBaseManager {
 
   hasUnsubscribeHandler (topic) {
     if (this.isDestroyComplete) {
-      // @todo - should this throw?
-      return false;
+      throw new Error('Tried to check unsubscribe handler after destroy was complete!');
     }
 
     if (!topic) {
@@ -408,6 +417,35 @@ export default class RouterTransactionManager extends RouterBaseManager {
     }
 
     return true;
+  }
+
+  _handleRouterUnsubscribeEvent (eventType, event) {
+    if (this.isDestroyComplete) {
+      throw new Error('Tried to handle Router unsubscribe event after destroy was complete!');
+    }
+
+    const topic = event.data.topic;
+
+    if (!this.hasUnsubscribeHandler(topic)) {
+      this.logger.warn(`No handler for topic "${topic}" for unsubscribe event "${eventType}"`);
+      return;
+    }
+
+    switch (eventType) {
+      case RouterTransactionManager.routerEvents.UNSUBSCRIBE_SUCCESS: {
+        this.unsubscribeHandlers[topic]();
+        break;
+      }
+      case RouterTransactionManager.routerEvents.UNSUBSCRIBE_FAILURE: {
+        this.unsubscribeHandlers[topic](new Error(event.data.reason));
+        break;
+      }
+      default: {
+        throw new Error(`Unknown eventType: ${eventType}`);
+      }
+    }
+
+    delete this.unsubscribeHandlers[topic];
   }
 
   halt () {
