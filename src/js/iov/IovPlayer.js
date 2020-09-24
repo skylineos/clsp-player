@@ -4,8 +4,8 @@ import {
   v4 as uuidv4,
 } from 'uuid';
 
-import ConduitCollection from '../conduit/ConduitCollection';
-import Conduit from '../conduit/Conduit';
+import ConduitCollection from '../Conduit/ConduitCollection';
+import Conduit from '../Conduit/Conduit';
 import MSEWrapper from './MSEWrapper';
 import Logger from '../utils/Logger';
 import StreamConfiguration from './StreamConfiguration';
@@ -243,7 +243,8 @@ export default class IovPlayer {
       this.logger.error(data.error);
     });
 
-    this.conduit.events.on(Conduit.events.ON_MESSAGE_ERROR, (data) => {
+    this.conduit.events.on(Conduit.events.ROUTER_EVENT_ERROR, (data) => {
+      // @todo - is there any remediation action we could take here?
       this.logger.error('Conduit Message Error!');
       this.logger.error(data.error);
     });

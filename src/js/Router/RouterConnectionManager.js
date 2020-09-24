@@ -32,6 +32,19 @@ export default class RouterConnectionManager extends RouterBaseManager {
     DISCONNECT_FAILURE: 'disconnect-failure',
   }
 
+  /**
+   * @static
+   *
+   * The Router events that this Router Manager is responsible for
+   */
+  static routerEvents = {
+    CONNECT_SUCCESS: RouterBaseManager.routerEvents.CONNECT_SUCCESS,
+    CONNECT_FAILURE: RouterBaseManager.routerEvents.CONNECT_FAILURE,
+    DISCONNECT_SUCCESS: RouterBaseManager.routerEvents.DISCONNECT_SUCCESS,
+    DISCONNECT_FAILURE: RouterBaseManager.routerEvents.DISCONNECT_FAILURE,
+    CONNECTION_LOST: RouterBaseManager.routerEvents.CONNECTION_LOST,
+  };
+
   static factory (
     logId,
     clientId,
@@ -179,31 +192,34 @@ export default class RouterConnectionManager extends RouterBaseManager {
         return resolve();
       }
 
-      this._onConnect = async (event) => {
-        const isValidEvent = this._isValidEvent(event, [
-          RouterConnectionManager.routerEvents.CONNECT_SUCCESS,
-          RouterConnectionManager.routerEvents.CONNECT_FAILURE,
-        ]);
-
-        if (!isValidEvent) {
-          return;
+      this._onConnect = (error) => {
+        if (error) {
+          return reject(error);
         }
 
-        const eventType = event.data.event;
-
-        this.logger.debug(`connect "${eventType}" event`);
-
-        if (eventType === RouterConnectionManager.routerEvents.CONNECT_SUCCESS) {
-          return resolve();
-        }
-
-        reject(new Error(event.data.reason));
+        resolve();
       };
-
-      window.addEventListener('message', this._onConnect);
 
       this.routerTransactionManager.issueCommand(RouterConnectionManager.routerCommands.CONNECT);
     });
+  }
+
+  _handleConnectRouterEvent (eventType, event) {
+    switch (eventType) {
+      case RouterConnectionManager.routerEvents.CONNECT_SUCCESS: {
+        this._onConnect();
+        break;
+      }
+      case RouterConnectionManager.routerEvents.CONNECT_FAILURE: {
+        this._onConnect(new Error(event.data.reason));
+        break;
+      }
+      default: {
+        throw new Error(`Unknown eventType: ${eventType}`);
+      }
+    }
+
+    this._onConnect = null;
   }
 
   /**
@@ -315,21 +331,12 @@ export default class RouterConnectionManager extends RouterBaseManager {
       // @todo - This seems like it's doing too much.  Maybe there should be an
       // additional `connect` layer, e.g:
       // connect -> reconnect -> _connect -> __connect ?
-      try {
-        await PromiseTimeout(this._connect(), this.IMMEDIATE_RECONNECTION_DELAY * 1000);
+      await PromiseTimeout(this._connect(), this.IMMEDIATE_RECONNECTION_DELAY * 1000);
 
-        this.isConnected = true;
+      this.isConnected = true;
 
-        // As soon as the connection is made, start publishing stats
-        this.statsManager.start();
-      }
-      finally {
-        if (this._onConnect) {
-          // Whether success or failure, remove the event listener
-          window.removeEventListener('message', this._onConnect);
-          this._onConnect = null;
-        }
-      }
+      // As soon as the connection is made, start publishing stats
+      this.statsManager.start();
 
       this.logger.info(`Reconnected successfully after ${reconnectionAttempts} attempts`);
     }
@@ -391,17 +398,6 @@ export default class RouterConnectionManager extends RouterBaseManager {
 
       throw error;
     }
-    finally {
-      // @todo - is this correct in the event of an error while disconnecting?
-      this.isConnected = false;
-      this.isDisconnecting = false;
-
-      if (this._onDisconnect) {
-        // Whether success or failure, remove the event listener
-        window.removeEventListener('message', this._onDisconnect);
-        this._onDisconnect = null;
-      }
-    }
   }
 
   /**
@@ -417,12 +413,6 @@ export default class RouterConnectionManager extends RouterBaseManager {
         return resolve();
       }
 
-      // If a connection is in progress, cancel it
-      if (this._onConnect) {
-        window.removeEventListener('message', this._onConnect);
-        this._onConnect = null;
-      }
-
       // when a stream fails, it no longer needs to send stats to the
       // server, and it may not even be connected to the server
       this.statsManager.stop();
@@ -431,31 +421,38 @@ export default class RouterConnectionManager extends RouterBaseManager {
         return resolve();
       }
 
-      this._onDisconnect = async (event) => {
-        const isValidEvent = this._isValidEvent(event, [
-          RouterConnectionManager.routerEvents.DISCONNECT_SUCCESS,
-          RouterConnectionManager.routerEvents.DISCONNECT_FAILURE,
-        ]);
-
-        if (!isValidEvent) {
-          return;
+      this._onDisconnect = (error) => {
+        if (error) {
+          return reject(error);
         }
 
-        const eventType = event.data.event;
-
-        this.logger.debug(`disconnect "${eventType}" event`);
-
-        if (eventType === RouterConnectionManager.routerEvents.DISCONNECT_SUCCESS) {
-          return resolve();
-        }
-
-        reject(new Error(event.data.reason));
+        resolve();
       };
-
-      window.addEventListener('message', this._onDisconnect);
 
       this.routerTransactionManager.issueCommand(RouterConnectionManager.routerCommands.DISCONNECT);
     });
+  }
+
+  _handleDisconnectRouterEvent (eventType, event) {
+    switch (eventType) {
+      case RouterConnectionManager.routerEvents.DISCONNECT_SUCCESS: {
+        this._onDisconnect();
+        break;
+      }
+      case RouterConnectionManager.routerEvents.DISCONNECT_FAILURE: {
+        this._onDisconnect(new Error(event.data.reason));
+        break;
+      }
+      default: {
+        throw new Error(`Unknown eventType: ${eventType}`);
+      }
+    }
+
+    this._onDisconnect = null;
+
+    // @todo - is this correct in the event of an error while disconnecting?
+    this.isConnected = false;
+    this.isDisconnecting = false;
   }
 
   /**
@@ -464,7 +461,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
    *
    * @param {*} event
    */
-  _onConnectionLost (event) {
+  _handleConnectionLostRouterEvent (event) {
     const eventType = event.data.event;
 
     this.logger.debug(`connection lost "${eventType}" event`);
@@ -484,27 +481,29 @@ export default class RouterConnectionManager extends RouterBaseManager {
     // });
   }
 
-  onMessage (eventType, event) {
-    try {
-      switch (eventType) {
-        case RouterConnectionManager.routerEvents.CONNECTION_LOST: {
-          this._onConnectionLost(event);
-          break;
-        }
-        case RouterConnectionManager.routerEvents.CONNECT_SUCCESS:
-        case RouterConnectionManager.routerEvents.CONNECT_FAILURE:
-        case RouterConnectionManager.routerEvents.DISCONNECT_SUCCESS:
-        case RouterConnectionManager.routerEvents.DISCONNECT_FAILURE: {
-          break;
-        }
-        default: {
-          this.logger.info(`RouterConnectionManager called with unknown eventType: ${eventType}`);
-        }
-      }
+  onRouterEvent (eventType, event) {
+    if (this.isDestroyComplete) {
+      throw new Error(`Tried to handle Router event ${eventType} after destroy was complete!`);
     }
-    catch (error) {
-      this.logger.error('Error while receiving message from Router:');
-      this.logger.error(error);
+
+    switch (eventType) {
+      case RouterConnectionManager.routerEvents.CONNECT_SUCCESS:
+      case RouterConnectionManager.routerEvents.CONNECT_FAILURE: {
+        this._handleConnectRouterEvent(eventType, event);
+        break;
+      }
+      case RouterConnectionManager.routerEvents.DISCONNECT_SUCCESS:
+      case RouterConnectionManager.routerEvents.DISCONNECT_FAILURE: {
+        this._handleDisconnectRouterEvent(eventType, event);
+        break;
+      }
+      case RouterConnectionManager.routerEvents.CONNECTION_LOST: {
+        this._handleConnectionLostRouterEvent(event);
+        break;
+      }
+      default: {
+        throw new Error(`Unknown eventType: ${eventType}`);
+      }
     }
   }
 
@@ -534,6 +533,9 @@ export default class RouterConnectionManager extends RouterBaseManager {
 
     this.statsManager = null;
     this.routerTransactionManager = null;
+
+    this._onConnect = null;
+    this._onDisconnect = null;
 
     super._destroy();
   }

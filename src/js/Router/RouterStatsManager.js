@@ -12,6 +12,13 @@ export default class RouterStatsManager extends RouterBaseManager {
     PUBLISH_FAILURE: 'publish-failed',
   }
 
+  /**
+   * @static
+   *
+   * The Router events that this Router Manager is responsible for
+   */
+  static routerEvents = {};
+
   static factory (
     logId,
     clientId,

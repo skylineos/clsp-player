@@ -20,8 +20,8 @@
  */
 export default function () {
   // @todo - if we can somehow get an event to fire from here when the iframe
-  // is unloaded, it would make the iframe handling in the conduit significantly
-  // more elegant and resilient...
+  // is unloaded, it would make the iframe handling significantly more elegant
+  // and resilient...
   return {
     /**
      * The `onload` event handler for the `<body> onload` event.  This event
@@ -31,7 +31,7 @@ export default function () {
      * indicate success or failure.
      *
      * @param {string} logId
-     *   a string that identifies this conduit/router in log messages
+     *   a string that identifies this Conduit / Router in log messages
      * @param {class} Router
      *   The Router class
      * @param {object} config
@@ -84,7 +84,7 @@ export default function () {
      * event handler will destroy this iframe's Router if it exists.
      *
      * @param {string} logId
-     *   a string that identifies this conduit/router in log messages
+     *   a string that identifies this Conduit / Router in log messages
      * @param {Router} router
      *   The router that was instantiated for this iframe
      *

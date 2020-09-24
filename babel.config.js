@@ -24,7 +24,7 @@ module.exports = (api) => {
     // be done on it.
     ignore: [
       'src/js/Router/Router.js',
-      'src/js/conduit/iframeEventHandlers.js',
+      'src/js/Router/iframeEventHandlers.js',
     ],
     presets: [
       [
