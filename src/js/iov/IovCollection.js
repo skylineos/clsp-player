@@ -1,5 +1,3 @@
-'use strict';
-
 import Iov from './Iov';
 import Logger from '../utils/Logger';
 

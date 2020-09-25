@@ -1,5 +1,3 @@
-'use strict';
-
 import Debug from 'debug';
 import defaults from 'lodash/defaults';
 import noop from 'lodash/noop';
@@ -758,9 +756,9 @@ export default class MSEWrapper {
     // caller is properly using them, if they exist.  Therefore, this
     // destroy method will clean up the source buffer later, allowing the
     // rest of the clsp destruction logic to continue.  The use case for
-    // needing that functionality is that the conduit needs to use the its
+    // needing that functionality is that the clspClient needs to use the its
     // iframe to contact the server, and if the iframe is destroyed before
-    // the conduit talks to the server, errors will be thrown during
+    // the clspClient talks to the server, errors will be thrown during
     // destruction, which will lead to resources not being free / memory
     // leaks, which may cause the browser to crash after extended periods
     // of time, such as 24 hours.

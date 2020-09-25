@@ -1,5 +1,3 @@
-'use strict';
-
 import utils from '../utils/utils';
 
 export default class StreamConfiguration {
