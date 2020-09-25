@@ -109,12 +109,13 @@ async function main () {
   try {
     utils.setDefaultStreamPort('clsp', 9001);
 
-    const url = $(`#${videoElementId}`).find('source')[0].getAttribute('src');
-
-    document.getElementById('stream-src').value = url;
+    const url = document.getElementById('stream-src').value;
 
     iovCollection = IovCollection.asSingleton();
     iov = await iovCollection.create(videoElementId);
+
+    // iov.registerContainerElement();
+    // iov.registerVideoElement();
 
     iov.changeSrc(url);
   }
