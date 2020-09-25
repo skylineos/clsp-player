@@ -88,6 +88,8 @@ $(() => {
 
   document.title = `v${window.CLSP.utils.version} ${document.title}`;
 
+  window.CLSP.utils.setDefaultStreamPort('clsp', 9001);
+
   const pageTitle = $('#page-title').html();
   $('#page-title').html(`${pageTitle} <br /> v${window.CLSP.utils.version}`);
 

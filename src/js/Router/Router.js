@@ -819,13 +819,13 @@ export default function (Paho) {
     }
 
     // Paho doesn't seem to handle publish while disconnected gracefully
-    console.log('publishing ' + topic, 'isConnected?', this.clspClient.isConnected(), publishId);
     if (!this.clspClient.isConnected()) {
-      return this._connectionWasLost({
-        publishId: publishId,
-        topic: topic,
-      });
-      // return this._publish_onSuccess(publishId, topic);
+      // @todo - this hasn't been tested...
+      // return this._connectionWasLost({
+      //   publishId: publishId,
+      //   topic: topic,
+      // });
+      return this._publish_onSuccess(publishId, topic);
     }
 
     var self = this;
