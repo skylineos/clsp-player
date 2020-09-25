@@ -1,3 +1,4 @@
+import EventEmitter from 'eventemitter3';
 import {
   v4 as uuidv4,
 } from 'uuid';
@@ -16,15 +17,13 @@ const DEFAULT_CONNECTION_CHANGE_PLAY_DELAY = 5;
  * deliver video content streamed through CLSP from distributed sources.
  */
 export default class Iov {
-  static EVENT_NAMES = [
-    'metric',
-    'firstFrameShown',
-    'videoReceived',
-    'videoInfoReceived',
-    'IframeDestroyedExternally',
-  ];
-
-  static METRIC_TYPES = [];
+  static events = {
+    METRIC: 'metric',
+    FIRST_FRAME_SHOWN: 'firstFrameShown',
+    VIDEO_RECEIVED: 'videoReceived',
+    VIDEO_INFO_RECEIVED: 'videoInfoReceived',
+    IFRAME_DESTROYED_EXTERNALLY: 'IframeDestroyedExternally',
+  }
 
   static factory (
     videoElementId,
@@ -58,16 +57,12 @@ export default class Iov {
     this.logger = Logger().factory(`Iov ${this.id}`);
     this.logger.debug('Constructing...');
 
-    this.metrics = {};
+    // @todo @metrics
+    // this.metrics = {};
 
-    // @todo - there must be a more proper way to do events than this...
-    this.events = {};
+    this.events = new EventEmitter();
 
-    for (let i = 0; i < Iov.EVENT_NAMES.length; i++) {
-      this.events[Iov.EVENT_NAMES[i]] = [];
-    }
-
-    this.destroyed = false;
+    this.isDestroyed = false;
     this.onReadyAlreadyCalled = false;
     this.videoElementId = videoElementId;
     this.videoElementParent = null;
@@ -102,59 +97,23 @@ export default class Iov {
     this.CONNECTION_CHANGE_PLAY_DELAY = DEFAULT_CONNECTION_CHANGE_PLAY_DELAY;
   }
 
-  on (name, action) {
-    this.logger.debug(`Registering Listener for ${name} event...`);
-
-    if (!Iov.EVENT_NAMES.includes(name)) {
-      throw new Error(`"${name}" is not a valid event."`);
-    }
-
-    if (this.destroyed) {
-      return;
-    }
-
-    this.events[name].push(action);
-  }
-
-  trigger (name, value) {
-    const sillyMetrics = [];
-
-    if (sillyMetrics.includes(name)) {
-      this.logger.silly(`Triggering ${name} event...`);
-    }
-    else {
-      this.logger.debug(`Triggering ${name} event...`);
-    }
-
-    if (this.destroyed) {
-      return;
-    }
-
-    if (!Iov.EVENT_NAMES.includes(name)) {
-      throw new Error(`"${name}" is not a valid event."`);
-    }
-
-    for (let i = 0; i < this.events[name].length; i++) {
-      this.events[name][i](value, this);
-    }
-  }
-
+  // @todo @metrics
   metric (type, value) {
-    if (!this.ENABLE_METRICS) {
-      return;
-    }
+    // if (!this.ENABLE_METRICS) {
+    //   return;
+    // }
 
-    if (!Iov.METRIC_TYPES.includes(type)) {
-      // @todo - should this throw?
-      return;
-    }
+    // if (!Iov.METRIC_TYPES.includes(type)) {
+    //   // @todo - should this throw?
+    //   return;
+    // }
 
-    this.metrics[type] = value;
+    // this.metrics[type] = value;
 
-    this.trigger('metric', {
-      type,
-      value: this.metrics[type],
-    });
+    // this.trigger('metric', {
+    //   type,
+    //   value: this.metrics[type],
+    // });
   }
 
   registerContainerElement (containerElement) {
@@ -237,20 +196,20 @@ export default class Iov {
   _registerPlayerListeners (iovPlayer) {
     // @todo - this seems to be videojs specific, and should be removed or moved
     // somewhere else
-    iovPlayer.on('firstFrameShown', () => {
-      this.trigger('firstFrameShown');
+    iovPlayer.events.on('firstFrameShown', () => {
+      this.events.emit(Iov.events.FIRST_FRAME_SHOWN);
     });
 
-    iovPlayer.on('videoReceived', () => {
-      this.trigger('videoReceived');
+    iovPlayer.events.on('videoReceived', () => {
+      this.events.emit(Iov.events.VIDEO_RECEIVED);
     });
 
-    iovPlayer.on('videoInfoReceived', () => {
-      this.trigger('videoInfoReceived');
+    iovPlayer.events.on('videoInfoReceived', () => {
+      this.events.emit(Iov.events.VIDEO_INFO_RECEIVED);
     });
 
-    iovPlayer.on('IframeDestroyedExternally', () => {
-      this.trigger('IframeDestroyedExternally');
+    iovPlayer.events.on('IframeDestroyedExternally', () => {
+      this.events.emit(Iov.events.IFRAME_DESTROYED_EXTERNALLY);
     });
   }
 
@@ -391,7 +350,7 @@ export default class Iov {
         // been shown?  right now it resolves on first moof recevied
         await this.play(iovPlayer);
 
-        iovPlayer.on('firstFrameShown', () => {
+        iovPlayer.events.on('firstFrameShown', () => {
           this.nextPlayerTimeout = setTimeout(() => {
             this._clearNextPlayerTimeout();
 
@@ -498,11 +457,11 @@ export default class Iov {
   async destroy () {
     this.logger.debug('destroy');
 
-    if (this.destroyed) {
+    if (this.isDestroyed) {
       return;
     }
 
-    this.destroyed = true;
+    this.isDestroyed = true;
 
     const {
       visibilityChangeEventName,
@@ -531,8 +490,13 @@ export default class Iov {
     this.videoElement = null;
     this.videoElementParent = null;
 
+    // @todo @metrics
+    // this.metrics = null;
+
+    this.events.removeAllListeners();
     this.events = null;
-    this.metrics = null;
+
+    this.isDestroyComplete = true;
 
     this.logger.info('destroy complete');
   }

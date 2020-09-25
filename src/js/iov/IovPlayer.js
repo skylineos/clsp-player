@@ -1,3 +1,4 @@
+import EventEmitter from 'eventemitter3';
 import {
   v4 as uuidv4,
 } from 'uuid';
@@ -23,23 +24,24 @@ const DEFAULT_DRIFT_CORRECTION_CONSTANT = 2;
  * exist here.
 */
 export default class IovPlayer {
-  static EVENT_NAMES = [
-    'metric',
-    'unsupportedMimeCodec',
-    'firstFrameShown',
-    'videoReceived',
-    'videoInfoReceived',
-    'IframeDestroyedExternally',
-  ];
+  static events = {
+    METRIC: 'metric',
+    UNSUPPORTED_MIME_CODEC: 'unsupportedMimeCodec',
+    FIRST_FRAME_SHOWN: 'firstFrameShown',
+    VIDEO_RECEIVED: 'videoReceived',
+    VIDEO_INFO_RECEIVED: 'videoInfoReceived',
+    IFRAME_DESTROYED_EXTERNALLY: 'IframeDestroyedExternally',
+  }
 
-  static METRIC_TYPES = [
-    'sourceBuffer.bufferTimeEnd',
-    'video.currentTime',
-    'video.drift',
-    'video.driftCorrection',
-    'video.segmentInterval',
-    'video.segmentIntervalAverage',
-  ];
+  // @todo @metrics
+  // static METRIC_TYPES = [
+  //   'sourceBuffer.bufferTimeEnd',
+  //   'video.currentTime',
+  //   'video.drift',
+  //   'video.driftCorrection',
+  //   'video.segmentInterval',
+  //   'video.segmentIntervalAverage',
+  // ];
 
   static factory (
     logId,
@@ -80,14 +82,10 @@ export default class IovPlayer {
     this.containerElement = containerElement;
     this.videoElement = videoElement;
 
-    this.metrics = {};
+    // @todo @metrics
+    // this.metrics = {};
 
-    // @todo - there must be a more proper way to do events than this...
-    this.events = {};
-
-    for (let i = 0; i < IovPlayer.EVENT_NAMES.length; i++) {
-      this.events[IovPlayer.EVENT_NAMES[i]] = [];
-    }
+    this.events = new EventEmitter();
 
     this.clspClientCount = 0;
     this.clspClient = null;
@@ -112,75 +110,36 @@ export default class IovPlayer {
     this.DRIFT_CORRECTION_CONSTANT = DEFAULT_DRIFT_CORRECTION_CONSTANT;
   }
 
-  on (name, action) {
-    this.logger.debug(`Registering Listener for ${name} event...`);
-
-    if (!IovPlayer.EVENT_NAMES.includes(name)) {
-      throw new Error(`"${name}" is not a valid event."`);
-    }
-
-    if (this.destroyed) {
-      return;
-    }
-
-    this.events[name].push(action);
-  }
-
-  trigger (name, value) {
-    const sillyMetrics = [
-      'metric',
-      'videoReceived',
-    ];
-
-    if (sillyMetrics.includes(name)) {
-      this.logger.silly(`Triggering ${name} event...`);
-    }
-    else {
-      this.logger.debug(`Triggering ${name} event...`);
-    }
-
-    if (this.destroyed) {
-      return;
-    }
-
-    if (!IovPlayer.EVENT_NAMES.includes(name)) {
-      throw new Error(`"${name}" is not a valid event."`);
-    }
-
-    for (let i = 0; i < this.events[name].length; i++) {
-      this.events[name][i](value, this);
-    }
-  }
-
+  // @todo @metrics
   metric (type, value) {
-    if (!this.ENABLE_METRICS) {
-      return;
-    }
+    // if (!this.ENABLE_METRICS) {
+    //   return;
+    // }
 
-    if (!IovPlayer.METRIC_TYPES.includes(type)) {
-      // @todo - should this throw?
-      return;
-    }
+    // if (!IovPlayer.METRIC_TYPES.includes(type)) {
+    //   // @todo - should this throw?
+    //   return;
+    // }
 
-    switch (type) {
-      case 'video.driftCorrection': {
-        if (!this.metrics[type]) {
-          this.metrics[type] = 0;
-        }
+    // switch (type) {
+    //   case 'video.driftCorrection': {
+    //     if (!this.metrics[type]) {
+    //       this.metrics[type] = 0;
+    //     }
 
-        this.metrics[type] += value;
+    //     this.metrics[type] += value;
 
-        break;
-      }
-      default: {
-        this.metrics[type] = value;
-      }
-    }
+    //     break;
+    //   }
+    //   default: {
+    //     this.metrics[type] = value;
+    //   }
+    // }
 
-    this.trigger('metric', {
-      type,
-      value: this.metrics[type],
-    });
+    // this.trigger('metric', {
+    //   type,
+    //   value: this.metrics[type],
+    // });
   }
 
   _onError (
@@ -264,7 +223,7 @@ export default class IovPlayer {
     });
 
     this.clspClient.conduit.events.on(ClspClient.events.IFRAME_DESTROYED_EXTERNALLY, () => {
-      this.trigger('IframeDestroyedExternally');
+      this.events.emit(IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY);
     });
 
     this.clspClient.conduit.events.on(ClspClient.events.RESYNC_STREAM_COMPLETE, () => {
@@ -306,15 +265,13 @@ export default class IovPlayer {
 
     this.mseWrapper = MSEWrapper.factory(this.videoElement);
 
-    this.mseWrapper.on('metric', ({
-      type,
-      value,
-    }) => {
-      this.trigger('metric', {
-        type,
-        value,
-      });
-    });
+    // @todo @metrics
+    // this.mseWrapper.on('metric', ({
+    //   type,
+    //   value,
+    // }) => {
+    //   this.metric(type, value);
+    // });
 
     this.mseWrapper.initializeMediaSource({
       onSourceOpen: async () => {
@@ -331,7 +288,7 @@ export default class IovPlayer {
 
             if (!this.firstFrameShown) {
               this.firstFrameShown = true;
-              this.trigger('firstFrameShown');
+              this.events.emit(IovPlayer.events.FIRST_FRAME_SHOWN);
             }
 
             this.drift = info.bufferTimeEnd - this.videoElement.currentTime;
@@ -398,7 +355,7 @@ export default class IovPlayer {
           },
         });
 
-        this.trigger('videoInfoReceived');
+        this.events.emit(IovPlayer.events.VIDEO_INFO_RECEIVED);
 
         this.mseWrapper.appendMoov(this.moov);
       },
@@ -467,7 +424,7 @@ export default class IovPlayer {
       return;
     }
 
-    this.trigger('videoReceived');
+    this.events.emit(IovPlayer.events.VIDEO_RECEIVED);
     this.getSegmentIntervalMetrics();
 
     // Sometimes, the first moof arrives before the mseWrapper has finished
@@ -521,7 +478,9 @@ export default class IovPlayer {
     }
 
     if (!MSEWrapper.isMimeCodecSupported(mimeCodec)) {
-      this.trigger('unsupportedMimeCodec', `Unsupported mime codec: ${mimeCodec}`);
+      this.events.emit(IovPlayer.events.UNSUPPORTED_MIME_CODEC, {
+        mimeCodec,
+      });
 
       throw new Error(`Unsupported mime codec: ${mimeCodec}`);
     }
@@ -608,13 +567,13 @@ export default class IovPlayer {
    * @returns {Promise}
    */
   async destroy () {
-    this.logger.debug('destroy...');
-
-    if (this.destroyed) {
+    if (this.isDestroyed) {
       return;
     }
 
-    this.destroyed = true;
+    this.isDestroyed = true;
+
+    this.logger.debug('destroy...');
 
     // Note that we DO NOT wait for the stop command to finish execution,
     // because this destroy method MUST be treated as a synchronous operation
@@ -640,14 +599,21 @@ export default class IovPlayer {
 
     this.firstFrameShown = null;
 
-    this.events = null;
-    this.metrics = null;
-
     this.latestSegmentReceived = null;
     this.segmentIntervalAverage = null;
     this.segmentInterval = null;
     this.segmentIntervals = null;
 
     this.moov = null;
+
+    // @todo @metrics
+    // this.metrics = null;
+
+    this.events.removeAllListeners();
+    this.events = null;
+
+    this.isDestroyComplete = true;
+
+    this.logger.info('destroy complete');
   }
 }

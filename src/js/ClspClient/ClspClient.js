@@ -126,5 +126,7 @@ export default class ClspClient {
     this.containerElement = null;
 
     this.isDestroyComplete = false;
+
+    this.logger.info('destroy complete');
   }
 }

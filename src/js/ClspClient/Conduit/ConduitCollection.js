@@ -30,7 +30,7 @@ export default class ConduitCollection {
     this.conduits = {};
     this.deletedConduitClientIds = [];
 
-    this.destroyed = false;
+    this.isDestroyed = false;
     this.isDestroyComplete = false;
 
     Paho.register();
@@ -201,11 +201,11 @@ export default class ConduitCollection {
    * @returns {void}
    */
   async destroy () {
-    if (this.destroyed) {
+    if (this.isDestroyed) {
       return;
     }
 
-    this.destroyed = true;
+    this.isDestroyed = true;
 
     window.removeEventListener('message', this._routeWindowMessageToTargetConduit);
 
@@ -223,6 +223,7 @@ export default class ConduitCollection {
     this.deletedConduitClientIds = null;
 
     this.isDestroyComplete = true;
+
     this.logger.info('destroy complete');
   }
 }
