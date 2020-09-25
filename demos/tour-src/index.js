@@ -107,6 +107,8 @@ $(() => {
 
   const urls = getTourList();
 
+  utils.setDefaultStreamPort('clsp', 9001);
+
   const tour = TourController.factory(
     IovCollection.asSingleton(),
     videoElementId,

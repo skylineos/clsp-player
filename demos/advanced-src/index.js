@@ -108,6 +108,8 @@ $(() => {
   const pageTitle = $('#page-title').html();
   $('#page-title').html(`${pageTitle} <br /> v${utils.version}`);
 
+  utils.setDefaultStreamPort('clsp', 9001);
+
   initializeWall(
     localStorageName,
     createPlayer,

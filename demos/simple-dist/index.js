@@ -66,6 +66,8 @@ function changeSrc () {
 }
 
 function initialize () {
+  window.CLSP.utils.setDefaultStreamPort('clsp', 9001);
+
   var videoElementId = 'my-video';
 
   var element = document.getElementById(videoElementId);

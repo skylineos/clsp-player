@@ -107,6 +107,8 @@ async function main () {
   const videoElementId = 'my-video';
 
   try {
+    utils.setDefaultStreamPort('clsp', 9001);
+
     const url = $(`#${videoElementId}`).find('source')[0].getAttribute('src');
 
     document.getElementById('stream-src').value = url;
