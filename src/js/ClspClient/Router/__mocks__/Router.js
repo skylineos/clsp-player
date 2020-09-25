@@ -3,7 +3,7 @@
 // @todo - can we use module alias or something here?
 const {
   generateUniqueString,
-} = require('../../../../test/jest/utils');
+} = require('../../../../../test/jest/utils');
 
 const RouterMock = jest.fn().mockImplementation(() => {
   return {

@@ -5,7 +5,7 @@ const mockConsole = require('jest-mock-console');
 // @todo - can we use module alias or something here?
 const {
   generateUniqueString,
-} = require('../../../../test/jest/utils');
+} = require('../../../../../test/jest/utils');
 
 const _iframeEventHandlers = require('../iframeEventHandlers');
 const Router = require('../Router');

@@ -1,5 +1,5 @@
-import utils from '../utils/utils';
-import StreamConfiguration from '../iov/StreamConfiguration';
+import utils from '../../utils/utils';
+import StreamConfiguration from '../../iov/StreamConfiguration';
 import RouterBaseManager from './RouterBaseManager';
 
 const DEFAULT_STREAM_DATA_TIMEOUT_DURATION = utils.DEFAULT_STREAM_TIMEOUT;

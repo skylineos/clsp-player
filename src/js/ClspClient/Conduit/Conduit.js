@@ -8,14 +8,14 @@
  */
 import EventEmitter from 'eventemitter3';
 
-import Logger from '../utils/Logger';
+import Logger from '../../utils/Logger';
 
 import RouterBaseManager from '../Router/RouterBaseManager';
 import RouterTransactionManager from '../Router/RouterTransactionManager';
 import RouterStreamManager from '../Router/RouterStreamManager';
 import RouterConnectionManager from '../Router/RouterConnectionManager';
 import RouterIframeManager from '../Router/RouterIframeManager';
-import StreamConfiguration from '../iov/StreamConfiguration';
+import StreamConfiguration from '../../iov/StreamConfiguration';
 
 export default class Conduit {
   /**
@@ -129,38 +129,32 @@ export default class Conduit {
   }
 
   async initialize () {
-    try {
-      this.routerIframeManager.events.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
-        this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
+    this.routerIframeManager.events.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+      this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
 
-        // This doesn't really do anything since the iframe is already
-        // destroyed, it just allows the disconnection to run in parallel with
-        // the rest of the destroy logic so that by the time the async destroy
-        // logic gets to the part where it actually performs the disconnection,
-        // it won't have to wait the 5 seconds for the disconnect timeout.
-        this.routerConnectionManager.disconnect();
-      });
+      // This doesn't really do anything since the iframe is already
+      // destroyed, it just allows the disconnection to run in parallel with
+      // the rest of the destroy logic so that by the time the async destroy
+      // logic gets to the part where it actually performs the disconnection,
+      // it won't have to wait the 5 seconds for the disconnect timeout.
+      this.routerConnectionManager.disconnect();
+    });
 
-      // Allow the caller to react every time there is a reconnection event
-      this.routerConnectionManager.events.on(RouterConnectionManager.events.RECONNECT_SUCCESS, () => {
-        this.events.emit(Conduit.events.RECONNECT_SUCCESS);
-      });
-      this.routerConnectionManager.events.on(RouterConnectionManager.events.RECONNECT_FAILURE, (data) => {
-        this.events.emit(Conduit.events.RECONNECT_FAILURE, data);
-      });
+    // Allow the caller to react every time there is a reconnection event
+    this.routerConnectionManager.events.on(RouterConnectionManager.events.RECONNECT_SUCCESS, () => {
+      this.events.emit(Conduit.events.RECONNECT_SUCCESS);
+    });
+    this.routerConnectionManager.events.on(RouterConnectionManager.events.RECONNECT_FAILURE, (data) => {
+      this.events.emit(Conduit.events.RECONNECT_FAILURE, data);
+    });
 
-      this.routerStreamManager.events.on(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, () => {
-        this.events.emit(Conduit.events.RESYNC_STREAM_COMPLETE);
-      });
+    this.routerStreamManager.events.on(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, () => {
+      this.events.emit(Conduit.events.RESYNC_STREAM_COMPLETE);
+    });
 
-      await this.routerIframeManager.create();
+    await this.routerIframeManager.create();
 
       this.isInitialized = true;
-    }
-    catch (error) {
-      this.logger.error('Error while initializing!');
-      this.logger.error(error);
-    }
   }
 
   /**
