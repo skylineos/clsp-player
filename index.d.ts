@@ -37,27 +37,6 @@ declare class StreamConfiguration {
   destroy();
 }
 
-/**
- * defined in src/iov/IovPlayer.js
- *
- * Responsible for receiving stream input and routing it to the media source
- * buffer for rendering on the video tag. There is some 'light' reworking of
- * the binary data that is required.
-*/
-declare class IovPlayer {
-  static factory(logId: string, videoElement, onConduitMessageError?: Function, onPlayerError?: Function): IovPlayer;
-  on(name: string, action: Function);
-  initialize (streamConfiguration: StreamConfiguration): Promise<void>;
-  reinitializeMseWrapper(mimeCodec): Promise<void>;
-  restart(): Promise<void>;
-  play(): Promise<void>;
-  stop(): Promise<void>;
-  enterFullscreen();
-  exitFullscreen();
-  toggleFullscreen();
-  destroy(): Promise<void>;
-}
-
 interface IovChangeSrcReturnValue {
   id: string;
   firstFrameReceivedPromise: Promise<void>;
@@ -68,7 +47,7 @@ interface IovChangeSrcReturnValue {
  * deliver video content streamed through CLSP from distributed sources.
  */
 export class Iov {
-  on(eventName: string, action: any);
+  on(eventName: string, handler: function);
   onConnectionChange();
   onVisibilityChange():Promise<void>;
   generatePlayerLogId(): string;
@@ -77,12 +56,12 @@ export class Iov {
   changeSrc(url: string | StreamConfiguration, showOnFirstFrame?: boolean): Promise<IovChangeSrcReturnValue>;
   clone(streamConfiguration?: StreamConfiguration): Iov;
   onPlayerError(error);
-  play(iovPlayer?: IovPlayer):Promise<void>;
-  stop(iovPlayer?: IovPlayer):Promise<void>;
-  restart(iovPlayer?: IovPlayer):Promise<void>;
-  enterFullscreen(iovPlayer?: IovPlayer);
-  exitFullscreen(iovPlayer?: IovPlayer);
-  toggleFullscreen(iovPlayer?: IovPlayer);
+  play():Promise<void>;
+  stop():Promise<void>;
+  restart():Promise<void>;
+  enterFullscreen();
+  exitFullscreen();
+  toggleFullscreen();
   /**
    * Dereference the necessary properties, clear any intervals and timeouts, and
    * remove any listeners.  Will also destroy the player.

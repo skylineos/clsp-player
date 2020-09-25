@@ -50,7 +50,7 @@ export default class IovCollection {
    *
    * @returns {Iov}
    */
-  async create (videoElementId) {
+  create (videoElementId) {
     const iov = Iov.factory(
       videoElementId,
       {
@@ -58,7 +58,7 @@ export default class IovCollection {
       },
     );
 
-    iov.events.on(Iov.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+    iov.on(Iov.events.IFRAME_DESTROYED_EXTERNALLY, () => {
       this.remove(iov.id);
     });
 

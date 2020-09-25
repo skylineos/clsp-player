@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * The Router contains the lowest-level logic of the actual CLSP connection.
  * The Router will manage a CLSP connection for a given clientId, and pass

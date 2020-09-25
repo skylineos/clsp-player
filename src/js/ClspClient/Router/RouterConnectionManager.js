@@ -79,7 +79,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
       this.routerTransactionManager,
     );
 
-    this.statsManager.events.on(RouterStatsManager.events.PUBLISH_FAILURE, (data) => {
+    this.statsManager.on(RouterStatsManager.events.PUBLISH_FAILURE, (data) => {
       // @todo - maybe wait for 2 or 3 failures before reconnecting?
       this.logger.warn('Publish stats failure - attempting to reconnect...');
       this.reconnect();

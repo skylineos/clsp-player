@@ -28,6 +28,7 @@ export default class Conduit {
     RECONNECT_SUCCESS: RouterConnectionManager.events.RECONNECT_SUCCESS,
     RECONNECT_FAILURE: RouterConnectionManager.events.RECONNECT_FAILURE,
     RESYNC_STREAM_COMPLETE: RouterStreamManager.events.RESYNC_STREAM_COMPLETE,
+    VIDEO_SEGMENT_RECEIVED: RouterStreamManager.events.VIDEO_SEGMENT_RECEIVED,
     IFRAME_DESTROYED_EXTERNALLY: RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY,
   }
 
@@ -128,8 +129,24 @@ export default class Conduit {
     );
   }
 
+  on (eventName, handler) {
+    const eventNames = Object.values(Conduit.events);
+
+    if (!eventNames.includes(eventName)) {
+      throw new Error(`Unable to register listener for unknown event "${eventName}"`);
+    }
+
+    if (!handler) {
+      throw new Error(`Unable to register for event "${eventName}" without a handler`);
+    }
+
+    this.events.on(eventName, handler);
+
+    return this;
+  }
+
   async initialize () {
-    this.routerIframeManager.events.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+    this.routerIframeManager.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
       this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
 
       // This doesn't really do anything since the iframe is already
@@ -141,35 +158,36 @@ export default class Conduit {
     });
 
     // Allow the caller to react every time there is a reconnection event
-    this.routerConnectionManager.events.on(RouterConnectionManager.events.RECONNECT_SUCCESS, () => {
+    this.routerConnectionManager.on(RouterConnectionManager.events.RECONNECT_SUCCESS, () => {
       this.events.emit(Conduit.events.RECONNECT_SUCCESS);
     });
-    this.routerConnectionManager.events.on(RouterConnectionManager.events.RECONNECT_FAILURE, (data) => {
+    this.routerConnectionManager.on(RouterConnectionManager.events.RECONNECT_FAILURE, (data) => {
       this.events.emit(Conduit.events.RECONNECT_FAILURE, data);
     });
 
-    this.routerStreamManager.events.on(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, () => {
+    this.routerStreamManager.on(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, () => {
       this.events.emit(Conduit.events.RESYNC_STREAM_COMPLETE);
+    });
+
+    // This is the big one - transmit the video segments upstreama
+    this.routerStreamManager.on(RouterStreamManager.events.VIDEO_SEGMENT_RECEIVED, (data) => {
+      this.events.emit(Conduit.events.VIDEO_SEGMENT_RECEIVED, data);
     });
 
     await this.routerIframeManager.create();
 
-      this.isInitialized = true;
+    this.isInitialized = true;
   }
 
   /**
    * Play the configured stream.
-   *
-   * @param {function} onMoof
-   *   the function that will handle the moof
-   *   @see RouterStreamManager.play
    *
    * @returns {object}
    *  - guid
    *  - mimeCodec
    *  - moov
    */
-  async play (onMoof) {
+  async play () {
     if (this.isDestroyed) {
       this.logger.info('Tried to play a stream from a destroyed Conduit');
       return;
@@ -198,7 +216,7 @@ export default class Conduit {
         guid,
         mimeCodec,
         moov,
-      } = await this.routerStreamManager.play(onMoof);
+      } = await this.routerStreamManager.play();
 
       return {
         guid,

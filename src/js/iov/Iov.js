@@ -6,7 +6,7 @@ import {
 import Logger from '../utils/Logger';
 import utils from '../utils/utils';
 
-import IovPlayer from './IovPlayer';
+import IovPlayer from './Player/IovPlayer';
 import StreamConfiguration from './StreamConfiguration';
 
 const DEFAULT_ENABLE_METRICS = false;
@@ -97,6 +97,23 @@ export default class Iov {
     this.CONNECTION_CHANGE_PLAY_DELAY = DEFAULT_CONNECTION_CHANGE_PLAY_DELAY;
   }
 
+  on (eventName, handler) {
+    const eventNames = Object.values(Iov.events);
+
+    if (!eventNames.includes(eventName)) {
+      throw new Error(`Unable to register listener for unknown event "${eventName}"`);
+    }
+
+    if (!handler) {
+      throw new Error(`Unable to register for event "${eventName}" without a handler`);
+    }
+
+    this.events.on(eventName, handler);
+
+    return this;
+  }
+
+
   // @todo @metrics
   metric (type, value) {
     // if (!this.ENABLE_METRICS) {
@@ -133,7 +150,7 @@ export default class Iov {
     // @todo - does this still work?
     if (window.navigator.onLine) {
       this.logger.debug('Back online...');
-      if (this.iovPlayer.stopped) {
+      if (this.iovPlayer.isStopped || this.iovPlayer.isStopping) {
         // Without this timeout, the video appears blank.  Not sure if there is
         // some race condition...
         setTimeout(() => {
@@ -154,7 +171,13 @@ export default class Iov {
       return;
     }
 
-    this.restart();
+    try {
+      await this.restart();
+    }
+    catch (error) {
+      this.logger.error('Error while restarting during onVisibilityChange!');
+      this.logger.error(error);
+    }
   };
 
   _prepareVideoElement () {
@@ -196,19 +219,19 @@ export default class Iov {
   _registerPlayerListeners (iovPlayer) {
     // @todo - this seems to be videojs specific, and should be removed or moved
     // somewhere else
-    iovPlayer.events.on('firstFrameShown', () => {
+    iovPlayer.on(IovPlayer.events.FIRST_FRAME_SHOWN, () => {
       this.events.emit(Iov.events.FIRST_FRAME_SHOWN);
     });
 
-    iovPlayer.events.on('videoReceived', () => {
+    iovPlayer.on(IovPlayer.events.VIDEO_RECEIVED, () => {
       this.events.emit(Iov.events.VIDEO_RECEIVED);
     });
 
-    iovPlayer.events.on('videoInfoReceived', () => {
+    iovPlayer.on(IovPlayer.events.VIDEO_INFO_RECEIVED, () => {
       this.events.emit(Iov.events.VIDEO_INFO_RECEIVED);
     });
 
-    iovPlayer.events.on('IframeDestroyedExternally', () => {
+    iovPlayer.on(IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY, () => {
       this.events.emit(Iov.events.IFRAME_DESTROYED_EXTERNALLY);
     });
   }
@@ -333,6 +356,7 @@ export default class Iov {
       this.videoElementParent,
       clspVideoElement,
       () => this.changeSrc(this.streamConfiguration),
+      // @todo - this is currently not used by IovPlayer...
       this.onPlayerError,
     );
 
@@ -344,13 +368,7 @@ export default class Iov {
 
     const firstFrameReceivedPromise = new Promise(async (resolve, reject) => {
       try {
-        await iovPlayer.initialize(streamConfiguration);
-
-        // @todo - should the play method only resolve once the first frame has
-        // been shown?  right now it resolves on first moof recevied
-        await this.play(iovPlayer);
-
-        iovPlayer.events.on('firstFrameShown', () => {
+        iovPlayer.on(IovPlayer.events.FIRST_FRAME_SHOWN, () => {
           this.nextPlayerTimeout = setTimeout(() => {
             this._clearNextPlayerTimeout();
 
@@ -363,8 +381,17 @@ export default class Iov {
             resolve();
           }, this.SHOW_NEXT_VIDEO_DELAY * 1000);
         });
+
+        iovPlayer.setStreamConfiguration(streamConfiguration);
+
+        await iovPlayer.initialize();
+
+        // @todo - should the play method only resolve once the first frame has
+        // been shown?  right now it resolves on first moof recevied
+        await this.play(iovPlayer);
       }
       catch (error) {
+        this.logger.error('Error while trying to change source!');
         reject(error);
       }
     });
@@ -391,16 +418,23 @@ export default class Iov {
     return Iov.factory(this.videoElement, newStreamConfiguration);
   }
 
-  onPlayerError = (error) => {
+  onPlayerError = async (error) => {
     // If it is currently hidden, do nothing
     if (document[utils.windowStateNames.hiddenStateName]) {
       this.stop();
       return;
     }
 
+    this.logger.error('IovPlayer error encountered!');
     this.logger.error(error);
 
-    this.restart();
+    try {
+      await this.restart();
+    }
+    catch (error) {
+      this.logger.error('Error while restarting after IovPlayer error!');
+      this.logger.error(error);
+    }
   };
 
   /**
@@ -415,9 +449,9 @@ export default class Iov {
       await iovPlayer.play();
     }
     catch (error) {
-      this.logger.debug('Play error - destroying');
-      // @todo - display a message in the page saying that the stream couldn't
-      // be played
+      this.logger.debug('Error while trying to play from IovPlayer, destroying IovPlayer...');
+      // @todo - display a message in the page (aka to the user) saying that
+      // the stream couldn't be played?
       await iovPlayer.destroy();
 
       throw error;

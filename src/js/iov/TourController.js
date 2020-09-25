@@ -319,7 +319,7 @@ export default class TourController {
    * once, at the beginning, to start the tour.
    */
   async start () {
-    this.iov = await this.iovCollection.create(this.videoElementId);
+    this.iov = this.iovCollection.create(this.videoElementId);
 
     await this.resume(true, false);
   }
