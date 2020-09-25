@@ -265,7 +265,7 @@ export default function (Paho) {
   Router.prototype._sendToParentWindow = function (message) {
     this.logger.debug('Sending message to parent window...');
 
-    if (this.destroyed) {
+    if (this.isDestroyed) {
       return;
     }
 
@@ -962,11 +962,11 @@ export default function (Paho) {
   Router.prototype.destroy = function () {
     this.logger.info('Destroying...');
 
-    if (this.destroyed) {
+    if (this.isDestroyed) {
       return;
     }
 
-    this.destroyed = true;
+    this.isDestroyed = true;
 
     window.removeEventListener('message', this.boundWindowMessageEventHandler);
 
@@ -977,6 +977,10 @@ export default function (Paho) {
     // @todo - is there a way to "destroy" the client?  I didn't see anything
     // in the documentation
     this.clspClient = null;
+
+    this.isDestroyComplete = false;
+
+    this.logger.info('destroy complete');
   };
 
   return Router;

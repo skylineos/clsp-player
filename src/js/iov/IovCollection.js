@@ -35,7 +35,7 @@ export default class IovCollection {
 
     this.iovs = {};
 
-    this.destroyed = false;
+    this.isDestroyed = false;
     this.isDestroyComplete = false;
   }
 
@@ -58,7 +58,7 @@ export default class IovCollection {
       },
     );
 
-    iov.on('IframeDestroyedExternally', () => {
+    iov.events.on(Iov.events.IFRAME_DESTROYED_EXTERNALLY, () => {
       this.remove(iov.id);
     });
 
@@ -139,11 +139,11 @@ export default class IovCollection {
    * @returns {void}
    */
   async destroy () {
-    if (this.destroyed) {
+    if (this.isDestroyed) {
       return;
     }
 
-    this.destroyed = true;
+    this.isDestroyed = true;
 
     for (const id in this.iovs) {
       try {
@@ -158,6 +158,7 @@ export default class IovCollection {
     this.iovs = null;
 
     this.isDestroyComplete = true;
+
     this.logger.info('destroy complete');
   }
 }

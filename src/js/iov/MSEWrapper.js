@@ -18,40 +18,37 @@ const silly = Debug(`silly:${DEBUG_PREFIX}:MSEWrapper`);
 const FULL_BUFFER_ERROR = 'and cannot free space to append additional buffers';
 
 export default class MSEWrapper {
-  static EVENT_NAMES = [
-    'metric',
-  ];
-
-  static METRIC_TYPES = [
-    'mediaSource.created',
-    'mediaSource.destroyed',
-    'objectURL.created',
-    'objectURL.revoked',
-    'mediaSource.reinitialized',
-    'sourceBuffer.created',
-    'sourceBuffer.destroyed',
-    'queue.added',
-    'queue.removed',
-    'sourceBuffer.append',
-    'error.sourceBuffer.append',
-    'frameDrop.hiddenTab',
-    'queue.mediaSourceNotReady',
-    'queue.sourceBufferNotReady',
-    'queue.shift',
-    'queue.append',
-    'sourceBuffer.lastKnownBufferSize',
-    'sourceBuffer.trim',
-    'sourceBuffer.trim.error',
-    'sourceBuffer.updateEnd',
-    'sourceBuffer.updateEnd.bufferLength.empty',
-    'sourceBuffer.updateEnd.bufferLength.error',
-    'sourceBuffer.updateEnd.removeEvent',
-    'sourceBuffer.updateEnd.appendEvent',
-    'sourceBuffer.updateEnd.bufferFrozen',
-    'sourceBuffer.abort',
-    'error.sourceBuffer.abort',
-    'sourceBuffer.lastMoofSize',
-  ];
+  // @todo @metrics
+  // static METRIC_TYPES = [
+  //   'mediaSource.created',
+  //   'mediaSource.destroyed',
+  //   'objectURL.created',
+  //   'objectURL.revoked',
+  //   'mediaSource.reinitialized',
+  //   'sourceBuffer.created',
+  //   'sourceBuffer.destroyed',
+  //   'queue.added',
+  //   'queue.removed',
+  //   'sourceBuffer.append',
+  //   'error.sourceBuffer.append',
+  //   'frameDrop.hiddenTab',
+  //   'queue.mediaSourceNotReady',
+  //   'queue.sourceBufferNotReady',
+  //   'queue.shift',
+  //   'queue.append',
+  //   'sourceBuffer.lastKnownBufferSize',
+  //   'sourceBuffer.trim',
+  //   'sourceBuffer.trim.error',
+  //   'sourceBuffer.updateEnd',
+  //   'sourceBuffer.updateEnd.bufferLength.empty',
+  //   'sourceBuffer.updateEnd.bufferLength.error',
+  //   'sourceBuffer.updateEnd.removeEvent',
+  //   'sourceBuffer.updateEnd.appendEvent',
+  //   'sourceBuffer.updateEnd.bufferFrozen',
+  //   'sourceBuffer.abort',
+  //   'error.sourceBuffer.abort',
+  //   'sourceBuffer.lastMoofSize',
+  // ];
 
   static isMimeCodecSupported (mimeCodec) {
     return (window.MediaSource && window.MediaSource.isTypeSupported(mimeCodec));
@@ -68,12 +65,14 @@ export default class MSEWrapper {
       throw new Error('videoElement is required to construct an MSEWrapper.');
     }
 
-    this.destroyed = false;
+    this.isDestroyed = false;
 
     this.videoElement = videoElement;
 
     this.options = defaults(
-      {}, options, {
+      {},
+      options,
+      {
         // These default buffer values provide the best results in my testing.
         // It keeps the memory usage as low as is practical, and rarely causes
         // the video to stutter
@@ -100,14 +99,8 @@ export default class MSEWrapper {
       this.options.bufferTruncateValue = parseInt(this.options.bufferSizeLimit / this.options.bufferTruncateFactor);
     }
 
-    this.metrics = {};
-
-    // @todo - there must be a more proper way to do events than this...
-    this.events = {};
-
-    for (let i = 0; i < MSEWrapper.EVENT_NAMES.length; i++) {
-      this.events[MSEWrapper.EVENT_NAMES[i]] = [];
-    }
+    // @todo @metrics
+    // this.metrics = {};
 
     this.eventListeners = {
       mediaSource: {},
@@ -115,62 +108,36 @@ export default class MSEWrapper {
     };
   }
 
-  on (name, action) {
-    debug(`Registering Listener for ${name} event...`);
-
-    if (!MSEWrapper.EVENT_NAMES.includes(name)) {
-      throw new Error(`"${name}" is not a valid event."`);
-    }
-
-    this.events[name].push(action);
-  }
-
-  trigger (name, value) {
-    if (name === 'metric') {
-      silly(`Triggering ${name} event...`);
-    }
-    else {
-      debug(`Triggering ${name} event...`);
-    }
-
-    if (!MSEWrapper.EVENT_NAMES.includes(name)) {
-      throw new Error(`"${name}" is not a valid event."`);
-    }
-
-    for (let i = 0; i < this.events[name].length; i++) {
-      this.events[name][i](value, this);
-    }
-  }
-
+  // @todo @metrics
   metric (type, value) {
-    if (!this.options || !this.options.enableMetrics) {
-      return;
-    }
+    // if (!this.options || !this.options.enableMetrics) {
+    //   return;
+    // }
 
-    if (!MSEWrapper.METRIC_TYPES.includes(type)) {
-      // @todo - should this throw?
-      return;
-    }
+    // if (!MSEWrapper.METRIC_TYPES.includes(type)) {
+    //   // @todo - should this throw?
+    //   return;
+    // }
 
-    switch (type) {
-      case 'sourceBuffer.lastKnownBufferSize':
-      case 'sourceBuffer.lastMoofSize': {
-        this.metrics[type] = value;
-        break;
-      }
-      default: {
-        if (!Object.prototype.hasOwnProperty.call(this.metrics, type)) {
-          this.metrics[type] = 0;
-        }
+    // switch (type) {
+    //   case 'sourceBuffer.lastKnownBufferSize':
+    //   case 'sourceBuffer.lastMoofSize': {
+    //     this.metrics[type] = value;
+    //     break;
+    //   }
+    //   default: {
+    //     if (!Object.prototype.hasOwnProperty.call(this.metrics, type)) {
+    //       this.metrics[type] = 0;
+    //     }
 
-        this.metrics[type] += value;
-      }
-    }
+    //     this.metrics[type] += value;
+    //   }
+    // }
 
-    this.trigger('metric', {
-      type,
-      value: this.metrics[type],
-    });
+    // this.trigger('metric', {
+    //   type,
+    //   value: this.metrics[type],
+    // });
   }
 
   initializeMediaSource (options = {}) {
@@ -402,7 +369,7 @@ export default class MSEWrapper {
   processNextInQueue () {
     silly('processNextInQueue');
 
-    if (this.destroyed) {
+    if (this.isDestroyed) {
       return;
     }
 
@@ -474,7 +441,7 @@ export default class MSEWrapper {
   append (byteArray) {
     silly('Append');
 
-    if (this.destroyed) {
+    if (this.isDestroyed) {
       return;
     }
 
@@ -726,8 +693,10 @@ export default class MSEWrapper {
     this.segmentQueue = null;
 
     this.options = null;
-    this.metrics = null;
-    this.events = null;
+
+    // @todo @metrics
+    // this.metrics = null;
+
     this.eventListeners = null;
 
     debug('_freeAllResources finished...');
@@ -736,11 +705,11 @@ export default class MSEWrapper {
   destroy () {
     debug('destroy...');
 
-    if (this.destroyed) {
+    if (this.isDestroyed) {
       return Promise.resolve();
     }
 
-    this.destroyed = true;
+    this.isDestroyed = true;
 
     this.destroyMediaSource();
 

@@ -26,7 +26,7 @@ export default class TourController {
 
     this.iovCollection = iovCollection;
 
-    this.destroyed = false;
+    this.isDestroyed = false;
     this.startTime = null;
     this.streamConfigurations = [];
     this.iov = null;
@@ -357,11 +357,11 @@ export default class TourController {
    * Destroy this tour and all associated streamConfigurations and iovs
    */
   async destroy () {
-    if (this.destroyed) {
+    if (this.isDestroyed) {
       return;
     }
 
-    this.destroyed = true;
+    this.isDestroyed = true;
 
     this._cancelAllChangeSrcs();
 
@@ -387,5 +387,9 @@ export default class TourController {
 
     this.iovCollection = null;
     this.videoElementId = null;
+
+    this.isDestroyComplete = false;
+
+    this.logger.info('destroy complete');
   }
 }
