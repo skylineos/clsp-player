@@ -23,8 +23,8 @@ module.exports = (api) => {
     // only, to be as light-weight as possible.  Therefore, no tranforms need to
     // be done on it.
     ignore: [
-      'src/js/Router/Router.js',
-      'src/js/Router/iframeEventHandlers.js',
+      'src/js/ClspClient/Router/Router.js',
+      'src/js/ClspClient/Router/iframeEventHandlers.js',
     ],
     presets: [
       [

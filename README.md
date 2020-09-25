@@ -24,6 +24,7 @@ An html5 CLSP video player.  CLSP is a proprietary near-real-time video streamin
   - [via `import` or `require`](#via-import-or-require)
     - [JS](#js)
     - [Styles (SASS)](#styles-sass)
+    - [`<video>` tag](#video-tag-1)
 
 ## Supported Browsers
 
@@ -264,4 +265,18 @@ catch (error) {
 @import '/path/to/node_modules/@skylineos/clsp-player/dist/clsp-player.css';
 // or import it from src
 @import '/path/to/node_modules/@skylineos/clsp-player/src/styles/clsp-player.scss';
+```
+
+#### `<video>` tag
+
+We recommend wrapping the `video` tag in a container element (e.g. `div`) that the CLSP Player can mutate as needed.  The CLSP Player needs to perform some actions on the `video` element as well as its container.
+
+```html
+<!-- The outer container used for your styling -->
+<div class="video-container">
+  <!-- The inner container used by CLSP for styling and other operations -->
+  <div class="clsp-container-fit">
+    <video id="my-video"></video>
+  </div>
+</div>
 ```
