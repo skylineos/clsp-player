@@ -128,9 +128,9 @@ export default class IovCollection {
       return;
     }
 
-    await iov.destroy();
-
     delete this.iovs[id];
+
+    await iov.destroy();
 
     return this;
   }

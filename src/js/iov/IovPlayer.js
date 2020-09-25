@@ -468,6 +468,7 @@ export default class IovPlayer {
     // tab resources, ultimately resulting in a crash if given enough time.
     // @todo - this check should probably be moved to the MSEWrapper
     if (document[utils.windowStateNames.hiddenStateName]) {
+      this.logger.info('Document is in hidden state, not appending moof');
       return;
     }
 

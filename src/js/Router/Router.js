@@ -424,40 +424,6 @@ export default function (Paho) {
     }
   };
 
-  /**
-   * @private
-   *
-   * Called when an clspClient connection has been lost
-   *
-   * @see - https://www.eclipse.org/paho/files/jsdoc/Paho.MQTT.Client.html
-   *
-   * @param {Object} response
-   *   The response object
-   *
-   * @returns {void}
-   */
-  Router.prototype._onConnectionLost = function (response) {
-    this.logger.debug('CLSP connection lost');
-
-    var errorCode = parseInt(response.errorCode);
-
-    if (errorCode === 0) {
-      // The connection was "properly" terminated
-      this._sendToParentWindow({
-        event: Router.events.DISCONNECT_SUCCESS,
-      });
-
-      return;
-    }
-
-    this.logger.warn('CLSP connection lost improperly!');
-
-    this._sendToParentWindow({
-      event: Router.events.CONNECTION_LOST,
-      reason: 'connection lost error code "' + errorCode + '" with message: ' + response.errorMessage,
-    });
-  };
-
   Router.prototype._onCommandReceived = function (command, message, event) {
     switch (command) {
       case Router.commands.SUBSCRIBE: {
@@ -597,6 +563,61 @@ export default function (Paho) {
       event: Router.events.CONNECT_FAILURE,
       reason: 'Connection Failed - Error code ' + parseInt(response.errorCode) + ': ' + response.errorMessage,
     });
+  };
+
+  /**
+   * @private
+   *
+   * Called when an clspClient connection has been lost
+   *
+   * @see - https://www.eclipse.org/paho/files/jsdoc/Paho.MQTT.Client.html
+   *
+   * @param {Object} response
+   *   The response object
+   * @param {Object} data
+   *   An optional data parameter, only used when this is called manually,
+   *   meaning when it is used outside of the Paho Client callback
+   *
+   * @returns {void}
+   */
+  Router.prototype._onConnectionLost = function (response, data = {}) {
+    this.logger.debug('CLSP connection lost');
+
+    var errorCode = parseInt(response.errorCode);
+
+    if (errorCode === 0) {
+      // The connection was "properly" terminated
+      this._sendToParentWindow({
+        event: Router.events.DISCONNECT_SUCCESS,
+        data: data,
+      });
+
+      return;
+    }
+
+    this.logger.warn('CLSP connection lost improperly!');
+
+    this._sendToParentWindow({
+      event: Router.events.CONNECTION_LOST,
+      reason: 'connection lost error code "' + errorCode + '" with message: ' + response.errorMessage,
+      data: data,
+    });
+  };
+
+  /**
+   * Call this when the Router has received a command, but the connection to
+   * the server no longer exists.  Paho does not appear to handle this
+   * situation gracefully.
+   */
+  Router.prototype._connectionWasLost = function (data) {
+    this.logger.debug('CLSP Connection was lost while trying to perform another action');
+
+    // Spoof the clspClient response...
+    var response = {
+      errorCode: 0,
+    };
+
+    this._onConnectionLost(response, data);
   };
 
   /**
@@ -798,8 +819,13 @@ export default function (Paho) {
     }
 
     // Paho doesn't seem to handle publish while disconnected gracefully
+    console.log('publishing ' + topic, 'isConnected?', this.clspClient.isConnected(), publishId);
     if (!this.clspClient.isConnected()) {
-      return this._publish_onSuccess(publishId, topic);
+      return this._connectionWasLost({
+        publishId: publishId,
+        topic: topic,
+      });
+      // return this._publish_onSuccess(publishId, topic);
     }
 
     var self = this;
@@ -908,10 +934,7 @@ export default function (Paho) {
       // disconnect from the clspClient while it isn't connected, it will never
       // call the _onConnectionLost callback...
       if (!this.clspClient.isConnected()) {
-        // Spoof the clspClient response...
-        this._onConnectionLost({
-          errorCode: 0,
-        });
+        this._connectionWasLost();
       }
       else {
         this.clspClient.disconnect();

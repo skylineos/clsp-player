@@ -73,6 +73,8 @@ export default class RouterStatsManager extends RouterBaseManager {
       return;
     }
 
+    this.logger.silly('Updating bytecount...');
+
     this.statsMsg.byteCount += byteArray.length;
   }
 
@@ -92,6 +94,8 @@ export default class RouterStatsManager extends RouterBaseManager {
       this.stop();
     }
 
+    this.logger.info('Starting stats publishing...');
+
     this.publishInterval = setInterval(() => {
       this._publishStats();
     }, this.PUBLISH_STATS_INTERVAL * 1000);
@@ -110,6 +114,8 @@ export default class RouterStatsManager extends RouterBaseManager {
       this.logger.info('Tried to stop while destroyed');
       return;
     }
+
+    this.logger.info('Stopping stats publishing...');
 
     if (this.publishInterval) {
       clearInterval(this.publishInterval);
@@ -138,6 +144,8 @@ export default class RouterStatsManager extends RouterBaseManager {
     this.statsMsg.byteCount = 0;
 
     try {
+      this.logger.info('About to send stats message...');
+
       await this.routerTransactionManager.publish('iov/stats', this.statsMsg);
 
       this.logger.debug('iov status', this.statsMsg);

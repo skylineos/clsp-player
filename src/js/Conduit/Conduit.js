@@ -108,10 +108,6 @@ export default class Conduit {
       this.containerElement,
     );
 
-    this.routerIframeManager.events.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
-      this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
-    });
-
     this.routerTransactionManager = RouterTransactionManager.factory(
       this.logId,
       this.clientId,
@@ -124,28 +120,39 @@ export default class Conduit {
       this.routerTransactionManager,
     );
 
-    // Allow the caller to react every time there is a reconnection event
-    this.routerConnectionManager.events.on(RouterConnectionManager.events.RECONNECT_SUCCESS, () => {
-      this.events.emit(Conduit.events.RECONNECT_SUCCESS);
-    });
-    this.routerConnectionManager.events.on(RouterConnectionManager.events.RECONNECT_FAILURE, (data) => {
-      this.events.emit(Conduit.events.RECONNECT_FAILURE, data);
-    });
-
     this.routerStreamManager = RouterStreamManager.factory(
       this.logId,
       this.clientId,
       this.streamConfiguration,
       this.routerTransactionManager,
     );
-
-    this.routerStreamManager.events.on(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, () => {
-      this.events.emit(Conduit.events.RESYNC_STREAM_COMPLETE);
-    });
   }
 
   async initialize () {
     try {
+      this.routerIframeManager.events.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+        this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
+
+        // This doesn't really do anything since the iframe is already
+        // destroyed, it just allows the disconnection to run in parallel with
+        // the rest of the destroy logic so that by the time the async destroy
+        // logic gets to the part where it actually performs the disconnection,
+        // it won't have to wait the 5 seconds for the disconnect timeout.
+        this.routerConnectionManager.disconnect();
+      });
+
+      // Allow the caller to react every time there is a reconnection event
+      this.routerConnectionManager.events.on(RouterConnectionManager.events.RECONNECT_SUCCESS, () => {
+        this.events.emit(Conduit.events.RECONNECT_SUCCESS);
+      });
+      this.routerConnectionManager.events.on(RouterConnectionManager.events.RECONNECT_FAILURE, (data) => {
+        this.events.emit(Conduit.events.RECONNECT_FAILURE, data);
+      });
+
+      this.routerStreamManager.events.on(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, () => {
+        this.events.emit(Conduit.events.RESYNC_STREAM_COMPLETE);
+      });
+
       await this.routerIframeManager.create();
 
       this.isInitialized = true;
@@ -226,8 +233,6 @@ export default class Conduit {
   async stop () {
     this.logger.info('Stopping stream...');
 
-    this.routerTransactionManager.halt();
-
     try {
       await this.routerStreamManager.stop();
     }
@@ -269,7 +274,7 @@ export default class Conduit {
     // Used for determining the size of the internal buffer hidden from the MSE
     // api by recording the size and time of each chunk of video upon buffer
     // append and recording the time when the updateend event is called.
-    if ((this.shouldLogSourceBuffer) && (this.logSourceBufferTopic !== null)) {
+    if (this.shouldLogSourceBuffer && this.logSourceBufferTopic) {
       this.routerTransactionManager.directSend(this.logSourceBufferTopic, byteArray);
     }
 
@@ -377,7 +382,13 @@ export default class Conduit {
       this.logger.error(error);
     }
 
-    this.routerTransactionManager.destroy();
+    try {
+      await this.routerTransactionManager.destroy();
+    }
+    catch (error) {
+      this.logger.error('Error while destroying routerTransactionManager while destroying');
+      this.logger.error(error);
+    }
 
     // Destruction of the iframe must come last
     this.routerIframeManager.destroy();

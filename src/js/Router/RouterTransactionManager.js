@@ -6,6 +6,7 @@ import {
 } from 'promise-timeout';
 
 import RouterBaseManager from './RouterBaseManager';
+import RouterIframeManager from './RouterIframeManager';
 
 const DEFAULT_TRANSACTION_TIMEOUT = 5;
 
@@ -52,12 +53,23 @@ export default class RouterTransactionManager extends RouterBaseManager {
 
     this.routerIframeManager = routerIframeManager;
 
+    this.isHalting = false;
+    this.isHalted = false;
+    this.iframeWasDestroyedExternally = false;
+
     this.publishHandlers = {};
     this.pendingTransactions = {};
     this.subscribeHandlers = {};
     this.unsubscribeHandlers = {};
+    this.unsubscribesInProgress = {};
 
     this.TRANSACTION_TIMEOUT = DEFAULT_TRANSACTION_TIMEOUT;
+
+    // @todo - this seems too tightly coupled...  It's needed to detect when an
+    // error should be shown for unsubscribes and publishes
+    this.routerIframeManager.events.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+      this.iframeWasDestroyedExternally = true;
+    });
   }
 
   /**
@@ -227,6 +239,11 @@ export default class RouterTransactionManager extends RouterBaseManager {
    *   Rejects when publish operation fails
    */
   async publish (topic, data, timeout = this.TRANSACTION_TIMEOUT) {
+    if (this.isDestroyComplete) {
+      this.logger.info(`Tried to publish to topic "${topic}" while destroyed`);
+      return;
+    }
+
     this.logger.debug(`Publishing to topic "${topic}"`);
 
     // There can be `n` publishes for 1 topic, e.g. `iov/stats`
@@ -237,8 +254,28 @@ export default class RouterTransactionManager extends RouterBaseManager {
       this.logger.info(`Successfully published to topic "${topic}" with id "${publishId}"`);
     }
     catch (error) {
+      if (this.isDestroyed) {
+        this.logger.info(`Publish to topic "${topic}" with id "${publishId}" failed while destroying`);
+        return;
+      }
+
+      if (this.isHalting || this.isHalted) {
+        this.logger.info(`Publish to topic "${topic}" with id "${publishId}" failed while halting/halted`);
+        return;
+      }
+
+      if (this.iframeWasDestroyedExternally) {
+        this.logger.info(`Publish to topic "${topic}" with id "${publishId}" failed while iframe was destroyed externally`);
+        return;
+      }
+
       this.logger.error(`Failed to publish to topic "${topic}" with id "${publishId}"`);
+      this.logger.error(error);
+
       throw error;
+    }
+    finally {
+      delete this.publishHandlers[publishId];
     }
   }
 
@@ -263,33 +300,14 @@ export default class RouterTransactionManager extends RouterBaseManager {
     });
   }
 
-  hasPublishHandler (publishId) {
-    if (this.isDestroyComplete) {
-      // @todo - should this throw?
-      return false;
-    }
-
-    if (!publishId) {
-      // @todo - should this throw?
-      return false;
-    }
-
-    if (!this.publishHandlers) {
-      // @todo - should this throw?
-      return false;
-    }
-
-    if (!this.publishHandlers[publishId]) {
-      return false;
-    }
-
-    return true;
-  }
-
   _handlePublishRouterEvent (eventType, event) {
     const publishId = event.data.publishId;
 
-    if (!this.hasPublishHandler(publishId)) {
+    if (!publishId) {
+      throw new Error('Cannot handle publish event without publishId');
+    }
+
+    if (!this.publishHandlers[publishId]) {
       this.logger.warn(`No handler for publishId "${publishId}" for publish event "${eventType}"`);
       return;
     }
@@ -307,8 +325,6 @@ export default class RouterTransactionManager extends RouterBaseManager {
         throw new Error(`Unknown eventType: ${eventType}`);
       }
     }
-
-    delete this.publishHandlers[publishId];
   }
 
   /**
@@ -335,29 +351,6 @@ export default class RouterTransactionManager extends RouterBaseManager {
     });
   }
 
-  hasSubscribeHandler (topic) {
-    if (this.isDestroyComplete) {
-      // @todo - should this throw?
-      return false;
-    }
-
-    if (!topic) {
-      // @todo - should this throw?
-      return false;
-    }
-
-    if (!this.subscribeHandlers) {
-      // @todo - should this throw?
-      return false;
-    }
-
-    if (!this.subscribeHandlers[topic]) {
-      return false;
-    }
-
-    return true;
-  }
-
   _handleMessageArrivedRouterEvent (eventType, event) {
     if (this.isDestroyComplete) {
       throw new Error('Tried to handle Router message arrived event after destroy was complete!');
@@ -366,7 +359,11 @@ export default class RouterTransactionManager extends RouterBaseManager {
     const message = event.data;
     const topic = message.destinationName;
 
-    if (!this.hasSubscribeHandler(topic)) {
+    if (!topic) {
+      throw new Error('Cannot handle subscribe event without a topic');
+    }
+
+    if (!this.subscribeHandlers[topic]) {
       this.logger.warn(`No handler for subscribe topic "${topic}" for message event "${eventType}"`);
       return;
     }
@@ -391,15 +388,52 @@ export default class RouterTransactionManager extends RouterBaseManager {
    *   The topic to unsubscribe from
    */
   async unsubscribe (topic, timeout = this.TRANSACTION_TIMEOUT) {
+    if (this.isDestroyComplete) {
+      this.logger.info(`Tried to unsubscribe from topic "${topic}" while destroyed`);
+      return;
+    }
+
+    if (this.unsubscribesInProgress[topic]) {
+      this.logger.info(`Already unsubscribing from ${topic}`);
+      return;
+    }
+
     this.logger.debug(`Unsubscribing from topic "${topic}"`);
 
     try {
+      // When data is received for a topic that is subscribed to, but that we
+      // are about to unsubscribe from, stop processing that topic data.
+      delete this.subscribeHandlers[topic];
+
+      this.unsubscribesInProgress[topic] = true;
+
       await PromiseTimeout(this._unsubscribe(topic), timeout * 1000);
+
       this.logger.info(`Successfully unsubscribed from topic "${topic}"`);
     }
     catch (error) {
+      if (this.isDestroyed) {
+        this.logger.info(`Unsubscribe from topic "${topic}" failed while destroying`);
+        return;
+      }
+
+      if (this.isHalting || this.isHalted) {
+        this.logger.info(`Unsubscribe from topic "${topic}" failed while halting/halted`);
+        return;
+      }
+
+      if (this.iframeWasDestroyedExternally) {
+        this.logger.info(`Unsubscribe from topic "${topic}" failed while iframe was destroyed externally`);
+        return;
+      }
+
       this.logger.info(`Failed to unsubscribe from topic "${topic}"`);
+
       throw error;
+    }
+    finally {
+      delete this.unsubscribesInProgress[topic];
+      delete this.unsubscribeHandlers[topic];
     }
   }
 
@@ -416,44 +450,24 @@ export default class RouterTransactionManager extends RouterBaseManager {
         resolve();
       };
 
-      if (this.hasSubscribeHandler(topic)) {
-        // When data is received for a topic that is subscribed to, but that we
-        // are about to unsubscribe from, stop processing that topic data.
-        delete this.subscribeHandlers[topic];
-      }
-
       this.issueCommand(RouterTransactionManager.routerCommands.UNSUBSCRIBE, {
         topic,
       });
     });
   }
 
-  hasUnsubscribeHandler (topic) {
+  _handleUnsubscribeRouterEvent (eventType, event) {
+    const topic = event.data.topic;
+
     if (this.isDestroyComplete) {
       throw new Error('Tried to check unsubscribe handler after destroy was complete!');
     }
 
     if (!topic) {
-      // @todo - should this throw?
-      return false;
-    }
-
-    if (!this.unsubscribeHandlers) {
-      // @todo - should this throw?
-      return false;
+      throw new Error('Cannot handle unsubscribe event without a topic');
     }
 
     if (!this.unsubscribeHandlers[topic]) {
-      return false;
-    }
-
-    return true;
-  }
-
-  _handleUnsubscribeRouterEvent (eventType, event) {
-    const topic = event.data.topic;
-
-    if (!this.hasUnsubscribeHandler(topic)) {
       this.logger.warn(`No handler for topic "${topic}" for unsubscribe event "${eventType}"`);
       return;
     }
@@ -471,8 +485,6 @@ export default class RouterTransactionManager extends RouterBaseManager {
         throw new Error(`Unknown eventType: ${eventType}`);
       }
     }
-
-    delete this.unsubscribeHandlers[topic];
   }
 
   onRouterEvent (eventType, event) {
@@ -501,7 +513,20 @@ export default class RouterTransactionManager extends RouterBaseManager {
     }
   }
 
-  halt () {
+  async halt () {
+    if (this.isDestroyed) {
+      this.logger.info('Tried to halt while destroyed');
+      return;
+    }
+
+    if (this.isHalting || this.isHalted) {
+      this.logger.info('Tried to halt while halting/halted');
+      return;
+    }
+
+    this.logger.info('Halting all handlers...');
+    this.isHalting = true;
+
     for (const transactionId in this.pendingTransactions) {
       const pendingTransaction = this.pendingTransactions[transactionId];
 
@@ -515,8 +540,17 @@ export default class RouterTransactionManager extends RouterBaseManager {
     this.unsubscribeHandlers = {};
     this.publishHandlers = {};
 
-    // @todo - do these all need to be unsubscribed from?
+    const subscribedTopics = Object.keys(this.subscribeHandlers);
+
+    // @todo - error handling
+    await Promise.allSettled(subscribedTopics.map((topic) => this.unsubscribe(topic)));
+
     this.subscribeHandlers = {};
+    this.unsubscribesInProgress = {};
+
+    this.isHalting = false;
+    this.isHalted = true;
+    this.logger.info('Finished halting all handlers');
   }
 
   /**
@@ -538,19 +572,20 @@ export default class RouterTransactionManager extends RouterBaseManager {
     });
   }
 
-  destroy () {
+  async destroy () {
     if (this.isDestroyed) {
       return;
     }
 
     this.isDestroyed = true;
 
-    this.halt();
+    await this.halt();
 
-    this.pendingTransactions = {};
-    this.unsubscribeHandlers = {};
-    this.publishHandlers = {};
-    this.subscribeHandlers = {};
+    this.pendingTransactions = null;
+    this.unsubscribeHandlers = null;
+    this.publishHandlers = null;
+    this.subscribeHandlers = null;
+    this.unsubscribesInProgress = null;
 
     super._destroy();
   }
