@@ -1,5 +1,7 @@
 'use strict';
 
+const path = require('path');
+const babelConfig = require('./babel.config')();
 const testOverride = require('./test/jest/.eslintrc.jest');
 
 const rules = {
@@ -111,19 +113,30 @@ module.exports = {
     'eslint:recommended',
   ],
   root: true,
-  parser: 'babel-eslint',
+  parser: '@babel/eslint-parser',
   parserOptions: {
-    ecmaVersion: 8,
+    ecmaVersion: 2020,
     sourceType: 'module',
     ecmaFeatures: {
       impliedStrict: true,
     },
+    babelOptions: {
+      configFile: path.join(__dirname, 'babel.config.js'),
+    },
   },
+  plugins: [
+    '@babel/eslint-plugin',
+  ],
   env: {
     browser: true,
   },
   rules,
   overrides: [
+    {
+      files: babelConfig.ignore,
+      // use the default parser since babel isn't parsing these files
+      parser: 'esprima',
+    },
     ...testOverride,
   ],
 };
