@@ -2,13 +2,13 @@ import {
   timeout as PromiseTimeout,
 } from 'promise-timeout';
 
-import Logger from '../utils/Logger';
-import utils from '../utils/utils';
+import Logger from '../../utils/Logger';
+import utils from '../../utils/utils';
 
 import RouterBaseManager from './RouterBaseManager';
 import Router from './Router';
 import iframeEventHandlers from './iframeEventHandlers';
-import StreamConfiguration from '../iov/StreamConfiguration';
+import StreamConfiguration from '../../iov/StreamConfiguration';
 
 const DEFAULT_ROUTER_CONNECTION_TIMEOUT = 120;
 // Setting this to half of the default value to help with SFS memory

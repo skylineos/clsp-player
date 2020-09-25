@@ -10,10 +10,10 @@ const instanceMethodsTests = require('./Router/instance.methods');
 
 const Paho = require('../../Conduit/Paho');
 const _Router = require('../Router');
-const Logger = require('../../utils/Logger');
+const Logger = require('../../../utils/Logger');
 
 jest.mock('../../Conduit/Paho');
-jest.mock('../../utils/Logger');
+jest.mock('../../../utils/Logger');
 
 describe('Router', () => {
   const utils = _utils({

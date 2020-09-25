@@ -1,7 +1,7 @@
 import Conduit from './Conduit';
 import Paho from './Paho';
 
-import Logger from '../utils/Logger';
+import Logger from '../../utils/Logger';
 
 let collection;
 
@@ -103,7 +103,7 @@ export default class ConduitCollection {
    *
    * @returns {Conduit}
    */
-  async create (
+  create (
     logId,
     clientId,
     streamConfiguration,

@@ -1,7 +1,7 @@
 'use strict';
 
 // @todo - can we use module alias or something here?
-const utils = require('../../../../../test/jest/utils');
+const utils = require('../../../../../../test/jest/utils');
 
 module.exports = function ({
   Logger,

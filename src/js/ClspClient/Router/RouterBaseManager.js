@@ -5,7 +5,7 @@
 
 import EventEmitter from 'eventemitter3';
 
-import Logger from '../utils/Logger';
+import Logger from '../../utils/Logger';
 
 import Router from './Router';
 
