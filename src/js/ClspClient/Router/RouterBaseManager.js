@@ -62,6 +62,22 @@ export default class RouterBaseManager {
     this.logger.info(`Constructing new ${this.constructor.name} instance`);
   }
 
+  on (eventName, handler) {
+    const eventNames = Object.values(this.constructor.events);
+
+    if (!eventNames.includes(eventName)) {
+      throw new Error(`Unable to register listener for unknown event "${eventName}"`);
+    }
+
+    if (!handler) {
+      throw new Error(`Unable to register for event "${eventName}" without a handler`);
+    }
+
+    this.events.on(eventName, handler);
+
+    return this;
+  }
+
   /**
    * @private
    *

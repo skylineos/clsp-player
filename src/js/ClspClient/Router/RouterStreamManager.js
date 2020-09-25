@@ -15,6 +15,7 @@ export default class RouterStreamManager extends RouterBaseManager {
    */
   static events = {
     RESYNC_STREAM_COMPLETE: 'resync-stream-complete',
+    VIDEO_SEGMENT_RECEIVED: 'video-segment-received',
   }
 
   /**
@@ -77,13 +78,6 @@ export default class RouterStreamManager extends RouterBaseManager {
   }
 
   /**
-   * Called many times, each time a moof (segment) is received
-   *
-   * @callback RouterStreamManager-onMoof
-   * @param {any} moof - a stream segment
-   */
-
-  /**
    * @async
    *
    * If the hash is valid or if we are not using a hash, perform the necessary
@@ -91,14 +85,11 @@ export default class RouterStreamManager extends RouterBaseManager {
    * occurs in the player, since it involves taking those received stream
    * segments and using MSE to display them.
    *
-   * @param {RouterStreamManager-onMoof} onMoof
-   *   the function that will handle the moof
-   *
    * @returns {Promise}
    *   * Resolves once the first moof has been received
    *   * Rejects if the moov or first moof time out
    */
-  async play (onMoof) {
+  async play () {
     if (this.isDestroyed) {
       this.logger.info('Tried to play from destroyed RouterStreamManager');
       return;
@@ -133,7 +124,7 @@ export default class RouterStreamManager extends RouterBaseManager {
       } = await this._requestMoov();
 
       // Set up the listener for the moofs
-      await this._requestMoofs(onMoof);
+      await this._requestMoofs();
 
       this.isPlaying = true;
 
@@ -384,15 +375,12 @@ export default class RouterStreamManager extends RouterBaseManager {
    *
    * Request moofs from the SFS.  Should only be called after getting the moov.
    *
-   * @param {Function} onMoof
-   *   The function to call when a moof is received
-   *
    * @returns {Promise}
    *   * Resolves when the first moof is received
    *   * Rejects if the first moof is not received within the time defined by
    *     FIRST_MOOF_TIMEOUT_DURATION
    */
-  async _requestMoofs (onMoof = () => {}) {
+  async _requestMoofs () {
     this.logger.info('Setting up moof listener...');
 
     if (!this.guid) {
@@ -446,7 +434,9 @@ export default class RouterStreamManager extends RouterBaseManager {
           this.routerConnectionManager.reconnect();
         }, this.MOOF_TIMEOUT_DURATION * 1000);
 
-        onMoof(clspMessage);
+        this.events.emit(RouterStreamManager.events.VIDEO_SEGMENT_RECEIVED, {
+          clspMessage,
+        });
       });
     });
   }

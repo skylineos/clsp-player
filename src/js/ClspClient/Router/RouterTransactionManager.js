@@ -67,7 +67,7 @@ export default class RouterTransactionManager extends RouterBaseManager {
 
     // @todo - this seems too tightly coupled...  It's needed to detect when an
     // error should be shown for unsubscribes and publishes
-    this.routerIframeManager.events.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+    this.routerIframeManager.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
       this.iframeWasDestroyedExternally = true;
     });
   }
