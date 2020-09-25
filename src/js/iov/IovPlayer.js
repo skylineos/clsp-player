@@ -1,11 +1,8 @@
-'use strict';
-
 import {
   v4 as uuidv4,
 } from 'uuid';
 
-import ConduitCollection from '../Conduit/ConduitCollection';
-import Conduit from '../Conduit/Conduit';
+import ClspClient from '../ClspClient/ClspClient';
 import MSEWrapper from './MSEWrapper';
 import Logger from '../utils/Logger';
 import StreamConfiguration from './StreamConfiguration';
@@ -46,28 +43,42 @@ export default class IovPlayer {
 
   static factory (
     logId,
+    containerElement,
     videoElement,
-    onConduitMessageError,
+    onClspClientRouterEventError,
     onPlayerError,
   ) {
     return new IovPlayer(
       logId,
+      containerElement,
       videoElement,
-      onConduitMessageError,
+      onClspClientRouterEventError,
       onPlayerError,
     );
   }
 
   constructor (
     logId,
+    containerElement,
     videoElement,
-    onConduitMessageError = this.onConduitMessageError,
+    onClspClientRouterEventError = this.onClspClientRouterEventError,
     onPlayerError = this.onPlayerError,
   ) {
+    if (!containerElement) {
+      throw new Error('Tried to construct without a container element');
+    }
+
+    if (!videoElement) {
+      throw new Error('Tried to construct without a video element');
+    }
+
     this.logId = logId;
     this.logger = Logger().factory(`Iov Player ${this.logId}`);
 
     this.logger.debug('constructor');
+
+    this.containerElement = containerElement;
+    this.videoElement = videoElement;
 
     this.metrics = {};
 
@@ -78,13 +89,11 @@ export default class IovPlayer {
       this.events[IovPlayer.EVENT_NAMES[i]] = [];
     }
 
-    this.videoElement = videoElement;
-
-    this.conduitCount = 0;
-    this.conduit = null;
+    this.clspClientCount = 0;
+    this.clspClient = null;
     this.streamConfiguration = null;
 
-    this.onConduitMessageError = onConduitMessageError;
+    this.onClspClientRouterEventError = onClspClientRouterEventError;
     this.onPlayerError = onPlayerError;
     this.firstFrameShown = false;
     this.stopped = false;
@@ -187,9 +196,14 @@ export default class IovPlayer {
     this.logger.error(error);
   }
 
-  generateConduitLogId () {
-    return `${this.logId}.conduit:${++this.conduitCount}`;
+  generateClspClientLogId () {
+    return `${this.logId}.clspClient:${++this.clspClientCount}`;
   }
+
+  onClspClientRouterEventError = (error) => {
+    this.logger.error('Router Event Error!');
+    this.logger.error(error);
+  };
 
   onPlayerError = (error) => {
     this.logger.error('Player Error!');
@@ -225,40 +239,40 @@ export default class IovPlayer {
     this.videoElement.id = this.clientId;
     this.videoElement.dataset.name = streamConfiguration.streamName;
 
-    this.conduit = await ConduitCollection.asSingleton().create(
-      this.generateConduitLogId(),
+    this.clspClient = ClspClient.factory(
+      this.generateClspClientLogId(),
       this.clientId,
       this.streamConfiguration,
-      this.videoElement.parentNode,
+      this.containerElement,
     );
 
-    this.conduit.events.on(Conduit.events.RECONNECT_SUCCESS, () => {
-      this.logger.info('Conduit reconnected, restarting...');
+    // @todo - don't use the conduit events here
+
+    this.clspClient.conduit.events.on(ClspClient.events.RECONNECT_SUCCESS, () => {
+      this.logger.info('ClspClient reconnected, restarting...');
       // @todo - is there a more performant way to do this?
       this.restart();
     });
 
-    this.conduit.events.on(Conduit.events.RECONNECT_FAILURE, (data) => {
-      this.logger.error('Conduit Reconnect Failure!');
+    this.clspClient.conduit.events.on(ClspClient.events.RECONNECT_FAILURE, (data) => {
+      this.logger.error('ClspClient Reconnect Failure!');
       this.logger.error(data.error);
     });
 
-    this.conduit.events.on(Conduit.events.ROUTER_EVENT_ERROR, (data) => {
-      // @todo - is there any remediation action we could take here?
-      this.logger.error('Conduit Message Error!');
-      this.logger.error(data.error);
+    this.clspClient.conduit.events.on(ClspClient.events.ROUTER_EVENT_ERROR, (data) => {
+      this.onClspClientRouterEventError(data.error, data);
     });
 
-    this.conduit.events.on(Conduit.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+    this.clspClient.conduit.events.on(ClspClient.events.IFRAME_DESTROYED_EXTERNALLY, () => {
       this.trigger('IframeDestroyedExternally');
     });
 
-    this.conduit.events.on(Conduit.events.RESYNC_STREAM_COMPLETE, () => {
+    this.clspClient.conduit.events.on(ClspClient.events.RESYNC_STREAM_COMPLETE, () => {
       this.logger.warn('Resyncing stream...');
       this.reinitializeMseWrapper(this.mimeCodec);
     });
 
-    await this.conduit.initialize();
+    await this.clspClient.initialize();
   }
 
   _html5Play () {
@@ -310,7 +324,7 @@ export default class IovPlayer {
           onAppendStart: (byteArray) => {
             this.logger.silly('On Append Start...');
 
-            this.conduit.segmentUsed(byteArray);
+            this.clspClient.conduit.segmentUsed(byteArray);
           },
           onAppendFinish: (info) => {
             this.logger.silly('On Append Finish...');
@@ -428,9 +442,8 @@ export default class IovPlayer {
     await this.stop();
 
     if (needToReinitialize) {
-      if (this.conduit) {
-        // @todo - do we need to await this?
-        ConduitCollection.asSingleton().remove(this.clientId);
+      if (this.clspClient) {
+        await this.clspClient.destroy();
       }
 
       await this.initialize();
@@ -497,7 +510,7 @@ export default class IovPlayer {
         // guid,
         mimeCodec,
         moov,
-      } = await this.conduit.play(this.onMoof));
+      } = await this.clspClient.conduit.play(this.onMoof));
     }
     catch (error) {
       this.onPlayerError(error);
@@ -536,10 +549,10 @@ export default class IovPlayer {
 
     try {
       try {
-        await this.conduit.stop();
+        await this.clspClient.conduit.stop();
       }
       catch (error) {
-        this.logger.error('failed to stop the conduit');
+        this.logger.error('failed to stop the clspClient');
         this.logger.error(error);
       }
 
@@ -591,30 +604,6 @@ export default class IovPlayer {
     }
   }
 
-  enterFullscreen () {
-    if (!window.document.fullscreenElement) {
-      // Since the iov and player take control of the video element and its
-      // parent, ask the parent for fullscreen since the video elements will be
-      // destroyed and recreated when changing sources
-      this.videoElement.parentNode.requestFullscreen();
-    }
-  }
-
-  exitFullscreen () {
-    if (window.document.exitFullscreen) {
-      window.document.exitFullscreen();
-    }
-  }
-
-  toggleFullscreen () {
-    if (!window.document.fullscreenElement) {
-      this.enterFullscreen();
-    }
-    else {
-      this.exitFullscreen();
-    }
-  }
-
   /**
    * @returns {Promise}
    */
@@ -643,20 +632,9 @@ export default class IovPlayer {
       this.logger.error(error);
     }
 
-    // Setting the src of the video element to an empty string is
-    // the only reliable way we have found to ensure that MediaSource,
-    // SourceBuffer, and various Video elements are properly dereferenced
-    // to avoid memory leaks
-    // @todo - should these occur after stop? is there a reason they're done
-    // in this order?
-    this.videoElement.src = '';
-    this.videoElement.parentNode.removeChild(this.videoElement);
-    this.videoElement.remove();
-    this.videoElement = null;
+    await this.clspClient.destroy();
 
-    await ConduitCollection.asSingleton().remove(this.clientId);
-
-    this.conduit = null;
+    this.clspClient = null;
     // The caller must destroy the streamConfiguration
     this.streamConfiguration = null;
 

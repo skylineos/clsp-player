@@ -23,7 +23,7 @@ A configuration object that contains all the necessary stream data.  It does not
 
 ### `IovPlayer.js`
 
-The IovPlayer controls both the Conduit for receiving the stream and the MSEWrapper to play the video.
+The IovPlayer controls both the CLSP Client for receiving the stream and the MSEWrapper to play the video.
 
 ### `MSEWrapper.js`
 

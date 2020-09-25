@@ -1,5 +1,3 @@
-'use strict';
-
 import {
   v4 as uuidv4,
 } from 'uuid';
@@ -28,15 +26,24 @@ export default class Iov {
 
   static METRIC_TYPES = [];
 
-  static factory (videoElementId, options) {
-    return new Iov(videoElementId, options);
+  static factory (
+    videoElementId,
+    options,
+  ) {
+    return new Iov(
+      videoElementId,
+      options,
+    );
   }
 
   /**
    * @param {String} videoElementId
    * @param {Object} [options]
    */
-  constructor (videoElementId, options = {}) {
+  constructor (
+    videoElementId,
+    options = {},
+  ) {
     if (!utils.supported()) {
       throw new Error('You are using an unsupported browser - Unable to play CLSP video');
     }
@@ -150,6 +157,19 @@ export default class Iov {
     });
   }
 
+  registerContainerElement (containerElement) {
+    this.containerElement = containerElement;
+
+    return this;
+  }
+
+  registerVideoElement (videoElement) {
+    this.videoElement = videoElement;
+    this.containerElement = this.videoElement.parentNode;
+
+    return this;
+  }
+
   onConnectionChange = () => {
     // @todo - does this still work?
     if (window.navigator.onLine) {
@@ -199,7 +219,7 @@ export default class Iov {
 
     const clspVideoElement = window.document.createElement('video');
     clspVideoElement.classList.add('clsp-player');
-    // @todo - can we remove these?
+
     clspVideoElement.muted = true;
     clspVideoElement.playsinline = true;
 
@@ -243,6 +263,43 @@ export default class Iov {
       clearTimeout(this.nextPlayerTimeout);
       this.nextPlayerTimeout = null;
     }
+  }
+
+  enterFullscreen () {
+    if (!window.document.fullscreenElement) {
+      // Since the iov and player take control of the video element and its
+      // parent, ask the parent for fullscreen since the video elements will be
+      // destroyed and recreated when changing sources
+      this.containerElement.requestFullscreen();
+    }
+  }
+
+  exitFullscreen () {
+    if (window.document.exitFullscreen) {
+      window.document.exitFullscreen();
+    }
+  }
+
+  toggleFullscreen () {
+    if (!window.document.fullscreenElement) {
+      this.enterFullscreen();
+    }
+    else {
+      this.exitFullscreen();
+    }
+  }
+
+  destroyVideoElement () {
+    // Setting the src of the video element to an empty string is
+    // the only reliable way we have found to ensure that MediaSource,
+    // SourceBuffer, and various Video elements are properly dereferenced
+    // to avoid memory leaks
+    // @todo - should these occur after stop? is there a reason they're done
+    // in this order?
+    this.videoElement.src = '';
+    this.videoElement.parentNode.removeChild(this.videoElement);
+    this.videoElement.remove();
+    this.videoElement = null;
   }
 
   /**
@@ -314,6 +371,7 @@ export default class Iov {
     const changeSrcId = uuidv4();
     const iovPlayer = IovPlayer.factory(
       this.generatePlayerLogId(),
+      this.videoElementParent,
       clspVideoElement,
       () => this.changeSrc(this.streamConfiguration),
       this.onPlayerError,
@@ -429,36 +487,6 @@ export default class Iov {
 
     // @todo - do we need to handle firstFrameReceivedPromise rejecting here?
     await this.changeSrc(this.streamConfiguration).firstFrameReceivedPromise;
-  }
-
-  enterFullscreen (iovPlayer = this.iovPlayer) {
-    if (!iovPlayer) {
-      this.logger.warn('Tried to fullscreen non-existent player');
-      return;
-    }
-
-    this.logger.debug('Enter fullscreen');
-    iovPlayer.enterFullscreen();
-  }
-
-  exitFullscreen (iovPlayer = this.iovPlayer) {
-    if (!iovPlayer) {
-      this.logger.warn('Tried to un-fullscreen non-existent player');
-      return;
-    }
-
-    this.logger.debug('Exit fullscreen');
-    iovPlayer.exitFullscreen();
-  }
-
-  toggleFullscreen (iovPlayer = this.iovPlayer) {
-    if (!iovPlayer) {
-      this.logger.warn('Tried to toggle fullscreen on non-existent player');
-      return;
-    }
-
-    this.logger.debug('Toggle fullscreen');
-    iovPlayer.toggleFullscreen();
   }
 
   /**

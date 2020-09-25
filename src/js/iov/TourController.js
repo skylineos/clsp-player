@@ -1,5 +1,3 @@
-'use strict';
-
 import StreamConfiguration from './StreamConfiguration';
 import Logger from '../utils/Logger';
 
