@@ -73,6 +73,7 @@ export default class RouterStreamManager extends RouterBaseManager {
     this.moofTimeout = null;
 
     this.isPlaying = false;
+    this.isStopping = false;
   }
 
   /**
@@ -177,18 +178,24 @@ export default class RouterStreamManager extends RouterBaseManager {
       return;
     }
 
+    this.isStopping = true;
+
     const results = await Promise.allSettled([
       // Stop listening for the moov
-      await this.routerTransactionManager.unsubscribe(this.moovRequestTopic),
+      this.routerTransactionManager.unsubscribe(this.moovRequestTopic),
       // Stop listening for moofs
-      await this.routerTransactionManager.unsubscribe(`iov/video/${this.guid}/live`),
+      this.routerTransactionManager.unsubscribe(`iov/video/${this.guid}/live`),
       // Stop listening for resync events
-      await this.routerTransactionManager.unsubscribe(`iov/video/${this.guid}/resync`),
+      this.routerTransactionManager.unsubscribe(`iov/video/${this.guid}/resync`),
       // Tell the server we've stopped
-      await this.routerTransactionManager.publish(`iov/video/${this.guid}/stop`, {
+      this.routerTransactionManager.publish(`iov/video/${this.guid}/stop`, {
         clientId: this.clientId,
       }),
     ]);
+
+    this.guid = null;
+    this.isPlaying = false;
+    this.isStopping = false;
 
     const errors = results.reduce((acc, cur) => {
       if (cur.status !== 'fulfilled') {
@@ -200,7 +207,8 @@ export default class RouterStreamManager extends RouterBaseManager {
 
     if (errors.length) {
       this.logger.warn('Error(s) encountered while stopping:');
-      this.logger.error(errors);
+
+      errors.foreach((error) => this.logger.error(error));
 
       // @todo - is there a better way to do this?
       throw errors[0];
@@ -360,6 +368,9 @@ export default class RouterStreamManager extends RouterBaseManager {
       // We must override the subscribe topic to get the moov
       this.moovRequestTopic,
     );
+
+    // @todo - after we request the moov, can we unsubscribe from the moov
+    // topic?  or do moov's get sent to us periodically or something?
 
     return {
       moov,

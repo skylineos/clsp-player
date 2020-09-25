@@ -58,6 +58,8 @@ export default class RouterBaseManager {
     // state flags
     this.isDestroyed = false;
     this.isDestroyComplete = false;
+
+    this.logger.info(`Constructing new ${this.constructor.name} instance`);
   }
 
   /**

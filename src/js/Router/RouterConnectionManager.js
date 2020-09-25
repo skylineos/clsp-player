@@ -81,7 +81,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
 
     this.statsManager.events.on(RouterStatsManager.events.PUBLISH_FAILURE, (data) => {
       // @todo - maybe wait for 2 or 3 failures before reconnecting?
-      this.logger.info('Publish stats failure - attempting to reconnect...');
+      this.logger.warn('Publish stats failure - attempting to reconnect...');
       this.reconnect();
     });
 
@@ -107,34 +107,13 @@ export default class RouterConnectionManager extends RouterBaseManager {
    * @async
    *
    * After initialization, call this to establish the connection to the server.
+   * It's really just a wrapper around reconnect that emits a different event.
    *
    * @param {} emit
    *
    * @returns {void}
    */
   async connect (emit = true) {
-    if (this.isDestroyed) {
-      this.logger.info('Tried to connect on destroyed RouterConnectionManager');
-      return;
-    }
-
-    if (this.isDisconnecting) {
-      this.logger.info('Tried to connect while there was a disconnection in progress');
-      return;
-    }
-
-    if (this.isConnecting) {
-      this.logger.info('Connection already in progress');
-      return;
-    }
-
-    if (this.isConnected) {
-      this.logger.info('Already connected.');
-      return;
-    }
-
-    this.isConnecting = true;
-
     try {
       await this.reconnect(false);
 
@@ -162,9 +141,6 @@ export default class RouterConnectionManager extends RouterBaseManager {
         });
       }
     }
-    finally {
-      this.isConnecting = false;
-    }
   }
 
   /**
@@ -176,23 +152,9 @@ export default class RouterConnectionManager extends RouterBaseManager {
    */
   _connect () {
     return new Promise((resolve, reject) => {
-      this.logger.debug('Connecting to CLSP server...');
-
-      if (this.isDestroyed) {
-        this.logger.info('Tried to _connect on destroyed RouterConnectionManager');
-        return resolve();
-      }
-
-      if (this.isDisconnecting) {
-        this.logger.info('Tried to _connect while there was a disconnection in progress');
-        return resolve();
-      }
-
-      if (this.isConnected) {
-        return resolve();
-      }
-
       this._onConnect = (error) => {
+        this._onConnect = null;
+
         if (error) {
           return reject(error);
         }
@@ -218,8 +180,6 @@ export default class RouterConnectionManager extends RouterBaseManager {
         throw new Error(`Unknown eventType: ${eventType}`);
       }
     }
-
-    this._onConnect = null;
   }
 
   /**
@@ -240,14 +200,19 @@ export default class RouterConnectionManager extends RouterBaseManager {
       return;
     }
 
-    this.logger.info('Reconnecting...');
+    if (this.isConnecting) {
+      this.logger.info('Connection already in progress');
+      return;
+    }
 
-    // If we're already trying to reconnect, don't try again
     if (this.isReconnecting) {
       this.logger.info('A reconnection attempt is already in progress');
       return;
     }
 
+    this.logger.info('Reconnecting...');
+
+    this.isConnecting = true;
     this.isReconnecting = true;
 
     const reconnectionStartedAt = Date.now();
@@ -288,6 +253,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
       }
     }
     finally {
+      this.isConnecting = false;
       this.isReconnecting = false;
     }
   }
@@ -310,6 +276,11 @@ export default class RouterConnectionManager extends RouterBaseManager {
 
     if (this.isDisconnecting) {
       this.logger.info('Tried to _reconnect while there was a disconnection in progress');
+      return;
+    }
+
+    if (this.isConnected) {
+      this.logger.info('Already connected.');
       return;
     }
 
@@ -383,6 +354,10 @@ export default class RouterConnectionManager extends RouterBaseManager {
     this.isDisconnecting = true;
 
     try {
+      // when a stream fails, it no longer needs to send stats to the
+      // server, and it may not even be connected to the server
+      this.statsManager.stop();
+
       await PromiseTimeout(this._disconnect(), this.IMMEDIATE_RECONNECTION_DELAY * 1000);
 
       if (emit) {
@@ -390,6 +365,16 @@ export default class RouterConnectionManager extends RouterBaseManager {
       }
     }
     catch (error) {
+      if (this.isDestroyComplete) {
+        this.logger.info('Disconnect failed while destroyed');
+        return;
+      }
+
+      if (this.routerTransactionManager.iframeWasDestroyedExternally) {
+        this.logger.info('Disconnect failed while iframe was destroyed externally');
+        return;
+      }
+
       if (emit) {
         this.events.emit(RouterConnectionManager.events.DISCONNECT_FAILURE, {
           error,
@@ -398,29 +383,17 @@ export default class RouterConnectionManager extends RouterBaseManager {
 
       throw error;
     }
+    finally {
+      this._onDisconnect = null;
+
+      // @todo - is this correct in the event of an error while disconnecting?
+      this.isConnected = false;
+      this.isDisconnecting = false;
+    }
   }
 
-  /**
-   * @private
-   * @async
-   *
-   * Do not call this method directly!  Only use the `disconnect` method.
-   */
   _disconnect () {
     return new Promise((resolve, reject) => {
-      if (this.isDestroyComplete) {
-        this.logger.info('Tried to _disconnect on a destroyed RouterConnectionManager');
-        return resolve();
-      }
-
-      // when a stream fails, it no longer needs to send stats to the
-      // server, and it may not even be connected to the server
-      this.statsManager.stop();
-
-      if (!this.isConnected) {
-        return resolve();
-      }
-
       this._onDisconnect = (error) => {
         if (error) {
           return reject(error);
@@ -447,12 +420,6 @@ export default class RouterConnectionManager extends RouterBaseManager {
         throw new Error(`Unknown eventType: ${eventType}`);
       }
     }
-
-    this._onDisconnect = null;
-
-    // @todo - is this correct in the event of an error while disconnecting?
-    this.isConnected = false;
-    this.isDisconnecting = false;
   }
 
   /**
