@@ -3,11 +3,12 @@ import {
 } from 'uuid';
 
 import EventEmitter from '../../utils/EventEmitter';
+import utils from '../../utils/utils';
+
 import ClspClient from '../../ClspClient/ClspClient';
 import MSEWrapper from './MSE/MSEWrapper';
-import Logger from '../../utils/Logger';
+import MediaSource from './MSE/MediaSource';
 import StreamConfiguration from '../StreamConfiguration';
-import utils from '../../utils/utils';
 
 const DEFAULT_ENABLE_METRICS = false;
 const DEFAULT_SEGMENT_INTERVAL_SAMPLE_SIZE = 5;
@@ -35,8 +36,9 @@ export default class IovPlayer extends EventEmitter {
     FIRST_FRAME_SHOWN: 'firstFrameShown',
     VIDEO_RECEIVED: 'videoReceived',
     VIDEO_INFO_RECEIVED: 'videoInfoReceived',
+    REINITIALZE_ERROR: 'reinitialize-error',
     IFRAME_DESTROYED_EXTERNALLY: 'IframeDestroyedExternally',
-  }
+  };
 
   // @todo @metrics
   // static METRIC_TYPES = [
@@ -273,6 +275,8 @@ export default class IovPlayer extends EventEmitter {
 
       this.clspClient.conduit.on(ClspClient.events.RESYNC_STREAM_COMPLETE, () => {
         this.logger.warn('Resyncing stream...');
+
+        // No need to await since we're inside an event listener
         this.#reinitializeMseWrapper();
       });
 
@@ -395,7 +399,7 @@ export default class IovPlayer extends EventEmitter {
       this.moov = moov;
       this.mimeCodec = mimeCodec;
 
-      await this.#reinitializeMseWrapper();
+      await this.#reinitializeMseWrapper(false);
 
       this.isPlaying = true;
       this.isStopped = false;
@@ -466,130 +470,179 @@ export default class IovPlayer extends EventEmitter {
     }
   }
 
-  async #reinitializeMseWrapper () {
+  async #reinitializeMseWrapper (shouldEmitOnError = true) {
     if (this.mseWrapper) {
       await this.mseWrapper.destroy();
     }
 
     this.mseWrapper = null;
 
-    this.mseWrapper = MSEWrapper.factory(this.videoElement);
+    this.mseWrapper = MSEWrapper.factory(
+      this.logId,
+      this.videoElement,
+    );
 
-    this.mseWrapper.on(MSEWrapper.events.METRIC, ({
-      type,
-      value,
-    }) => {
+    this.mseWrapper.on(MSEWrapper.events.METRIC, ({ type, value }) => {
       this.#metric(type, value);
     });
 
-    this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_OPEN, async (event) => {
-      this.logger.debug('on mediaSource sourceopen');
+    // Error events
 
-      await this.mseWrapper.initializeSourceBuffer(this.mimeCodec, {
-        onAppendStart: (byteArray) => {
-          this.logger.silly('On Append Start...');
+    this.mseWrapper.on(MSEWrapper.events.SHOW_VIDEO_SEGMENT_ERROR, ({ error }) => {
+      // internal error, this has been observed to happen the tab
+      // in the browser where this video player lives is hidden
+      // then reselected. 'ex' is undefined the error is bug
+      // within the MSE C++ implementation in the browser.
+      this.logger.error('Error while showing video segment!');
+      this.logger.error(error);
 
-          this.clspClient.conduit.segmentUsed(byteArray);
-        },
-        onAppendFinish: async (info) => {
-          this.logger.silly('On Append Finish...');
-
-          if (!this.firstFrameShown) {
-            this.firstFrameShown = true;
-            this.events.emit(IovPlayer.events.FIRST_FRAME_SHOWN);
-          }
-
-          this.drift = info.bufferTimeEnd - this.videoElement.currentTime;
-
-          this.#metric('sourceBuffer.bufferTimeEnd', info.bufferTimeEnd);
-          this.#metric('video.currentTime', this.videoElement.currentTime);
-          this.#metric('video.drift', this.drift);
-
-          if (this.drift > ((this.segmentIntervalAverage / 1000) + this.DRIFT_CORRECTION_CONSTANT)) {
-            this.#metric('video.driftCorrection', 1);
-            this.videoElement.currentTime = info.bufferTimeEnd;
-          }
-
-          if (this.videoElement.paused === true) {
-            this.logger.debug('Video is paused!');
-
-            try {
-              await this.#html5Play();
-            }
-            catch (error) {
-              this.logger.error('Error while trying to play CLSP video from video element...');
-              throw error;
-            }
-          }
-        },
-        onRemoveFinish: (info) => {
-          this.logger.debug('onRemoveFinish');
-        },
-        onAppendError: async (error) => {
-          // internal error, this has been observed to happen the tab
-          // in the browser where this video player lives is hidden
-          // then reselected. 'ex' is undefined the error is bug
-          // within the MSE C++ implementation in the browser.
-          this.logger.warn('sourceBuffer.append', 'Error while appending to sourceBuffer');
-          this.logger.error(error);
-
-          await this.#reinitializeMseWrapper();
-        },
-        onRemoveError: (error) => {
-          if (error.constructor.name === 'DOMException') {
-            // @todo - every time the mseWrapper is destroyed, there is a
-            // sourceBuffer error.  No need to log that, but you should fix it
-            return;
-          }
-
-          // observed this fail during a memry snapshot in chrome
-          // otherwise no observed failure, so ignore exception.
-          this.logger.warn('sourceBuffer.remove', 'Error while removing segments from sourceBuffer');
-          this.logger.error(error);
-        },
-        onStreamFrozen: async () => {
-          this.logger.debug('stream appears to be frozen - reinitializing...');
-
-          await this.#reinitializeMseWrapper();
-        },
-        onError: async (error) => {
-          this.logger.warn('mediaSource.sourceBuffer.generic', 'mediaSource sourceBuffer error');
-          this.logger.error(error);
-
-          await this.#reinitializeMseWrapper();
-        },
-      });
-
-      this.events.emit(IovPlayer.events.VIDEO_INFO_RECEIVED);
-
-      this.mseWrapper.appendMoov(this.moov);
+      // No need to await since we're inside an event listener
+      this.#reinitializeMseWrapper();
     });
 
-    this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_ENDED, async (event) => {
-      this.logger.debug('on mediaSource sourceended');
-
-      await this.stop();
-    });
-
-    this.mseWrapper.mediaSource.on(MediaSource.events.ERROR, (event) => {
-      this.logger.warn('mediaSource.generic -> mediaSource error');
-
+    this.mseWrapper.on(MSEWrapper.events.MEDIA_SOURCE_ERROR, (event) => {
+      this.logger.warn('mediaSource.generic --> mediaSource error');
       // @todo - sometimes, this error is an event rather than an error!
       // If different onError calls use different method signatures, that
       // needs to be accounted for in the MSEWrapper, and the actual error
       // that was thrown must ALWAYS be the first argument here.  As a
       // shortcut, we can log `...args` here instead.
       this.logger.error(event);
+
+      // No need to await since we're inside an event listener
+      this.#reinitializeMseWrapper();
+    });
+
+    this.mseWrapper.on(MSEWrapper.events.SOURCE_BUFFER_ERROR, (event) => {
+      this.logger.warn('sourceBuffer.generic --> sourceBuffer error');
+      // @todo - sometimes, this error is an event rather than an error!
+      // If different onError calls use different method signatures, that
+      // needs to be accounted for in the MSEWrapper, and the actual error
+      // that was thrown must ALWAYS be the first argument here.  As a
+      // shortcut, we can log `...args` here instead.
+      this.logger.error(event);
+
+      // No need to await since we're inside an event listener
+      this.#reinitializeMseWrapper();
+    });
+
+    this.mseWrapper.on(MSEWrapper.events.STREAM_FROZEN, () => {
+      this.logger.info('stream appears to be frozen - reinitializing...');
+
+      // No need to await since we're inside an event listener
+      this.#reinitializeMseWrapper();
+    });
+
+    this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_OPEN_ERROR, ({ error }) => {
+      this.logger.error('Failed to initialize mediaSource - Error on "sourceopen" event:');
+      this.logger.error(error);
+
+      // No need to await since we're inside an event listener
+      this.#reinitializeMseWrapper();
+    });
+
+    // Non-Error events
+
+    this.mseWrapper.on(MSEWrapper.events.VIDEO_SEGMENT_SHOWN, async ({ info }) => {
+      this.logger.silly('On Append Finish...');
+
+      if (!this.firstFrameShown) {
+        this.firstFrameShown = true;
+        this.events.emit(IovPlayer.events.FIRST_FRAME_SHOWN);
+      }
+
+      this.drift = info.bufferTimeEnd - this.videoElement.currentTime;
+
+      this.#metric('sourceBuffer.bufferTimeEnd', info.bufferTimeEnd);
+      this.#metric('video.currentTime', this.videoElement.currentTime);
+      this.#metric('video.drift', this.drift);
+
+      if (this.drift > ((this.segmentIntervalAverage / 1000) + this.DRIFT_CORRECTION_CONSTANT)) {
+        this.#metric('video.driftCorrection', 1);
+        this.videoElement.currentTime = info.bufferTimeEnd;
+      }
+
+      if (this.videoElement.paused === true) {
+        this.logger.info('Video is paused!');
+
+        try {
+          await this.#html5Play();
+        }
+        catch (error) {
+          this.logger.error('Error while trying to play CLSP video from video element...');
+          this.logger.error(error);
+
+          // No need to await since we're inside an event listener
+          this.#reinitializeMseWrapper();
+        }
+      }
+    });
+
+    // When the MediaSource first becomes ready, send it the moov
+    // @todo - all of this logic should be handled by the MSEWrapper!!
+    this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_OPEN, async (event) => {
+      this.logger.debug('on mediaSource sourceopen');
+
+      try {
+        try {
+          await this.mseWrapper.initializeSourceBuffer(this.mimeCodec);
+        }
+        catch (error) {
+          this.logger.warn('Error while initializing SourceBuffer!');
+
+          throw error;
+        }
+
+        this.events.emit(IovPlayer.events.VIDEO_INFO_RECEIVED);
+
+        try {
+          this.mseWrapper.appendMoov(this.moov);
+        }
+        catch (error) {
+          // internal error, this has been observed to happen the tab
+          // in the browser where this video player lives is hidden
+          // then reselected. 'ex' is undefined the error is bug
+          // within the MSE C++ implementation in the browser.
+          this.logger.warn('Error while appending moov!');
+
+          throw error;
+        }
+      }
+      catch (error) {
+        this.logger.error(error);
+
+        // No need to await since we're inside an event listener
+        this.#reinitializeMseWrapper();
+      }
+    });
+
+    this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_ENDED, async (event) => {
+      this.logger.debug('on mediaSource sourceended');
+
+      try {
+        await this.stop();
+      }
+      catch (error) {
+        this.logger.error('Error while stopping in SOURCE_ENDED event!');
+        this.logger.error(error);
+      }
     });
 
     try {
-      this.mseWrapper.initializeMediaSource();
+      await this.mseWrapper.initialize();
     }
     catch (error) {
-      // @todo - now what?
+      if (shouldEmitOnError) {
+        // Because this method is called in so many places, handle the error here.
+        // This also makes it so that all of the event listeners don't have to
+        // catch the error thrown by this method, which if not caught would result
+        // in an uncaught error exception.
+        this.events.emit(IovPlayer.events.REINITIALZE_ERROR, { error });
+      }
+      else {
+        throw error;
+      }
     }
-
-    this.mseWrapper.reinitializeVideoElementSrc();
   }
 
   async #html5Play () {
@@ -636,7 +689,21 @@ export default class IovPlayer extends EventEmitter {
       return;
     }
 
-    this.mseWrapper.append(videoSegement);
+    try {
+      this.mseWrapper.showVideoSegement(videoSegement);
+      this.clspClient.conduit.segmentUsed(videoSegement);
+    }
+    catch (error) {
+      // internal error, this has been observed to happen the tab
+      // in the browser where this video player lives is hidden
+      // then reselected. 'ex' is undefined the error is bug
+      // within the MSE C++ implementation in the browser.
+      this.logger.error('Error while showing video segment!');
+      this.logger.error(error);
+
+      // no need to await this since it's only ever called in an event handler
+      this.#reinitializeMseWrapper();
+    }
   };
 
   /**
