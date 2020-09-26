@@ -1,8 +1,11 @@
 import Debug from 'debug';
 import defaults from 'lodash/defaults';
 import noop from 'lodash/noop';
+
+import EventEmitter from '../../../utils/EventEmitter';
 import utils from '../../../utils/utils';
 // import { mp4toJSON } from './mp4-inspect';
+import MediaSource from './MediaSource';
 
 const DEBUG_PREFIX = 'skylineos:clsp-player:iov';
 
@@ -17,7 +20,14 @@ const silly = Debug(`silly:${DEBUG_PREFIX}:MSEWrapper`);
 // and cannot free space to append additional buffers.";
 const FULL_BUFFER_ERROR = 'and cannot free space to append additional buffers';
 
-export default class MSEWrapper {
+export default class MSEWrapper extends EventEmitter {
+  static events = {
+    METRIC: 'metric',
+    ON_SOURCE_OPEN: 'on-source-open',
+    ON_SOURCE_ENDED: 'on-source-ended',
+    ON_ERROR: 'on-error',
+  };
+
   // @todo @metrics
   // static METRIC_TYPES = [
   //   'mediaSource.created',
@@ -50,16 +60,16 @@ export default class MSEWrapper {
   //   'sourceBuffer.lastMoofSize',
   // ];
 
-  static isMimeCodecSupported (mimeCodec) {
-    return (window.MediaSource && window.MediaSource.isTypeSupported(mimeCodec));
-  }
-
   static factory (videoElement, options = {}) {
     return new MSEWrapper(videoElement, options);
   }
 
-  constructor (videoElement, options = {}) {
-    debug('Constructing...');
+  constructor (
+    logId,
+    videoElement,
+    options = {},
+  ) {
+    super(logId);
 
     if (!videoElement) {
       throw new Error('videoElement is required to construct an MSEWrapper.');
@@ -80,7 +90,6 @@ export default class MSEWrapper {
         bufferTruncateFactor: 2,
         bufferTruncateValue: null,
         driftThreshold: 2000,
-        duration: 10,
         enableMetrics: false,
         appendsWithSameTimeEndThreshold: 1,
       },
@@ -91,7 +100,6 @@ export default class MSEWrapper {
 
     this.mediaSource = null;
     this.sourceBuffer = null;
-    this.objectURL = null;
     this.timeBuffered = null;
     this.appendsSinceTimeEndUpdated = 0;
 
@@ -108,121 +116,36 @@ export default class MSEWrapper {
     };
   }
 
-  // @todo @metrics
-  metric (type, value) {
-    // if (!this.options || !this.options.enableMetrics) {
-    //   return;
-    // }
-
-    // if (!MSEWrapper.METRIC_TYPES.includes(type)) {
-    //   // @todo - should this throw?
-    //   return;
-    // }
-
-    // switch (type) {
-    //   case 'sourceBuffer.lastKnownBufferSize':
-    //   case 'sourceBuffer.lastMoofSize': {
-    //     this.metrics[type] = value;
-    //     break;
-    //   }
-    //   default: {
-    //     if (!Object.prototype.hasOwnProperty.call(this.metrics, type)) {
-    //       this.metrics[type] = 0;
-    //     }
-
-    //     this.metrics[type] += value;
-    //   }
-    // }
-
-    // this.trigger('metric', {
-    //   type,
-    //   value: this.metrics[type],
-    // });
-  }
-
-  initializeMediaSource (options = {}) {
+  initializeMediaSource () {
     debug('Initializing mediaSource...');
-
-    options = defaults(
-      {}, options, {
-        onSourceOpen: noop,
-        onSourceEnded: noop,
-        onError: noop,
-      },
-    );
 
     this.metric('mediaSource.created', 1);
 
     // Kill the existing media source
     this.destroyMediaSource();
 
-    this.mediaSource = new window.MediaSource();
-
-    this.eventListeners.mediaSource.sourceopen = () => {
-      // This can only be set when the media source is open.
-      // @todo - does this do memory management for us so we don't have
-      // to call remove on the buffer, which is expensive?  It seems
-      // like it...
-      this.mediaSource.duration = this.options.duration;
-
-      options.onSourceOpen();
-    };
-    this.eventListeners.mediaSource.sourceended = options.onSourceEnded;
-    this.eventListeners.mediaSource.error = options.onError;
-
-    this.mediaSource.addEventListener('sourceopen', this.eventListeners.mediaSource.sourceopen);
-    this.mediaSource.addEventListener('sourceended', this.eventListeners.mediaSource.sourceended);
-    this.mediaSource.addEventListener('error', this.eventListeners.mediaSource.error);
+    this.mediaSource = MediaSource.factory();
   }
 
   getVideoElementSrc () {
     debug('getVideoElementSrc...');
 
-    if (!this.mediaSource) {
-      // @todo - should this throw?
-      return;
-    }
+    this.metric('objectURL.created', 1);
 
-    // @todo - should multiple calls to this method with the same mediaSource
-    // result in multiple objectURLs being created?  The docs for this say that
-    // it creates something on the document, which lives until revokeObjectURL
-    // is called on it.  Does that mean we should only ever have one per
-    // this.mediaSource?  It seems like it, but I do not know.  Having only one
-    // seems more predictable, and more memory efficient.
-
-    // Ensure only a single objectURL exists at one time
-    if (!this.objectURL) {
-      this.metric('objectURL.created', 1);
-
-      this.objectURL = window.URL.createObjectURL(this.mediaSource);
-    }
-
-    this.videoElement.src = this.objectURL;
+    this.videoElement.src = this.mediaSource.asObjectURL();
   }
 
   destroyVideoElementSrc () {
     debug('destroyVideoElementSrc...');
 
-    if (!this.mediaSource) {
-      // @todo - should this throw?
-      return;
-    }
-
-    if (!this.objectURL) {
-      // @todo - should this throw?
-      return;
-    }
-
-    // this.metric('objectURL.revoked', 1);
-
-    this.objectURL = null;
-
     if (this.sourceBuffer) {
       this.shouldAbort = true;
     }
 
-    // free the resource
-    return window.URL.revokeObjectURL(this.videoElement.src);
+    this.metric('objectURL.revoked', 1);
+
+    this.mediaSource.revokeObjectURL();
+    this.videoElement.src = '';
   }
 
   reinitializeVideoElementSrc () {
@@ -233,13 +156,6 @@ export default class MSEWrapper {
     // reallocate, this will call media source open which will
     // append the MOOV atom.
     return this.getVideoElementSrc();
-  }
-
-  isMediaSourceReady () {
-    // found when stress testing many videos, it is possible for the
-    // media source ready state not to be open even though
-    // source open callback is being called.
-    return this.mediaSource && this.mediaSource.readyState === 'open';
   }
 
   isSourceBufferReady () {
@@ -257,12 +173,11 @@ export default class MSEWrapper {
         onAppendError: noop,
         onRemoveError: noop,
         onStreamFrozen: noop,
-        onError: noop,
         retry: true,
       },
     );
 
-    if (!this.isMediaSourceReady()) {
+    if (!this.mediaSource.isReady()) {
       throw new Error('Cannot create the sourceBuffer if the mediaSource is not ready.');
     }
 
@@ -281,11 +196,10 @@ export default class MSEWrapper {
     this.eventListeners.sourceBuffer.onAppendFinish = options.onAppendFinish;
     this.eventListeners.sourceBuffer.onRemoveError = options.onRemoveError;
     this.eventListeners.sourceBuffer.onStreamFrozen = options.onStreamFrozen;
-    this.eventListeners.sourceBuffer.onError = options.onError;
 
     // Supported Events
     this.sourceBuffer.addEventListener('updateend', this.onSourceBufferUpdateEnd);
-    this.sourceBuffer.addEventListener('error', this.eventListeners.sourceBuffer.onError);
+    this.sourceBuffer.addEventListener('error', this._onError);
   }
 
   queueSegment (segment) {
@@ -380,7 +294,7 @@ export default class MSEWrapper {
       return;
     }
 
-    if (!this.isMediaSourceReady()) {
+    if (!this.mediaSource.isReady()) {
       debug('The mediaSource is not ready');
       this.metric('queue.mediaSourceNotReady', 1);
       this.metric('queue.cannotProcessNext', 1);
@@ -622,7 +536,7 @@ export default class MSEWrapper {
       }
 
       this.sourceBuffer.removeEventListener('updateend', this.onSourceBufferUpdateEnd);
-      this.sourceBuffer.removeEventListener('error', this.eventListeners.sourceBuffer.onError);
+      this.sourceBuffer.removeEventListener('error', this._onError);
 
       this.sourceBuffer.addEventListener('updateend', finish);
 
@@ -634,39 +548,22 @@ export default class MSEWrapper {
     });
   }
 
-  destroyMediaSource () {
-    this.metric('sourceBuffer.destroyed', 1);
-
-    debug('Destroying mediaSource...');
-
+  async destroyMediaSource () {
     if (!this.mediaSource) {
       return;
     }
+
+    this.metric('sourceBuffer.destroyed', 1);
+
+    debug('Destroying mediaSource...');
 
     // We must do this PRIOR to the sourceBuffer being destroyed, to ensure that the
     // 'buffered' property is still available, which is necessary for completely
     // emptying the sourceBuffer.
     this.trimBuffer(undefined, true);
 
-    this.mediaSource.removeEventListener('sourceopen', this.eventListeners.mediaSource.sourceopen);
-    this.mediaSource.removeEventListener('sourceended', this.eventListeners.mediaSource.sourceended);
-    this.mediaSource.removeEventListener('error', this.eventListeners.mediaSource.error);
-
-    // let sourceBuffers = this.mediaSource.sourceBuffers;
-
-    // if (sourceBuffers.SourceBuffers) {
-    //   // @see - https://developer.mozilla.org/en-US/docs/Web/API/MediaSource/sourceBuffers
-    //   sourceBuffers = sourceBuffers.SourceBuffers();
-    // }
-
-    // for (let i = 0; i < sourceBuffers.length; i++) {
-    // this.mediaSource.removeSourceBuffer(sourceBuffers[i]);
-    // }
-
-    if (this.isMediaSourceReady() && this.isSourceBufferReady()) {
-      debug('media source was ready for endOfStream and removeSourceBuffer');
-      this.mediaSource.endOfStream();
-      this.mediaSource.removeSourceBuffer(this.sourceBuffer);
+    if (this.isSourceBufferReady()) {
+      await this.mediaSource.destroy();
     }
 
     // @todo - is this happening at the right time, or should it happen
@@ -702,16 +599,40 @@ export default class MSEWrapper {
     debug('_freeAllResources finished...');
   }
 
-  destroy () {
-    debug('destroy...');
+  // @todo @metrics
+  metric (type, value) {
+    // if (!this.options || !this.options.enableMetrics) {
+    //   return;
+    // }
 
-    if (this.isDestroyed) {
-      return Promise.resolve();
-    }
+    // if (!MSEWrapper.METRIC_TYPES.includes(type)) {
+    //   // @todo - should this throw?
+    //   return;
+    // }
 
-    this.isDestroyed = true;
+    // switch (type) {
+    //   case 'sourceBuffer.lastKnownBufferSize':
+    //   case 'sourceBuffer.lastMoofSize': {
+    //     this.metrics[type] = value;
+    //     break;
+    //   }
+    //   default: {
+    //     if (!Object.prototype.hasOwnProperty.call(this.metrics, type)) {
+    //       this.metrics[type] = 0;
+    //     }
 
-    this.destroyMediaSource();
+    //     this.metrics[type] += value;
+    //   }
+    // }
+
+    // this.trigger('metric', {
+    //   type,
+    //   value: this.metrics[type],
+    // });
+  }
+
+  _destroy () {
+    const destroyMediaSourcePromise = this.destroyMediaSource();
 
     // We MUST not force the destroy method here to be asynchronous, even
     // though it "should" be.  This is because we cannot assume that the
@@ -733,7 +654,7 @@ export default class MSEWrapper {
     // of time, such as 24 hours.
     // Note that we still return the promise, so that the caller has the
     // option of waiting if they choose.
-    const destroyPromise = this.destroySourceBuffer()
+    const destroySourceBufferPromise = this.destroySourceBuffer()
       .then(() => {
         debug('destroySourceBuffer successfully finished...');
         this._freeAllResources();
@@ -751,6 +672,9 @@ export default class MSEWrapper {
 
     debug('exiting destroy, asynchronous destroy logic in progress...');
 
-    return destroyPromise;
+    return Promise.allSettled([
+      destroyMediaSourcePromise,
+      destroySourceBufferPromise,
+    ]);
   }
 }

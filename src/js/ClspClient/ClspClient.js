@@ -1,10 +1,11 @@
 import Logger from '../utils/Logger';
 
+import Destroyable from '../utils/Destroyable';
 import Conduit from './Conduit/Conduit';
 import ConduitCollection from './Conduit/ConduitCollection';
 import StreamConfiguration from '../iov/StreamConfiguration';
 
-export default class ClspClient {
+export default class ClspClient extends Destroyable {
   static events = Conduit.events;
 
   /**
@@ -55,14 +56,14 @@ export default class ClspClient {
     streamConfiguration,
     containerElement,
   ) {
+    super(logId);
+
     this._constructorArgumentsBouncer(
-      logId,
       clientId,
       streamConfiguration,
       containerElement,
     );
 
-    this.logId = logId;
     this.clientId = clientId;
     this.streamConfiguration = streamConfiguration;
     this.containerElement = containerElement;
@@ -82,15 +83,10 @@ export default class ClspClient {
   }
 
   _constructorArgumentsBouncer (
-    logId,
     clientId,
     streamConfiguration,
     containerElement,
   ) {
-    if (!logId) {
-      throw new Error('logId is required to construct a new Conduit instance.');
-    }
-
     if (!clientId) {
       throw new Error('clientId is required to construct a new Conduit instance.');
     }
@@ -112,21 +108,13 @@ export default class ClspClient {
     await this.conduit.initialize();
   }
 
-  async destroy () {
-    if (this.isDestroyed) {
-      return;
-    }
-
-    this.isDestroyed = true;
-
+  async _destroy () {
     await ConduitCollection.asSingleton().remove(this.clientId);
 
     this.conduit = null;
     this.streamConfiguration = null;
     this.containerElement = null;
 
-    this.isDestroyComplete = false;
-
-    this.logger.info('destroy complete');
+    await super._destroy();
   }
 }

@@ -572,13 +572,7 @@ export default class RouterTransactionManager extends RouterBaseManager {
     });
   }
 
-  async destroy () {
-    if (this.isDestroyed) {
-      return;
-    }
-
-    this.isDestroyed = true;
-
+  async _destroy () {
     await this.halt();
 
     this.pendingTransactions = null;
@@ -587,6 +581,6 @@ export default class RouterTransactionManager extends RouterBaseManager {
     this.subscribeHandlers = null;
     this.unsubscribesInProgress = null;
 
-    super._destroy();
+    await super._destroy();
   }
 }

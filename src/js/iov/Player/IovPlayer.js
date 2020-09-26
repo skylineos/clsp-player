@@ -1,8 +1,8 @@
-import EventEmitter from 'eventemitter3';
 import {
   v4 as uuidv4,
 } from 'uuid';
 
+import EventEmitter from '../../utils/EventEmitter';
 import ClspClient from '../../ClspClient/ClspClient';
 import MSEWrapper from './MSE/MSEWrapper';
 import Logger from '../../utils/Logger';
@@ -23,7 +23,7 @@ const DEFAULT_DRIFT_CORRECTION_CONSTANT = 2;
  * uses this player should have all of the videojs logic, and none should
  * exist here.
 */
-export default class IovPlayer {
+export default class IovPlayer extends EventEmitter {
   /**
    * @static
    *
@@ -44,7 +44,7 @@ export default class IovPlayer {
   //   'video.currentTime',
   //   'video.drift',
   //   'video.driftCorrection',
-  //   'video.segmentInterval',
+  //   'video.intervalBetweenSegments',
   //   'video.segmentIntervalAverage',
   // ];
 
@@ -108,12 +108,13 @@ export default class IovPlayer {
   clspClient = null;
   streamConfiguration = null;
   firstFrameShown = false;
-  latestSegmentReceived = null;
-  segmentIntervalAverage = null;
-  segmentInterval = null;
-  segmentIntervals = [];
   mseWrapper = null;
   moov = null;
+
+  latestSegmentReceivedAt = null;
+  segmentIntervalAverage = null;
+  intervalBetweenSegments = null;
+  segmentIntervals = [];
 
   ENABLE_METRICS = DEFAULT_ENABLE_METRICS;
   SEGMENT_INTERVAL_SAMPLE_SIZE = DEFAULT_SEGMENT_INTERVAL_SAMPLE_SIZE;
@@ -139,21 +140,25 @@ export default class IovPlayer {
     logId,
     containerElement,
     videoElement,
-    onClspClientRouterEventError = this.#onClspClientRouterEventError,
-    onPlayError = this.#onPlayError,
+    onClspClientRouterEventError,
+    onPlayError,
   ) {
+    super(logId);
+
+    if (!onClspClientRouterEventError) {
+      onClspClientRouterEventError = this.#onClspClientRouterEventError;
+    }
+
+    if (!onPlayError) {
+      onPlayError = this.#onPlayError;
+    }
+
     this.#constructorArgumentsBouncer(
-      logId,
       containerElement,
       videoElement,
       onClspClientRouterEventError,
       onPlayError,
     );
-
-    this.logId = logId;
-    this.logger = Logger().factory(`Iov Player ${this.logId}`);
-
-    this.logger.debug('constructor');
 
     this.containerElement = containerElement;
     this.videoElement = videoElement;
@@ -165,8 +170,6 @@ export default class IovPlayer {
 
     // @todo @metrics
     // this.metrics = {};
-
-    this.events = new EventEmitter();
   }
 
   /**
@@ -179,16 +182,11 @@ export default class IovPlayer {
    * @returns {void}
    */
   #constructorArgumentsBouncer (
-    logId,
     containerElement,
     videoElement,
     onClspClientRouterEventError,
     onPlayError,
   ) {
-    if (!logId) {
-      throw new Error('Tried to construct without a logId');
-    }
-
     if (!containerElement) {
       throw new Error('Tried to construct without a container element');
     }
@@ -204,33 +202,6 @@ export default class IovPlayer {
     if (typeof onPlayError !== 'function') {
       throw new Error('Tried to construct with an invalid onPlayError');
     }
-  }
-
-  /**
-   * Register an event listener for this IovPlayer.
-   *
-   * @param {string} eventName
-   *   A valid IovPlayer event name
-   * @param {function} handler
-   *   A function that will be executed every time the IovPlayer triggers the
-   *   event defined by the `eventName` argument.
-   *
-   * @returns {this}
-   */
-  on (eventName, handler) {
-    const eventNames = Object.values(IovPlayer.events);
-
-    if (!eventNames.includes(eventName)) {
-      throw new Error(`Unable to register listener for unknown event "${eventName}"`);
-    }
-
-    if (!handler) {
-      throw new Error(`Unable to register for event "${eventName}" without a handler`);
-    }
-
-    this.events.on(eventName, handler);
-
-    return this;
   }
 
   setStreamConfiguration (streamConfiguration) {
@@ -413,7 +384,7 @@ export default class IovPlayer {
         moov,
       } = await this.clspClient.conduit.play();
 
-      if (!MSEWrapper.isMimeCodecSupported(mimeCodec)) {
+      if (!MediaSource.isMimeCodecSupported(mimeCodec)) {
         this.events.emit(IovPlayer.events.UNSUPPORTED_MIME_CODEC, {
           mimeCodec,
         });
@@ -495,6 +466,141 @@ export default class IovPlayer {
     }
   }
 
+  async #reinitializeMseWrapper () {
+    if (this.mseWrapper) {
+      await this.mseWrapper.destroy();
+    }
+
+    this.mseWrapper = null;
+
+    this.mseWrapper = MSEWrapper.factory(this.videoElement);
+
+    this.mseWrapper.on(MSEWrapper.events.METRIC, ({
+      type,
+      value,
+    }) => {
+      this.#metric(type, value);
+    });
+
+    this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_OPEN, async (event) => {
+      this.logger.debug('on mediaSource sourceopen');
+
+      await this.mseWrapper.initializeSourceBuffer(this.mimeCodec, {
+        onAppendStart: (byteArray) => {
+          this.logger.silly('On Append Start...');
+
+          this.clspClient.conduit.segmentUsed(byteArray);
+        },
+        onAppendFinish: async (info) => {
+          this.logger.silly('On Append Finish...');
+
+          if (!this.firstFrameShown) {
+            this.firstFrameShown = true;
+            this.events.emit(IovPlayer.events.FIRST_FRAME_SHOWN);
+          }
+
+          this.drift = info.bufferTimeEnd - this.videoElement.currentTime;
+
+          this.#metric('sourceBuffer.bufferTimeEnd', info.bufferTimeEnd);
+          this.#metric('video.currentTime', this.videoElement.currentTime);
+          this.#metric('video.drift', this.drift);
+
+          if (this.drift > ((this.segmentIntervalAverage / 1000) + this.DRIFT_CORRECTION_CONSTANT)) {
+            this.#metric('video.driftCorrection', 1);
+            this.videoElement.currentTime = info.bufferTimeEnd;
+          }
+
+          if (this.videoElement.paused === true) {
+            this.logger.debug('Video is paused!');
+
+            try {
+              await this.#html5Play();
+            }
+            catch (error) {
+              this.logger.error('Error while trying to play CLSP video from video element...');
+              throw error;
+            }
+          }
+        },
+        onRemoveFinish: (info) => {
+          this.logger.debug('onRemoveFinish');
+        },
+        onAppendError: async (error) => {
+          // internal error, this has been observed to happen the tab
+          // in the browser where this video player lives is hidden
+          // then reselected. 'ex' is undefined the error is bug
+          // within the MSE C++ implementation in the browser.
+          this.logger.warn('sourceBuffer.append', 'Error while appending to sourceBuffer');
+          this.logger.error(error);
+
+          await this.#reinitializeMseWrapper();
+        },
+        onRemoveError: (error) => {
+          if (error.constructor.name === 'DOMException') {
+            // @todo - every time the mseWrapper is destroyed, there is a
+            // sourceBuffer error.  No need to log that, but you should fix it
+            return;
+          }
+
+          // observed this fail during a memry snapshot in chrome
+          // otherwise no observed failure, so ignore exception.
+          this.logger.warn('sourceBuffer.remove', 'Error while removing segments from sourceBuffer');
+          this.logger.error(error);
+        },
+        onStreamFrozen: async () => {
+          this.logger.debug('stream appears to be frozen - reinitializing...');
+
+          await this.#reinitializeMseWrapper();
+        },
+        onError: async (error) => {
+          this.logger.warn('mediaSource.sourceBuffer.generic', 'mediaSource sourceBuffer error');
+          this.logger.error(error);
+
+          await this.#reinitializeMseWrapper();
+        },
+      });
+
+      this.events.emit(IovPlayer.events.VIDEO_INFO_RECEIVED);
+
+      this.mseWrapper.appendMoov(this.moov);
+    });
+
+    this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_ENDED, async (event) => {
+      this.logger.debug('on mediaSource sourceended');
+
+      await this.stop();
+    });
+
+    this.mseWrapper.mediaSource.on(MediaSource.events.ERROR, (event) => {
+      this.logger.warn('mediaSource.generic -> mediaSource error');
+
+      // @todo - sometimes, this error is an event rather than an error!
+      // If different onError calls use different method signatures, that
+      // needs to be accounted for in the MSEWrapper, and the actual error
+      // that was thrown must ALWAYS be the first argument here.  As a
+      // shortcut, we can log `...args` here instead.
+      this.logger.error(event);
+    });
+
+    try {
+      this.mseWrapper.initializeMediaSource();
+    }
+    catch (error) {
+      // @todo - now what?
+    }
+
+    this.mseWrapper.reinitializeVideoElementSrc();
+  }
+
+  async #html5Play () {
+    // @see - https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play
+    await this.videoElement.play();
+  }
+
+  #generateClspClientLogId () {
+    return `${this.logId}.clspClient:${++this.clspClientCount}`;
+  }
+
   #onClspClientRouterEventError = (error) => {
     this.logger.error('Router Event Error!');
     this.logger.error(error);
@@ -512,6 +618,7 @@ export default class IovPlayer {
     }
 
     this.events.emit(IovPlayer.events.VIDEO_RECEIVED);
+    // @todo @metrics
     this.#getSegmentIntervalMetrics();
 
     // Sometimes, the first moof arrives before the mseWrapper has finished
@@ -532,165 +639,54 @@ export default class IovPlayer {
     this.mseWrapper.append(videoSegement);
   };
 
-  #generateClspClientLogId () {
-    return `${this.logId}.clspClient:${++this.clspClientCount}`;
-  }
-
-  async #reinitializeMseWrapper () {
-    if (this.mseWrapper) {
-      await this.mseWrapper.destroy();
-    }
-
-    this.mseWrapper = MSEWrapper.factory(this.videoElement);
-
-    // @todo @metrics
-    // this.mseWrapper.on('metric', ({
-    //   type,
-    //   value,
-    // }) => {
-    //   this.#metric(type, value);
-    // });
-
-    this.mseWrapper.initializeMediaSource({
-      onSourceOpen: async () => {
-        this.logger.debug('on mediaSource sourceopen');
-
-        await this.mseWrapper.initializeSourceBuffer(this.mimeCodec, {
-          onAppendStart: (byteArray) => {
-            this.logger.silly('On Append Start...');
-
-            this.clspClient.conduit.segmentUsed(byteArray);
-          },
-          onAppendFinish: async (info) => {
-            this.logger.silly('On Append Finish...');
-
-            if (!this.firstFrameShown) {
-              this.firstFrameShown = true;
-              this.events.emit(IovPlayer.events.FIRST_FRAME_SHOWN);
-            }
-
-            this.drift = info.bufferTimeEnd - this.videoElement.currentTime;
-
-            this.#metric('sourceBuffer.bufferTimeEnd', info.bufferTimeEnd);
-            this.#metric('video.currentTime', this.videoElement.currentTime);
-            this.#metric('video.drift', this.drift);
-
-            if (this.drift > ((this.segmentIntervalAverage / 1000) + this.DRIFT_CORRECTION_CONSTANT)) {
-              this.#metric('video.driftCorrection', 1);
-              this.videoElement.currentTime = info.bufferTimeEnd;
-            }
-
-            if (this.videoElement.paused === true) {
-              this.logger.debug('Video is paused!');
-
-              try {
-                await this.#html5Play();
-              }
-              catch (error) {
-                this.logger.error('Error while trying to play CLSP video from video element...');
-                throw error;
-              }
-            }
-          },
-          onRemoveFinish: (info) => {
-            this.logger.debug('onRemoveFinish');
-          },
-          onAppendError: async (error) => {
-            // internal error, this has been observed to happen the tab
-            // in the browser where this video player lives is hidden
-            // then reselected. 'ex' is undefined the error is bug
-            // within the MSE C++ implementation in the browser.
-            this.logger.warn('sourceBuffer.append', 'Error while appending to sourceBuffer');
-            this.logger.error(error);
-
-            await this.#reinitializeMseWrapper();
-          },
-          onRemoveError: (error) => {
-            if (error.constructor.name === 'DOMException') {
-              // @todo - every time the mseWrapper is destroyed, there is a
-              // sourceBuffer error.  No need to log that, but you should fix it
-              return;
-            }
-
-            // observed this fail during a memry snapshot in chrome
-            // otherwise no observed failure, so ignore exception.
-            this.logger.warn('sourceBuffer.remove', 'Error while removing segments from sourceBuffer');
-            this.logger.error(error);
-          },
-          onStreamFrozen: async () => {
-            this.logger.debug('stream appears to be frozen - reinitializing...');
-
-            await this.#reinitializeMseWrapper();
-          },
-          onError: async (error) => {
-            this.logger.warn('mediaSource.sourceBuffer.generic', 'mediaSource sourceBuffer error');
-            this.logger.error(error);
-
-            await this.#reinitializeMseWrapper();
-          },
-        });
-
-        this.events.emit(IovPlayer.events.VIDEO_INFO_RECEIVED);
-
-        this.mseWrapper.appendMoov(this.moov);
-      },
-      onSourceEnded: async () => {
-        this.logger.debug('on mediaSource sourceended');
-
-        await this.stop();
-      },
-      onError: (error) => {
-        this.logger.warn('mediaSource.generic', 'mediaSource error');
-        // @todo - sometimes, this error is an event rather than an error!
-        // If different onError calls use different method signatures, that
-        // needs to be accounted for in the MSEWrapper, and the actual error
-        // that was thrown must ALWAYS be the first argument here.  As a
-        // shortcut, we can log `...args` here instead.
-        this.logger.error(error);
-      },
-    });
-
-    if (!this.mseWrapper.mediaSource || !this.videoElement) {
-      throw new Error('The video element or mediaSource is not ready!');
-    }
-
-    this.mseWrapper.reinitializeVideoElementSrc();
-  }
-
+  /**
+   * @private
+   *
+   * Track segment interval metrics to help account for drift
+   *
+   * @returns {void}
+   */
   #getSegmentIntervalMetrics () {
-    const previousSegmentReceived = this.latestSegmentReceived;
-    this.latestSegmentReceived = Date.now();
-
-    if (previousSegmentReceived) {
-      this.segmentInterval = this.latestSegmentReceived - previousSegmentReceived;
+    if (!this.latestSegmentReceivedAt) {
+      this.latestSegmentReceivedAt = Date.now();
+      return;
     }
 
-    if (this.segmentInterval) {
-      if (this.segmentIntervals.length >= this.SEGMENT_INTERVAL_SAMPLE_SIZE) {
-        this.segmentIntervals.shift();
-      }
+    const previousSegmentReceivedAt = this.latestSegmentReceivedAt;
+    this.latestSegmentReceivedAt = Date.now();
 
-      this.segmentIntervals.push(this.segmentInterval);
+    this.intervalBetweenSegments = this.latestSegmentReceivedAt - previousSegmentReceivedAt;
 
-      let segmentIntervalSum = 0;
-
-      for (let i = 0; i < this.segmentIntervals.length; i++) {
-        segmentIntervalSum += this.segmentIntervals[i];
-      }
-
-      this.segmentIntervalAverage = segmentIntervalSum / this.segmentIntervals.length;
-
-      this.#metric('video.segmentInterval', this.segmentInterval);
-      this.#metric('video.segmentIntervalAverage', this.segmentIntervalAverage);
+    // @todo - Do we really need to check for the case where two segments
+    // arrive at exactly the same time?
+    if (!this.intervalBetweenSegments) {
+      return;
     }
-  }
 
-  async #html5Play () {
-    // @see - https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play
-    await this.videoElement.play();
+    if (this.segmentIntervals.length >= this.SEGMENT_INTERVAL_SAMPLE_SIZE) {
+      this.segmentIntervals.shift();
+    }
+
+    this.segmentIntervals.push(this.intervalBetweenSegments);
+
+    let segmentIntervalSum = 0;
+
+    for (let i = 0; i < this.segmentIntervals.length; i++) {
+      segmentIntervalSum += this.segmentIntervals[i];
+    }
+
+    this.segmentIntervalAverage = segmentIntervalSum / this.segmentIntervals.length;
+
+    this.#metric('video.intervalBetweenSegments', this.intervalBetweenSegments);
+    this.#metric('video.segmentIntervalAverage', this.segmentIntervalAverage);
   }
 
   // @todo @metrics
+  /**
+   * @private
+   *
+   * @deprecated
+   */
   #metric (type, value) {
     // if (!this.ENABLE_METRICS) {
     //   return;
@@ -723,25 +719,9 @@ export default class IovPlayer {
   }
 
   /**
-   * @returns {Promise}
+   * @async
    */
-  async destroy () {
-    if (this.isDestroyed) {
-      return;
-    }
-
-    this.isDestroyed = true;
-
-    this.logger.debug('destroy...');
-
-    // Note that we DO NOT wait for the stop command to finish execution,
-    // because this destroy method MUST be treated as a synchronous operation
-    // to ensure that the caller is not forced to wait on destruction.  This
-    // allows us to properly support client side libraries and frameworks that
-    // do not support asynchronous destruction.  See the comments in the destroy
-    // method on the MSEWrapper for a more detailed explanation.
-    this.logger.debug('about to stop...');
-
+  async _destroy () {
     try {
       await this.stop();
     }
@@ -758,21 +738,16 @@ export default class IovPlayer {
 
     this.firstFrameShown = null;
 
-    this.latestSegmentReceived = null;
-    this.segmentIntervalAverage = null;
-    this.segmentInterval = null;
-    this.segmentIntervals = null;
-
     this.moov = null;
+
+    this.latestSegmentReceivedAt = null;
+    this.segmentIntervalAverage = null;
+    this.intervalBetweenSegments = null;
+    this.segmentIntervals = null;
 
     // @todo @metrics
     // this.metrics = null;
 
-    this.events.removeAllListeners();
-    this.events = null;
-
-    this.isDestroyComplete = true;
-
-    this.logger.info('destroy complete');
+    await super._destroy();
   }
 }

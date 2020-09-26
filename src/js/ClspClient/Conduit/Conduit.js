@@ -6,9 +6,7 @@
  * This code is a layer of abstraction on top of the CLSP router, and the
  * controller of the iframe that contains the router.
  */
-import EventEmitter from 'eventemitter3';
-
-import Logger from '../../utils/Logger';
+import EventEmitter from '../../utils/EventEmitter';
 
 import RouterBaseManager from '../Router/RouterBaseManager';
 import RouterTransactionManager from '../Router/RouterTransactionManager';
@@ -17,7 +15,7 @@ import RouterConnectionManager from '../Router/RouterConnectionManager';
 import RouterIframeManager from '../Router/RouterIframeManager';
 import StreamConfiguration from '../../iov/StreamConfiguration';
 
-export default class Conduit {
+export default class Conduit extends EventEmitter {
   /**
    * @static
    *
@@ -72,9 +70,7 @@ export default class Conduit {
     streamConfiguration,
     containerElement,
   ) {
-    if (!logId) {
-      throw new Error('logId is required to construct a new Conduit instance.');
-    }
+    super(logId);
 
     if (!clientId) {
       throw new Error('clientId is required to construct a new Conduit instance.');
@@ -88,15 +84,9 @@ export default class Conduit {
       throw new Error('containerElement is required to construct a new Conduit instance');
     }
 
-    this.logId = logId;
     this.clientId = clientId;
     this.streamConfiguration = streamConfiguration;
     this.containerElement = containerElement;
-
-    this.logger = Logger().factory(`Conduit ${this.logId}`, 'color: orange;');
-    this.logger.debug('Constructing...');
-
-    this.events = new EventEmitter();
 
     this.isInitialized = false;
     this.isDestroyed = false;
@@ -129,22 +119,6 @@ export default class Conduit {
     );
   }
 
-  on (eventName, handler) {
-    const eventNames = Object.values(Conduit.events);
-
-    if (!eventNames.includes(eventName)) {
-      throw new Error(`Unable to register listener for unknown event "${eventName}"`);
-    }
-
-    if (!handler) {
-      throw new Error(`Unable to register for event "${eventName}" without a handler`);
-    }
-
-    this.events.on(eventName, handler);
-
-    return this;
-  }
-
   async initialize () {
     this.routerIframeManager.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
       this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
@@ -162,15 +136,25 @@ export default class Conduit {
       this.events.emit(Conduit.events.RECONNECT_SUCCESS);
     });
     this.routerConnectionManager.on(RouterConnectionManager.events.RECONNECT_FAILURE, (data) => {
+      // @todo - currently, the default is to reconnect indefinitely.  but if
+      // a reconnection attempt limit is set, what should happen when the
+      // reconnection fails for the last time?  does this event indicate that
+      // the last reconnection attempt failed and another attempt will not be
+      // made?
       this.events.emit(Conduit.events.RECONNECT_FAILURE, data);
     });
 
     this.routerStreamManager.on(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, () => {
+      // @todo - if a stream has to "resync", how are we supposed to respond
+      // to that?
       this.events.emit(Conduit.events.RESYNC_STREAM_COMPLETE);
     });
 
     // This is the big one - transmit the video segments upstreama
     this.routerStreamManager.on(RouterStreamManager.events.VIDEO_SEGMENT_RECEIVED, (data) => {
+      // @todo - if a video segment isn't received for some interval after the
+      // previous video segment was received, some sort of remediation should
+      // take place.
       this.events.emit(Conduit.events.VIDEO_SEGMENT_RECEIVED, data);
     });
 
@@ -360,15 +344,7 @@ export default class Conduit {
    *
    * @returns {void}
    */
-  async destroy () {
-    this.logger.debug('Destroying...');
-
-    if (this.isDestroyed) {
-      return;
-    }
-
-    this.isDestroyed = true;
-
+  async _destroy () {
     // order matters here
     try {
       await this.stop();
@@ -402,8 +378,14 @@ export default class Conduit {
       this.logger.error(error);
     }
 
-    // Destruction of the iframe must come last
-    this.routerIframeManager.destroy();
+    try {
+      // Destruction of the iframe must come last
+      await this.routerIframeManager.destroy();
+    }
+    catch (error) {
+      this.logger.error('Error while destroying routerIframeManager while destroying');
+      this.logger.error(error);
+    }
 
     this.routerStreamManager = null;
     this.routerConnectionManager = null;
@@ -415,11 +397,6 @@ export default class Conduit {
     this.streamConfiguration = null;
     this.containerElement = null;
 
-    this.events.removeAllListeners();
-    this.events = null;
-
-    this.isDestroyComplete = true;
-
-    this.logger.info('destroy complete');
+    await super._destroy();
   }
 }

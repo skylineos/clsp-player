@@ -1,10 +1,9 @@
-import EventEmitter from 'eventemitter3';
 import {
   v4 as uuidv4,
 } from 'uuid';
 
-import Logger from '../utils/Logger';
 import utils from '../utils/utils';
+import EventEmitter from '../utils/EventEmitter';
 
 import IovPlayer from './Player/IovPlayer';
 import StreamConfiguration from './StreamConfiguration';
@@ -16,7 +15,7 @@ const DEFAULT_CONNECTION_CHANGE_PLAY_DELAY = 5;
  * Internet of Video client. This module uses the MediaSource API to
  * deliver video content streamed through CLSP from distributed sources.
  */
-export default class Iov {
+export default class Iov extends EventEmitter {
   static events = {
     METRIC: 'metric',
     FIRST_FRAME_SHOWN: 'firstFrameShown',
@@ -26,23 +25,24 @@ export default class Iov {
   }
 
   static factory (
+    logId,
     videoElementId,
-    options,
   ) {
     return new Iov(
+      logId,
       videoElementId,
-      options,
     );
   }
 
   /**
    * @param {String} videoElementId
-   * @param {Object} [options]
    */
   constructor (
+    logId,
     videoElementId,
-    options = {},
   ) {
+    super(logId);
+
     if (!utils.supported()) {
       throw new Error('You are using an unsupported browser - Unable to play CLSP video');
     }
@@ -51,21 +51,13 @@ export default class Iov {
       throw new Error('videoElementId is required to construct an Iov');
     }
 
-    // This should be unique - it is only used for logging
-    this.id = options.id || uuidv4();
-
-    this.logger = Logger().factory(`Iov ${this.id}`);
-    this.logger.debug('Constructing...');
-
     // @todo @metrics
     // this.metrics = {};
 
-    this.events = new EventEmitter();
-
-    this.isDestroyed = false;
-    this.onReadyAlreadyCalled = false;
     this.videoElementId = videoElementId;
     this.videoElementParent = null;
+
+    this.onReadyAlreadyCalled = false;
     this.iovPlayerCount = 0;
 
     const {
@@ -95,42 +87,6 @@ export default class Iov {
     // These can be configured manually after construction
     this.ENABLE_METRICS = DEFAULT_ENABLE_METRICS;
     this.CONNECTION_CHANGE_PLAY_DELAY = DEFAULT_CONNECTION_CHANGE_PLAY_DELAY;
-  }
-
-  on (eventName, handler) {
-    const eventNames = Object.values(Iov.events);
-
-    if (!eventNames.includes(eventName)) {
-      throw new Error(`Unable to register listener for unknown event "${eventName}"`);
-    }
-
-    if (!handler) {
-      throw new Error(`Unable to register for event "${eventName}" without a handler`);
-    }
-
-    this.events.on(eventName, handler);
-
-    return this;
-  }
-
-
-  // @todo @metrics
-  metric (type, value) {
-    // if (!this.ENABLE_METRICS) {
-    //   return;
-    // }
-
-    // if (!Iov.METRIC_TYPES.includes(type)) {
-    //   // @todo - should this throw?
-    //   return;
-    // }
-
-    // this.metrics[type] = value;
-
-    // this.trigger('metric', {
-    //   type,
-    //   value: this.metrics[type],
-    // });
   }
 
   registerContainerElement (containerElement) {
@@ -237,7 +193,7 @@ export default class Iov {
   }
 
   generatePlayerLogId () {
-    return `iov:${this.id}.player:${++this.iovPlayerCount}`;
+    return `iov:${this.logId}.player:${++this.iovPlayerCount}`;
   }
 
   _clearNextPlayerTimeout () {
@@ -482,21 +438,32 @@ export default class Iov {
     await this.changeSrc(this.streamConfiguration).firstFrameReceivedPromise;
   }
 
+  // @todo @metrics
+  metric (type, value) {
+    // if (!this.ENABLE_METRICS) {
+    //   return;
+    // }
+
+    // if (!Iov.METRIC_TYPES.includes(type)) {
+    //   // @todo - should this throw?
+    //   return;
+    // }
+
+    // this.metrics[type] = value;
+
+    // this.trigger('metric', {
+    //   type,
+    //   value: this.metrics[type],
+    // });
+  }
+
   /**
    * Dereference the necessary properties, clear any intervals and timeouts, and
    * remove any listeners.  Will also destroy the player.
    *
    * @returns {Promise}
    */
-  async destroy () {
-    this.logger.debug('destroy');
-
-    if (this.isDestroyed) {
-      return;
-    }
-
-    this.isDestroyed = true;
-
+  async _destroy () {
     const {
       visibilityChangeEventName,
     } = utils.windowStateNames;
@@ -527,11 +494,6 @@ export default class Iov {
     // @todo @metrics
     // this.metrics = null;
 
-    this.events.removeAllListeners();
-    this.events = null;
-
-    this.isDestroyComplete = true;
-
-    this.logger.info('destroy complete');
+    await super._destroy();
   }
 }

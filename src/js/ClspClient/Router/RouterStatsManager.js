@@ -168,18 +168,12 @@ export default class RouterStatsManager extends RouterBaseManager {
     }
   }
 
-  destroy () {
-    if (this.isDestroyed) {
-      return;
-    }
-
-    this.isDestroyed = true;
-
+  async _destroy () {
     this.stop();
 
     this.statsMsg = null;
     this.routerTransactionManager = null;
 
-    super._destroy();
+    await super._destroy();
   }
 }

@@ -474,14 +474,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
     }
   }
 
-  async destroy () {
-    if (this.isDestroyed) {
-      this.logger.info('Tried to destroy on destroyed RouterConnectionManager');
-      return;
-    }
-
-    this.isDestroyed = true;
-
+  async _destroy () {
     try {
       await this.disconnect();
     }
@@ -491,7 +484,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
     }
 
     try {
-      this.statsManager.destroy();
+      await this.statsManager.destroy();
     }
     catch (error) {
       this.logger.error('Error while destroying statsManager while destroying:');
@@ -504,6 +497,6 @@ export default class RouterConnectionManager extends RouterBaseManager {
     this._onConnect = null;
     this._onDisconnect = null;
 
-    super._destroy();
+    await super._destroy();
   }
 }
