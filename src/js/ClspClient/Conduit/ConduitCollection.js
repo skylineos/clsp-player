@@ -1,29 +1,28 @@
 import Conduit from './Conduit';
 import Paho from './Paho';
 
-import Logger from '../../utils/Logger';
+import Destroyable from '../../utils/Destroyable';
 
 let collection;
 
-export default class ConduitCollection {
+export default class ConduitCollection extends Destroyable {
   static asSingleton () {
     if (!collection) {
-      collection = ConduitCollection.factory();
+      collection = ConduitCollection.factory('1');
     }
 
     return collection;
   }
 
-  static factory () {
-    return new ConduitCollection();
+  static factory (logId) {
+    return new ConduitCollection(logId);
   }
 
   /**
    * @private
    */
-  constructor () {
-    this.logger = Logger().factory('ConduitCollection');
-    this.logger.debug('Constructing...');
+  constructor (logId) {
+    super(logId);
 
     this.totalConduitCount = 0;
 
@@ -200,13 +199,7 @@ export default class ConduitCollection {
    *
    * @returns {void}
    */
-  async destroy () {
-    if (this.isDestroyed) {
-      return;
-    }
-
-    this.isDestroyed = true;
-
+  async _destroy () {
     window.removeEventListener('message', this._routeWindowMessageToTargetConduit);
 
     for (const clientId in this.conduits) {
@@ -222,8 +215,6 @@ export default class ConduitCollection {
     this.conduits = null;
     this.deletedConduitClientIds = null;
 
-    this.isDestroyComplete = true;
-
-    this.logger.info('destroy complete');
+    await super._destroy();
   }
 }

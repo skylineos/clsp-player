@@ -52,10 +52,8 @@ export default class IovCollection {
    */
   create (videoElementId) {
     const iov = Iov.factory(
+      (++totalIovCount).toString(),
       videoElementId,
-      {
-        id: (++totalIovCount).toString(),
-      },
     );
 
     iov.on(Iov.events.IFRAME_DESTROYED_EXTERNALLY, () => {

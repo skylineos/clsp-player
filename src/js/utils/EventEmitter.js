@@ -48,5 +48,7 @@ export default class EventEmitter extends Destroyable {
   async _destroy () {
     this.events.removeAllListeners();
     this.events = null;
+
+    await super._destroy();
   }
 }

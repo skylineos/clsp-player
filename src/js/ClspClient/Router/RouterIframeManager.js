@@ -305,19 +305,13 @@ export default class RouterIframeManager extends RouterBaseManager {
     // this.iframe.remove();
   }
 
-  destroy () {
-    if (this.isDestroyed) {
-      return;
-    }
-
-    this.isDestroyed = true;
-
+  async _destroy () {
     this._destroyIframe();
 
     // The caller must destroy the streamConfiguration
     this.streamConfiguration = null;
     this.containerElement = null;
 
-    super._destroy();
+    await super._destroy();
   }
 }

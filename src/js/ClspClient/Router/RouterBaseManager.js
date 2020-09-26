@@ -3,9 +3,7 @@
  * (e.g. state, events, etc) that are common to all Router Manager classes.
  */
 
-import EventEmitter from 'eventemitter3';
-
-import Logger from '../../utils/Logger';
+import EventEmitter from '../../utils/EventEmitter';
 
 import Router from './Router';
 
@@ -14,7 +12,7 @@ const {
   events,
 } = Router();
 
-export default class RouterBaseManager {
+export default class RouterBaseManager extends EventEmitter {
   /**
    * @static
    *
@@ -41,6 +39,8 @@ export default class RouterBaseManager {
     logId,
     clientId,
   ) {
+    super(logId);
+
     if (!logId) {
       throw new Error('logId is required to construct a new RouterStatsManager instance.');
     }
@@ -51,46 +51,5 @@ export default class RouterBaseManager {
 
     this.logId = logId;
     this.clientId = clientId;
-
-    this.logger = Logger().factory(`${this.constructor.name} ${this.logId}`, 'color: magenta;');
-    this.events = new EventEmitter();
-
-    // state flags
-    this.isDestroyed = false;
-    this.isDestroyComplete = false;
-
-    this.logger.info(`Constructing new ${this.constructor.name} instance`);
-  }
-
-  on (eventName, handler) {
-    const eventNames = Object.values(this.constructor.events);
-
-    if (!eventNames.includes(eventName)) {
-      throw new Error(`Unable to register listener for unknown event "${eventName}"`);
-    }
-
-    if (!handler) {
-      throw new Error(`Unable to register for event "${eventName}" without a handler`);
-    }
-
-    this.events.on(eventName, handler);
-
-    return this;
-  }
-
-  /**
-   * @private
-   *
-   * Call this method at the end of the class's `destroy` method.
-   *
-   * @returns {void}
-   */
-  _destroy () {
-    this.events.removeAllListeners();
-    this.events = null;
-
-    this.isDestroyComplete = true;
-
-    this.logger.info('destroy complete');
   }
 }
