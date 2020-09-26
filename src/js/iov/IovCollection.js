@@ -60,6 +60,11 @@ export default class IovCollection {
       this.remove(iov.id);
     });
 
+    iov.on(Iov.events.REINITIALZE_ERROR, async () => {
+      await this.remove(iov.id);
+      this.create(videoElementId);
+    });
+
     this.add(iov);
 
     return iov;

@@ -18,11 +18,12 @@ const DEFAULT_CONNECTION_CHANGE_PLAY_DELAY = 5;
 export default class Iov extends EventEmitter {
   static events = {
     METRIC: 'metric',
-    FIRST_FRAME_SHOWN: 'firstFrameShown',
-    VIDEO_RECEIVED: 'videoReceived',
-    VIDEO_INFO_RECEIVED: 'videoInfoReceived',
-    IFRAME_DESTROYED_EXTERNALLY: 'IframeDestroyedExternally',
-  }
+    FIRST_FRAME_SHOWN: IovPlayer.events.FIRST_FRAME_SHOWN,
+    VIDEO_RECEIVED: IovPlayer.events.VIDEO_RECEIVED,
+    VIDEO_INFO_RECEIVED: IovPlayer.events.VIDEO_INFO_RECEIVED,
+    IFRAME_DESTROYED_EXTERNALLY: IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY,
+    REINITIALZE_ERROR: IovPlayer.events.REINITIALZE_ERROR,
+  };
 
   static factory (
     logId,
@@ -190,6 +191,10 @@ export default class Iov extends EventEmitter {
     iovPlayer.on(IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY, () => {
       this.events.emit(Iov.events.IFRAME_DESTROYED_EXTERNALLY);
     });
+
+    iovPlayer.on(IovPlayer.events.REINITIALZE_ERROR, ({ error }) => {
+      this.events.emit(Iov.events.REINITIALZE_ERROR, { error });
+    });
   }
 
   generatePlayerLogId () {
@@ -323,21 +328,21 @@ export default class Iov extends EventEmitter {
     this._registerPlayerListeners(iovPlayer);
 
     const firstFrameReceivedPromise = new Promise(async (resolve, reject) => {
+      iovPlayer.on(IovPlayer.events.FIRST_FRAME_SHOWN, () => {
+        this.nextPlayerTimeout = setTimeout(() => {
+          this._clearNextPlayerTimeout();
+
+          this.logger.debug('Next player has received its first frame...');
+
+          if (showOnFirstFrame) {
+            this.showNextStream();
+          }
+
+          resolve();
+        }, this.SHOW_NEXT_VIDEO_DELAY * 1000);
+      });
+
       try {
-        iovPlayer.on(IovPlayer.events.FIRST_FRAME_SHOWN, () => {
-          this.nextPlayerTimeout = setTimeout(() => {
-            this._clearNextPlayerTimeout();
-
-            this.logger.debug('Next player has received its first frame...');
-
-            if (showOnFirstFrame) {
-              this.showNextStream();
-            }
-
-            resolve();
-          }, this.SHOW_NEXT_VIDEO_DELAY * 1000);
-        });
-
         iovPlayer.setStreamConfiguration(streamConfiguration);
 
         await iovPlayer.initialize();

@@ -31,7 +31,8 @@ const rules = {
   'object-curly-newline': [
     'error',
     {
-      minProperties: 1,
+      minProperties: 3,
+      consistent: true,
     },
   ],
   'object-property-newline': 'error',

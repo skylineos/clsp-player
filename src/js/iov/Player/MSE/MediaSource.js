@@ -1,5 +1,8 @@
 /**
  * A wrapper for the default browser `window.MediaSource` class
+ *
+ * @see - https://developers.google.com/web/fundamentals/media/mse/basics
+ * @see - https://github.com/nickdesaulniers/netfix/blob/gh-pages/demo/bufferAll.html
  */
 
 import interval from 'interval-promise';
@@ -11,25 +14,62 @@ const DEFAULT_IS_READY_INTERVAL = 0.5;
 const DEFAULT_IS_READY_TIMEOUT = 10;
 
 export default class MediaSource extends EventEmitter {
+  /**
+   * Events that are emitted by this MediaSource
+   */
   static events = {
+    // --- Custom events
+    SOURCE_OPEN_ERROR: 'source-open-error',
+    // --- MSE MediaSource events
+    // @todo - create an event name that makes sense in layman's terms, such
+    // as "INITIALIZED" either here or in MSEWrapper
     SOURCE_OPEN: 'sourceopen',
+    // @todo - create an event name that makes sense in layman's terms, such
+    // as "FINISHED" either here or in MSEWrapper
     SOURCE_ENDED: 'sourceended',
     ERROR: 'error',
   };
 
+  /**
+   * Check to see if the passed mimeCodec is supported by this browser.
+   *
+   * @see - https://developer.mozilla.org/en-US/docs/Web/API/MediaSource/isTypeSupported
+   *
+   * @param {string} mimeCodec
+   *   The mime code to check for support / compatibility
+   *
+   * @returns {boolean}
+   *   - true if the mimeCodec is supported
+   *   - false if the mimeCodec is not supported
+   */
   static isMimeCodecSupported (mimeCodec) {
-    return (window.MediaSource && window.MediaSource.isTypeSupported(mimeCodec));
+    return window.MediaSource.isTypeSupported(mimeCodec);
   }
 
+  /**
+   * Create a new MediaSource, which is a wrapper around `window.MediaSource`
+   *
+   * @param {string|object} logId
+   *   a string that identifies this MediaSource in log messages
+   *   @see - src/js/utils/Destroyable
+   */
   static factory (logId) {
     return new MediaSource(logId);
   }
 
+  /**
+   * @private
+   *
+   * Create a new MediaSource, which is a wrapper around `window.MediaSource`
+   *
+   * @param {string|object} logId
+   *   a string that identifies this MediaSource in log messages
+   *   @see - src/js/utils/Destroyable
+   */
   constructor (logId) {
     super(logId);
 
     this.mediaSource = new window.MediaSource();
-    this.objectURL = null;
 
     // @todo - no idea what could cause this situation...
     if (!this.mediaSource) {
@@ -40,21 +80,44 @@ export default class MediaSource extends EventEmitter {
     this.mediaSource.addEventListener('sourceended', this.#onSourceEnded);
     this.mediaSource.addEventListener('error', this.#onError);
 
+    this.objectURL = null;
+
     this.DURATION = DEFAULT_DURATION;
     this.IS_READY_INTERVAL = DEFAULT_IS_READY_INTERVAL;
     this.IS_READY_TIMEOUT = DEFAULT_IS_READY_TIMEOUT;
   }
 
-  // @todo - evaluate all uses of isReady outside of waitUntilReady - can
-  // waitUntilReady be used in those instances?
+  /**
+   * Determine if this MediaSource is ready to start using any SourceBuffers
+   * it might have.
+   *
+   * @returns {boolean}
+   *   - true if readyState is "open"
+   *   - false if readyState is not "open"
+   */
   isReady () {
+    if (this.isDestroyComplete) {
+      return false;
+    }
+
     // found when stress testing many videos, it is possible for the
     // media source ready state not to be open even though
     // source open callback is being called.
     return this.mediaSource.readyState === 'open';
   }
 
+  /**
+   * @async
+   *
+   * Wait for this MediaSource to become ready.
+   *
+   * @returns {void}
+   */
   async waitUntilReady () {
+    if (this.isDestroyComplete) {
+      throw new Error('MediaSource will not become ready because it has already been destroyed');
+    }
+
     if (this.isReady()) {
       return;
     }
@@ -68,12 +131,13 @@ export default class MediaSource extends EventEmitter {
         },
         this.IS_READY_INTERVAL,
         {
-          iterations: (this.IS_READY_TIMEOUT / this.IS_READY_INTERVAL)
+          iterations: (this.IS_READY_TIMEOUT / this.IS_READY_INTERVAL),
         },
       );
     }
     catch (error) {
-      const message = 'MediaSource readyState open timed out!';
+      const message = 'MediaSource `readyState` timed out waiting to be `open`!';
+
       this.logger.error(message);
       this.logger.error(error);
 
@@ -81,21 +145,39 @@ export default class MediaSource extends EventEmitter {
     }
   }
 
+  /**
+   * Create the objectURL for this MediaSource that is needed to play a stream
+   * using an HTML5 `<video>` tag.
+   *
+   * @see - https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL
+   *
+   * @returns {DOMString|string}
+   *   The objectURL that can be set as the `<video>` tag's `src` attribute
+   */
   asObjectURL () {
+    if (this.isDestroyed) {
+      throw new Error('Cannot create objectURL while destroyed');
+    }
+
     if (!this.objectURL) {
-      // @todo - should multiple calls to this method with the same mediaSource
-      // result in multiple objectURLs being created?  The docs for this say that
-      // it creates something on the document, which lives until revokeObjectURL
-      // is called on it.  Does that mean we should only ever have one per
-      // this.mediaSource?  It seems like it, but I do not know.  Having only one
-      // seems more predictable, and more memory efficient.
+      // Since the value returned by `createObjectURL` appears to be retained
+      // by the `document`, only create one for this instance to reduce the
+      // chance of it creating a memory leak.
       this.objectURL = window.URL.createObjectURL(this.mediaSource);
     }
 
     return this.objectURL;
   }
 
-  revokeObjectURL () {
+  /**
+   * @private
+   *
+   * Revoke the objectURL that was created for this MediaSource, if it exists.
+   * Meant to help with memory management.
+   *
+   * @returns {void}
+   */
+  #revokeObjectURL () {
     if (this.objectURL) {
       window.URL.revokeObjectURL(this.objectURL);
     }
@@ -103,8 +185,29 @@ export default class MediaSource extends EventEmitter {
     this.objectURL = null;
   }
 
+  /**
+   * @private
+   *
+   * Event listener for the `sourceopen` event.  Broadcasts an event to
+   * indicate that this MediaSource is ready.
+   *
+   * @todo - Does this realy need to be broadcast up?  Is there ever a
+   * situation where `sourceopen` will be emitted more than once for a single
+   * MediaSource / SourceBuffer?  If not, this event should only be used
+   * privately as part of an initialization method.
+   *
+   * @param {object} event
+   *
+   * @returns {void}
+   */
   #onSourceOpen = async (event) => {
-    await this.waitUntilReady();
+    try {
+      await this.waitUntilReady();
+    }
+    catch (error) {
+      this.events.emit(MediaSource.events.SOURCE_OPEN_ERROR, { error });
+      return;
+    }
 
     // This can only be set when the media source is open.
     // @todo - does this do memory management for us so we don't have
@@ -115,38 +218,86 @@ export default class MediaSource extends EventEmitter {
     this.events.emit(MediaSource.events.SOURCE_OPEN, event);
   };
 
+  /**
+   * @private
+   *
+   * Event listener for the `sourceended` event.  Broadcasts an event to
+   * indicate that this MediaSource is finished.
+   *
+   * @todo - the `sourceended` event is only supposed to be emitted when
+   * `mediaSource.endOfStream` is called, which is only ever done inside this
+   * class.  This means we should always be in control of when this event
+   * occurs, and shouldn't need to broadcast it up.  Is there some other
+   * condition which could cause this to be emitted?
+   *
+   * @param {object} event
+   *
+   * @returns {void}
+   */
   #onSourceEnded = (event) => {
     this.events.emit(MediaSource.events.SOURCE_ENDED, event);
   };
 
+  /**
+   * @private
+   *
+   * Event listener for the `error` event.  Broadcasts an event to indicate
+   * that this MediaSource has encountered an unexpected error.
+   *
+   * @param {object} event
+   *
+   * @returns {void}
+   */
   #onError = (event) => {
     this.events.emit(MediaSource.events.ERROR, event);
   };
 
-  async _destroy () {
-    this.mediaSource.removeEventListener('sourceopen', this.#onSourceOpen);
-    this.mediaSource.removeEventListener('sourceended', this.#onSourceEnded);
-    this.mediaSource.removeEventListener('error', this.#onError);
-
+  /**
+   * @private
+   * @deprecated
+   *
+   * Intended to clear all SourceBuffers from this MediaSource.  We should not
+   * need to do this since we are supposed to only have a single SourceBuffer
+   * that is privately managed (by the MSEWrapper).
+   *
+   * @see - https://developer.mozilla.org/en-US/docs/Web/API/MediaSource/sourceBuffers
+   *
+   * @returns {void}
+   */
+  #removeAllSourceBuffers () {
     // let sourceBuffers = this.mediaSource.sourceBuffers;
 
     // if (sourceBuffers.SourceBuffers) {
-    //   // @see - https://developer.mozilla.org/en-US/docs/Web/API/MediaSource/sourceBuffers
+    //   //
     //   sourceBuffers = sourceBuffers.SourceBuffers();
     // }
 
     // for (let i = 0; i < sourceBuffers.length; i++) {
     //   this.mediaSource.removeSourceBuffer(sourceBuffers[i]);
     // }
+  }
 
-    // @todo - what if it isn't ready?  shouldn't we wait for it to be ready?
-    if (this.isReady()) {
-      this.logger.info('media source was ready for endOfStream and removeSourceBuffer');
-      this.mediaSource.endOfStream();
-      this.mediaSource.removeSourceBuffer(this.sourceBuffer);
+  async _destroy () {
+    this.mediaSource.removeEventListener('sourceopen', this.#onSourceOpen);
+    this.mediaSource.removeEventListener('sourceended', this.#onSourceEnded);
+    this.mediaSource.removeEventListener('error', this.#onError);
+
+    // @todo - this code existed, but was never used...
+    // this.#removeAllSourceBuffers();
+
+    try {
+      await this.waitUntilReady();
+    }
+    catch (error) {
+      this.logger.warn('MediaSource did not become ready while destroying, continuing destroy anyway...');
+      this.logger.error(error);
     }
 
-    this.revokeObjectURL();
+    this.mediaSource.endOfStream();
+    // @todo - can this be done in the SourceBuffer destroy?
+    this.mediaSource.removeSourceBuffer(this.sourceBuffer.sourceBuffer);
+
+    this.#revokeObjectURL();
 
     await super._destroy();
   }
