@@ -139,8 +139,6 @@ export default class IovCollection {
 
     const newIov = this.create(videoElementId);
 
-    console.log(streamConfiguration);
-
     try {
       await newIov.changeSrc(streamConfiguration);
     }

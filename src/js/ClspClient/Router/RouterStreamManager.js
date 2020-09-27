@@ -167,7 +167,6 @@ export default class RouterStreamManager extends RouterBaseManager {
       return;
     }
 
-
     if (!this.guid) {
       // @todo - is this condition a symptom of a problem?
       this.logger.info(`Trying to stop stream ${this.streamName} with no guid!`);
