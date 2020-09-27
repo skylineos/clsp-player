@@ -158,15 +158,10 @@ A `CLSP` object is attached to `window`, which contains the classes and utils yo
   var iovCollection = window.CLSP.IovCollection.asSingleton();
 
   // Instantiate the iov instance for the target video element
-  iovCollection.create(videoElementId)
-    .then(function (iov) {
-      // do something with the iov instance
-      iov.changeSrc(urls[0]);
-    })
-    .catch(function (error) {
-      // do something with the error
-      console.error(error);
-    });
+  var iov = iovCollection.create(videoElementId)
+
+  // do something with the iov instance
+  iov.changeSrc(urls[0]);
 
   // Or instantiate a tour
   var tour = window.CLSP.TourController.factory(
@@ -236,7 +231,7 @@ try {
   const iovCollection = IovCollection.asSingleton();
 
   // Instantiate the iov instance for the target video element
-  const iov = await iovCollection.create(videoElementId);
+  const iov = iovCollection.create(videoElementId);
 
   // do something with the iov instance
   iov.changeSrc(urls[0]);
