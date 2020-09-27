@@ -46,39 +46,6 @@ export default class IovPlayerCollection extends EventEmitter {
     this.pendingRemoval = {};
   }
 
-  async _reset () {
-    let mostRecentlyAddedPlayer = null;
-    let mostRecentlyPlayedPlayer = null;
-
-    // if (this.mostRecentlyAddedId) {
-    //   const iovPlayer = this.get(this.mostRecentlyAddedId);
-
-    //   if (iovPlayer !== null) {
-
-    //   }
-    // }
-
-    // if (this.mostRecentlyPlayedId) {
-    //   const iovPlayer = this.get(this.mostRecentlyPlayedId);
-
-    //   if (iovPlayer !== null) {
-    //     mostRecentlyPlayedPlayer = this._create();
-
-    //   }
-    // }
-
-    try {
-      await this.removeAll();
-    }
-    catch (error) {
-      this.logger.error('Error(s) encountered while removing while resetting, continuing anyway...');
-    }
-
-    this.initialize();
-
-    await super._reset();
-  }
-
   generatePlayerLogId (streamName) {
     return `${this.logId}.player:${this.totalPlayersAdded}:${streamName}`;
   }
@@ -312,12 +279,12 @@ export default class IovPlayerCollection extends EventEmitter {
       this.logger.error(error);
 
       if (this.MAX_RETRIES_ON_PLAY_ERROR > 0 && this.retryAttempts[id] <= this.MAX_RETRIES_ON_PLAY_ERROR) {
-        this.logger.info(`Retry attempt #${this.retryAttempts[id]++} for player ${this.playerLogMessageIds[id]}...`);
+        this.logger.warn(`Retry play attempt #${this.retryAttempts[id]++} for player ${this.playerLogMessageIds[id]}...`);
 
         await this.#play(id);
       }
       else {
-        this.logger.error('Destroying IovPlayer during after exhausting play and retry attempts');
+        this.logger.error('Destroying IovPlayer after exhausting play and retry attempts');
 
         // @todo - display a message in the page (aka to the user) saying that
         // the stream couldn't be played?
