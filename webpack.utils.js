@@ -24,7 +24,9 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 
 const babelConfig = require('./babel.config')();
 
-const isDevMode = process.env.NODE_ENV !== 'production';
+const isDevMode = true;
+// @todo - this fails when running `NODE_ENV=production yarn run build`...
+// const isDevMode = process.env.NODE_ENV !== 'production';
 
 /**
  * @private
