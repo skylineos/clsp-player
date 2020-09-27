@@ -80,19 +80,12 @@ function initialize () {
 
   window.iovCollection = window.CLSP.IovCollection.asSingleton();
 
-  window.iovCollection.create(videoElementId)
-    .then(function (iov) {
-      window.iov = iov;
-      window.iov.changeSrc(url).firstFrameReceivedPromise.catch(function (error) {
-        console.error('Error while playing stream in demo:');
-        console.error(error);
-      });
-    })
-    .catch(function (error) {
-      document.getElementById('browser-not-supported').style.display = 'block';
-      document.getElementById(videoElementId).style.display = 'none';
-      console.error(error);
-    });
+  window.iov = window.iovCollection.create(videoElementId);
+
+  window.iov.changeSrc(url).firstFrameReceivedPromise.catch(function (error) {
+    console.error('Error while playing stream in demo:');
+    console.error(error);
+  });
 }
 
 window.clspPlayerControls = {

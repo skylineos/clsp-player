@@ -115,7 +115,7 @@ async function main () {
     const url = document.getElementById('stream-src').value;
 
     iovCollection = IovCollection.asSingleton();
-    iov = await iovCollection.create(videoElementId);
+    iov = iovCollection.create(videoElementId);
 
     // iov.registerContainerElement();
     // iov.registerVideoElement();
