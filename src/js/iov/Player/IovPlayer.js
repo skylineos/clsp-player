@@ -1,6 +1,5 @@
-import {
-  v4 as uuidv4,
-} from 'uuid';
+import isNil from 'lodash/isNil';
+import { v4 as uuidv4 } from 'uuid';
 
 import EventEmitter from '../../utils/EventEmitter';
 import utils from '../../utils/utils';
@@ -139,7 +138,7 @@ export default class IovPlayer extends EventEmitter {
   ) {
     super(logId);
 
-    if (!id) {
+    if (isNil(id)) {
       throw new Error('Tried to construct without an id');
     }
 

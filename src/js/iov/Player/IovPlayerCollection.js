@@ -1,3 +1,4 @@
+import isNil from 'lodash/isNil';
 import { v4 as uuidv4 } from 'uuid';
 
 import IovPlayer from './IovPlayer';
@@ -174,7 +175,7 @@ export default class IovPlayerCollection extends EventEmitter {
   }
 
   async #handleCriticalIovPlayerError (id) {
-    if (id !== this.mostRecentlyPlayedId || id !== this.mostRecentlyAddedId) {
+    if (id !== this.mostRecentlyPlayedId && id !== this.mostRecentlyAddedId) {
       this.logger.info(`Stale IovPlayer ${this.playerLogMessageIds[id]} emitted a RECONNECT_FAILURE, destroying it...`);
 
       try {
@@ -296,7 +297,7 @@ export default class IovPlayerCollection extends EventEmitter {
   }
 
   has (id) {
-    if (!id) {
+    if (isNil(id)) {
       return false;
     }
 
@@ -330,13 +331,13 @@ export default class IovPlayerCollection extends EventEmitter {
   }
 
   async remove (id) {
-    if (!this.has(id)) {
+    const iovPlayer = this.get(id);
+
+    if (iovPlayer === null) {
       return;
     }
 
     try {
-      const iovPlayer = this.get(id);
-
       this.pendingRemoval[id] = true;
 
       iovPlayer.logger.info('IovPlayerCollection - removing player...');
@@ -349,6 +350,7 @@ export default class IovPlayerCollection extends EventEmitter {
     finally {
       delete this.players[id];
       delete this.playerLogMessageIds[id];
+      delete this.pendingRemoval[id];
 
       const index = this.playerStack.indexOf(id);
       if (index !== -1) {

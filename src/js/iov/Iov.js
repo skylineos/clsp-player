@@ -1,4 +1,5 @@
 import { sleepSeconds } from 'sleepjs';
+import isNil from 'lodash/isNil';
 
 import utils from '../utils/utils';
 import EventEmitter from '../utils/EventEmitter';
@@ -9,6 +10,9 @@ import StreamConfiguration from './StreamConfiguration';
 
 const DEFAULT_ENABLE_METRICS = false;
 const DEFAULT_CONNECTION_CHANGE_PLAY_DELAY = 5;
+
+const CONTAINER_CLASS = 'clsp-player-container';
+const VIDEO_CLASS = 'clsp-player';
 
 /**
  * Internet of Video client. This module uses the MediaSource API to
@@ -26,22 +30,19 @@ export default class Iov extends EventEmitter {
   static factory (
     logId,
     id,
-    videoElementId,
+    config,
   ) {
     return new Iov(
       logId,
       id,
-      videoElementId,
+      config,
     );
   }
 
-  /**
-   * @param {String} videoElementId
-   */
   constructor (
     logId,
     id,
-    videoElementId,
+    config,
   ) {
     if (!utils.supported()) {
       throw new Error('You are using an unsupported browser - Unable to play CLSP video');
@@ -49,23 +50,24 @@ export default class Iov extends EventEmitter {
 
     super(logId);
 
-    if (!id) {
+    if (isNil(id)) {
       throw new Error('id is required to construct an Iov');
     }
 
-    if (!videoElementId) {
-      throw new Error('videoElementId is required to construct an Iov');
+    if (!config) {
+      throw new Error('Tried to construct without config');
     }
 
     // @todo @metrics
     // this.metrics = {};
 
     this.id = id;
-    this.videoElementId = videoElementId;
-    this.videoElementParent = null;
+    this.shouldRetainVideoElement = false;
+    this.containerElement = null;
+    this.videoElement = null;
 
-    this.onReadyAlreadyCalled = false;
-    this.iovPlayerCount = 0;
+    this._config = config;
+    this.#initializeElements(config);
 
     const {
       visibilityChangeEventName,
@@ -118,6 +120,96 @@ export default class Iov extends EventEmitter {
     });
   }
 
+  #initializeElements ({
+    videoElementId,
+    videoElement,
+    containerElementId,
+    containerElement,
+  }) {
+    if (containerElementId) {
+      containerElement = document.getElementById(containerElementId);
+    }
+
+    // at this point, the container element may still be falsy.  we'll handle
+    // that after we determine the video element
+    this.containerElement = containerElement;
+
+    // If one or the other was passed in, CLSP Player will NOT be responsible
+    // for the creation and possible deletion of any video elements on the DOM
+    if (videoElementId || videoElement) {
+      this.shouldRetainVideoElement = true;
+    }
+
+    if (videoElementId) {
+      videoElement = document.getElementById(videoElementId);
+    }
+
+    this.videoElement = videoElement;
+
+    if (this.shouldRetainVideoElement && !this.videoElement) {
+      if (videoElementId) {
+        throw new Error(`Unable to get element with id: "${videoElementId}"`);
+      }
+
+      throw new Error('No video element or id was passed');
+    }
+
+    // If we don't have either the container or the video element at this
+    // point, then the caller didn't pass any elements to us.  We need at least
+    // of those 2 to create a player.
+    if (!this.videoElement && !this.containerElement) {
+      throw new Error('Must pass at least 1 valid container or video element or id');
+    }
+
+    if (!this.videoElement) {
+      videoElement = document.createElement('video');
+
+      containerElement.appendChild(videoElement);
+
+      this.videoElement = videoElement;
+    }
+
+    if (!this.containerElement) {
+      this.containerElement = this.videoElement.parentNode;
+    }
+
+    // One final sanity check
+    if (!this.containerElement || !this.videoElement) {
+      throw new Error('Unable to get both the container and video elements');
+    }
+
+    this.containerElement.classList.add(CONTAINER_CLASS);
+
+    this.videoElement.classList.add(VIDEO_CLASS);
+    this.videoElement.muted = true;
+    this.videoElement.playsinline = true;
+  }
+
+  #uninitializeElements () {
+    this.containerElement.classList.remove(CONTAINER_CLASS);
+
+    this.videoElement.classList.remove(VIDEO_CLASS);
+
+    // Setting the src of the video element to an empty string is
+    // the only reliable way we have found to ensure that MediaSource,
+    // SourceBuffer, and various Video elements are properly dereferenced
+    // to avoid memory leaks
+    // @todo - should these occur after stop? is there a reason they're done
+    // in this order?
+    this.videoElement.src = '';
+
+    // If the CLSP Player was responsible for creating the video element,
+    // completely remove it
+    if (!this.shouldRetainVideoElement) {
+      this.containerElement.removeChild(this.videoElement);
+      this.videoElement.remove();
+      this.videoElement = null;
+    }
+
+    this.videoElement = null;
+    this.containerElement = null;
+  }
+
   onConnectionChange = async () => {
     if (!window.navigator.onLine) {
       this.logger.info('Offline!');
@@ -168,42 +260,6 @@ export default class Iov extends EventEmitter {
     }
   };
 
-  _prepareVideoElement () {
-    const videoElement = window.document.getElementById(this.videoElementId);
-
-    // If we have no elements to work with, throw an error
-    if (!videoElement) {
-      throw new Error(`Unable to find an element in the DOM with id "${this.videoElementId}".`);
-    }
-
-    if (!this.videoElementParent) {
-      videoElement.style.display = 'none';
-      this.videoElementParent = videoElement.parentNode;
-    }
-
-    if (!this.videoElementParent) {
-      throw new Error('There is no iframe container element to attach the iframe to!');
-    }
-
-    this.videoElementParent.classList.add('clsp-player-container');
-
-    const clspVideoElement = window.document.createElement('video');
-    clspVideoElement.classList.add('clsp-player');
-
-    clspVideoElement.muted = true;
-    clspVideoElement.playsinline = true;
-
-    const insertBefore = this.iovPlayer && this.iovPlayer.videoElement
-      ? this.iovPlayer.videoElement.nextSibling
-      : this.videoElementParent.childNodes[0];
-
-    // @todo - is it ok that the most recent video is always first?  what about
-    // the spinner or the not-supported text
-    this.videoElementParent.insertBefore(clspVideoElement, insertBefore);
-
-    return clspVideoElement;
-  }
-
   enterFullscreen () {
     if (!window.document.fullscreenElement) {
       // Since the iov and player take control of the video element and its
@@ -228,24 +284,9 @@ export default class Iov extends EventEmitter {
     }
   }
 
-  destroyVideoElement () {
-    // Setting the src of the video element to an empty string is
-    // the only reliable way we have found to ensure that MediaSource,
-    // SourceBuffer, and various Video elements are properly dereferenced
-    // to avoid memory leaks
-    // @todo - should these occur after stop? is there a reason they're done
-    // in this order?
-    this.videoElement.src = '';
-    this.videoElement.parentNode.removeChild(this.videoElement);
-    this.videoElement.remove();
-    this.videoElement = null;
-  }
-
   /**
    * @param {StreamConfiguration|String} url
    *   The StreamConfiguration or url of the new stream
-   * @param {Boolean} showOnFirstFrame
-   *   if true, when the new stream has received its first frame,
    */
   async changeSrc (url) {
     if (this.isDestroyed) {
@@ -256,14 +297,8 @@ export default class Iov extends EventEmitter {
     this.logger.info('Changing Stream...');
 
     if (!url) {
-      // @todo - we shouldn't need to throw this, but root cause has not yet
-      // been determined
-      this.emit(Iov.events.NO_STREAM_CONFIGURATION);
-
       throw new Error('url is required to changeSrc');
     }
-
-    const clspVideoElement = this._prepareVideoElement();
 
     this.streamConfiguration = StreamConfiguration.isStreamConfiguration(url)
       ? url
@@ -273,8 +308,8 @@ export default class Iov extends EventEmitter {
 
     try {
       iovPlayerId = await this.iovPlayerCollection.create(
-        this.videoElementParent,
-        clspVideoElement,
+        this.containerElement,
+        this.videoElement,
         this.streamConfiguration,
       );
     }
@@ -423,8 +458,8 @@ export default class Iov extends EventEmitter {
 
     this.streamConfiguration = null;
 
-    this.videoElement = null;
-    this.videoElementParent = null;
+    this.#uninitializeElements();
+    this._config = null;
 
     // @todo @metrics
     // this.metrics = null;

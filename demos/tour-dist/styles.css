@@ -51,7 +51,7 @@ body {
   margin: auto;
 }
 
-#browser-not-supported {
+#demo-error {
   display: none;
   color: white;
   margin: auto;
