@@ -125,7 +125,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
       }
 
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.CONNECT_SUCCESS);
+        this.emit(RouterConnectionManager.events.CONNECT_SUCCESS);
       }
     }
     catch (error) {
@@ -133,7 +133,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
       this.logger.error(error);
 
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.CONNECT_FAILURE, {
+        this.emit(RouterConnectionManager.events.CONNECT_FAILURE, {
           error,
         });
       }
@@ -237,14 +237,14 @@ export default class RouterConnectionManager extends RouterBaseManager {
       this.logger.info('Successfully reconnected!');
 
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.RECONNECT_SUCCESS);
+        this.emit(RouterConnectionManager.events.RECONNECT_SUCCESS);
       }
     }
     catch (error) {
       this.logger.error('Failed to reconnect');
 
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.RECONNECT_FAILURE, { error });
+        this.emit(RouterConnectionManager.events.RECONNECT_FAILURE, { error });
       }
     }
     finally {
@@ -356,7 +356,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
       await PromiseTimeout(this._disconnect(), this.IMMEDIATE_RECONNECTION_DELAY * 1000);
 
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.DISCONNECT_SUCCESS);
+        this.emit(RouterConnectionManager.events.DISCONNECT_SUCCESS);
       }
     }
     catch (error) {
@@ -371,7 +371,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
       }
 
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.DISCONNECT_FAILURE, {
+        this.emit(RouterConnectionManager.events.DISCONNECT_FAILURE, {
           error,
         });
       }
@@ -438,7 +438,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
     // caller request the reconnect?  Should this emit a disconnect event
     // instead of trying to reconnect?
     this.reconnect();
-    // this.events.emit(RouterConnectionManager.events.DISCONNECT_SUCCESS, {
+    // this.emit(RouterConnectionManager.events.DISCONNECT_SUCCESS, {
     //   reason: event.data.reason,
     // });
   }

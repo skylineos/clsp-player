@@ -205,7 +205,7 @@ export default class MediaSource extends EventEmitter {
       await this.waitUntilReady();
     }
     catch (error) {
-      this.events.emit(MediaSource.events.SOURCE_OPEN_ERROR, { error });
+      this.emit(MediaSource.events.SOURCE_OPEN_ERROR, { error });
       return;
     }
 
@@ -215,7 +215,7 @@ export default class MediaSource extends EventEmitter {
     // like it...
     this.mediaSource.duration = this.DURATION;
 
-    this.events.emit(MediaSource.events.SOURCE_OPEN, event);
+    this.emit(MediaSource.events.SOURCE_OPEN, event);
   };
 
   /**
@@ -235,7 +235,7 @@ export default class MediaSource extends EventEmitter {
    * @returns {void}
    */
   #onSourceEnded = (event) => {
-    this.events.emit(MediaSource.events.SOURCE_ENDED, event);
+    this.emit(MediaSource.events.SOURCE_ENDED, event);
   };
 
   /**
@@ -249,7 +249,7 @@ export default class MediaSource extends EventEmitter {
    * @returns {void}
    */
   #onError = (event) => {
-    this.events.emit(MediaSource.events.ERROR, event);
+    this.emit(MediaSource.events.ERROR, event);
   };
 
   /**

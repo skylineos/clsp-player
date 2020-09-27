@@ -1,5 +1,4 @@
 import { v4 as uuidv4 } from 'uuid';
-import { sleepSeconds } from 'sleepjs';
 
 import utils from '../utils/utils';
 import EventEmitter from '../utils/EventEmitter';
@@ -18,6 +17,8 @@ const DEFAULT_MAX_RETRIES_ON_PLAY_ERROR = 20;
 export default class Iov extends EventEmitter {
   static events = {
     METRIC: 'metric',
+    NO_STREAM_CONFIGURATION: 'no-stream-configuration',
+    RETRY_ERROR: 'retry-error',
     FIRST_FRAME_SHOWN: IovPlayer.events.FIRST_FRAME_SHOWN,
     VIDEO_RECEIVED: IovPlayer.events.VIDEO_RECEIVED,
     VIDEO_INFO_RECEIVED: IovPlayer.events.VIDEO_INFO_RECEIVED,
@@ -104,6 +105,8 @@ export default class Iov extends EventEmitter {
   // conditions.  Those conditions should be discovered and accounted for, and
   // this method should be removed.
   startCheckingForWorkingPlayer () {
+    return;
+
     if (this.isDestroyed) {
       return;
     }
@@ -115,15 +118,22 @@ export default class Iov extends EventEmitter {
     this.workingPlayerCheck = setInterval(() => {
       this.logger.info('Checking for working player...');
 
+      if (this.isDestroyed) {
+        this.logger.info('Checked for working player while destroyed');
+        this.stopCheckingForWorkingPlayer();
+        return;
+      }
+
       if (this.iovPlayer || this.pendingChangeSrcIovPlayer) {
         return;
       }
 
-      this.logger.warn('Working player not found!');
+      this.logger.warn('Working player not found, restarting this iov...');
 
       this.restart().catch((error) => {
         this.logger.warn('Error while restarting while working player not found!');
         this.logger.error(error);
+        this.stopCheckingForWorkingPlayer();
       });
     }, 10 * 1000);
   }
@@ -336,6 +346,10 @@ export default class Iov extends EventEmitter {
     this.logger.info('Changing Stream...');
 
     if (!url) {
+      // @todo - we shouldn't need to throw this, but root cause has not yet
+      // been determined
+      this.emit(Iov.events.NO_STREAM_CONFIGURATION);
+
       throw new Error('url is required to changeSrc');
     }
 
@@ -366,33 +380,38 @@ export default class Iov extends EventEmitter {
     // @todo - this seems to be videojs specific, and should be removed or moved
     // somewhere else
     iovPlayer.on(IovPlayer.events.FIRST_FRAME_SHOWN, () => {
-      this.events.emit(Iov.events.FIRST_FRAME_SHOWN);
+      this.emit(Iov.events.FIRST_FRAME_SHOWN);
     });
 
     iovPlayer.on(IovPlayer.events.VIDEO_RECEIVED, () => {
-      this.events.emit(Iov.events.VIDEO_RECEIVED);
+      this.emit(Iov.events.VIDEO_RECEIVED);
     });
 
     iovPlayer.on(IovPlayer.events.VIDEO_INFO_RECEIVED, () => {
-      this.events.emit(Iov.events.VIDEO_INFO_RECEIVED);
+      this.emit(Iov.events.VIDEO_INFO_RECEIVED);
     });
 
     iovPlayer.on(IovPlayer.events.RECONNECT_FAILURE, ({ error }) => {
       // Don't try to clean anything up, just destroy it and start over
-      this.onPlayerError(error);
+      // @todo - there should be a more graceful way to handle this...
+      this.emit(Iov.events.REINITIALZE_ERROR, { error });
     });
 
     iovPlayer.on(IovPlayer.events.ROUTER_EVENT_ERROR, ({ error }) => {
       // Don't try to clean anything up, just destroy it and start over
-      this.onPlayerError(error);
-    });
-
-    iovPlayer.on(IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY, () => {
-      this.events.emit(Iov.events.IFRAME_DESTROYED_EXTERNALLY);
+      // @todo - there should be a more graceful way to handle this...
+      this.emit(Iov.events.REINITIALZE_ERROR, { error });
     });
 
     iovPlayer.on(IovPlayer.events.REINITIALZE_ERROR, ({ error }) => {
-      this.events.emit(Iov.events.REINITIALZE_ERROR, { error });
+      // Don't try to clean anything up, just destroy it and start over
+      // @todo - there should be a more graceful way to handle this...
+      this.emit(Iov.events.REINITIALZE_ERROR, { error });
+    });
+
+    // This means there's no chance of retrying...
+    iovPlayer.on(IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+      this.emit(Iov.events.IFRAME_DESTROYED_EXTERNALLY);
     });
 
     this.pendingChangeSrcId = changeSrcId;
@@ -459,32 +478,6 @@ export default class Iov extends EventEmitter {
     return Iov.factory(this.videoElement, newStreamConfiguration);
   }
 
-  onPlayerError = async (error) => {
-    // If it is currently hidden, do nothing
-    if (document[utils.windowStateNames.hiddenStateName]) {
-      try {
-        await this.stop();
-      }
-      catch (error) {
-        this.logger.warn('Error while trying to stop during visibilityChange event');
-        this.logger.error(error);
-      }
-
-      return;
-    }
-
-    this.logger.warn('IovPlayer error encountered!');
-    this.logger.error(error);
-
-    try {
-      await this.restart();
-    }
-    catch (error) {
-      this.logger.error('Error while restarting after IovPlayer error!');
-      this.logger.error(error);
-    }
-  };
-
   /**
    * Whenever possible, use the changeSrc method instead, since it minimizes the
    * number of black (empty) frames when playing or resuming a stream
@@ -519,7 +512,8 @@ export default class Iov extends EventEmitter {
 
   async #retryPlay (iovPlayer) {
     if (this.isDestroyed) {
-      throw new Error('Tried to retry play while destroyed');
+      this.logger.error('Tried to retry play while destroyed');
+      return;
     }
 
     if (this.retryCount >= this.MAX_RETRIES_ON_PLAY_ERROR) {
@@ -527,22 +521,16 @@ export default class Iov extends EventEmitter {
 
       this.retryCount = 0;
 
+      // @todo - we shouldn't need to throw this, but root cause has not yet
+      // been determined
+      // this.emit(Iov.events.RETRY_ERROR);
+
       throw new Error(`Failed to play after ${retryCount} retries!`);
     }
 
     this.retryCount++;
 
     await this.play(iovPlayer);
-
-    // try {
-    //   await this.play(iovPlayer);
-    // }
-    // catch (error) {
-    //   this.logger.warn(`Failed to play after ${retryCount} retries:`);
-    //   this.logger.error(error);
-
-    //   await this.#retryPlay(iovPlayer);
-    // }
   }
 
   async stop (stopPendingPlayer = true) {
@@ -550,7 +538,7 @@ export default class Iov extends EventEmitter {
       throw new Error('Tried to stop while destroyed');
     }
 
-    if (!this.iovPlayer) {
+    if (!this.iovPlayer && !this.pendingChangeSrcIovPlayer) {
       this.logger.info('Already stopped');
       return;
     }
@@ -573,11 +561,18 @@ export default class Iov extends EventEmitter {
 
     this.logger.info('Stopping by destroying current IovPlayer...');
 
-    const stopOperations = [
-      this.iovPlayer.destroy(),
-    ];
+    const stopOperations = [];
 
-    if (stopPendingPlayer) {
+    console.log(this.iovPlayer)
+    console.log(this.pendingChangeSrcIovPlayer)
+
+    if (this.iovPlayer) {
+      stopOperations.push(this.iovPlayer.destroy());
+    }
+
+    // If the iov is in the process of being destroyed, we will not accept the
+    // stopPendingPlayer override
+    if (stopPendingPlayer && !this.isDestroyed) {
       stopOperations.push(this.cancelChangeSrc());
     }
 
