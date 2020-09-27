@@ -47,7 +47,7 @@ interface IovChangeSrcReturnValue {
  * deliver video content streamed through CLSP from distributed sources.
  */
 export class Iov {
-  on(eventName: string, handler: function);
+  on(eventName: string, handler: Function);
   onConnectionChange();
   onVisibilityChange():Promise<void>;
   generatePlayerLogId(): string;
