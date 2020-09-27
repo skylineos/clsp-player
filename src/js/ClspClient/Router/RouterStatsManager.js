@@ -157,9 +157,7 @@ export default class RouterStatsManager extends RouterBaseManager {
         this.logger.error('Error while publishing stats!');
         this.logger.error(error);
 
-        this.events.emit(RouterStatsManager.events.PUBLISH_FAILURE, {
-          error,
-        });
+        this.emit(RouterStatsManager.events.PUBLISH_FAILURE, { error });
 
         // If any publish operation fails, do not continue to try to send stats
         // messages.  It is up to the caller how to respond.

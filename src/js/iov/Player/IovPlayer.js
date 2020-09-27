@@ -208,16 +208,16 @@ export default class IovPlayer extends EventEmitter {
           this.logger.error(error);
 
           // @todo - there could be a dedicated event for this...
-          this.events.emit(IovPlayer.events.RECONNECT_FAILURE, { error });
+          this.emit(IovPlayer.events.RECONNECT_FAILURE, { error });
         }
       });
 
       this.clspClient.conduit.on(ClspClient.events.RECONNECT_FAILURE, ({ error }) => {
-        this.events.emit(IovPlayer.events.RECONNECT_FAILURE, { error });
+        this.emit(IovPlayer.events.RECONNECT_FAILURE, { error });
       });
 
       this.clspClient.conduit.on(ClspClient.events.ROUTER_EVENT_ERROR, ({ error }) => {
-        this.events.emit(IovPlayer.events.ROUTER_EVENT_ERROR, { error });
+        this.emit(IovPlayer.events.ROUTER_EVENT_ERROR, { error });
       });
 
       // @todo - the intended resync logic doesn't currently work, so we have
@@ -226,7 +226,7 @@ export default class IovPlayer extends EventEmitter {
         this.logger.warn(`Resyncing stream ${data.streamName}...`);
 
         // spoofing an error...
-        this.events.emit(IovPlayer.events.RECONNECT_FAILURE, {
+        this.emit(IovPlayer.events.RECONNECT_FAILURE, {
           error: new Error('Resync detected'),
         });
 
@@ -240,7 +240,7 @@ export default class IovPlayer extends EventEmitter {
       });
 
       this.clspClient.conduit.on(ClspClient.events.IFRAME_DESTROYED_EXTERNALLY, () => {
-        this.events.emit(IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY);
+        this.emit(IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY);
       });
 
       await this.clspClient.initialize();
@@ -344,7 +344,7 @@ export default class IovPlayer extends EventEmitter {
       } = await this.clspClient.conduit.play();
 
       if (!MediaSource.isMimeCodecSupported(mimeCodec)) {
-        this.events.emit(IovPlayer.events.UNSUPPORTED_MIME_CODEC, {
+        this.emit(IovPlayer.events.UNSUPPORTED_MIME_CODEC, {
           mimeCodec,
         });
 
@@ -492,7 +492,7 @@ export default class IovPlayer extends EventEmitter {
 
       if (!this.firstFrameShown) {
         this.firstFrameShown = true;
-        this.events.emit(IovPlayer.events.FIRST_FRAME_SHOWN);
+        this.emit(IovPlayer.events.FIRST_FRAME_SHOWN);
       }
 
       this.drift = info.bufferTimeEnd - this.videoElement.currentTime;
@@ -552,7 +552,7 @@ export default class IovPlayer extends EventEmitter {
             throw error;
           }
 
-          this.events.emit(IovPlayer.events.VIDEO_INFO_RECEIVED);
+          this.emit(IovPlayer.events.VIDEO_INFO_RECEIVED);
 
           try {
             this.mseWrapper.appendMoov(this.moov);
@@ -577,7 +577,7 @@ export default class IovPlayer extends EventEmitter {
           // be attempted to be initialized.
           // One of the conditions that causes this problem is when resync
           // stream is triggered.
-          this.events.emit(IovPlayer.events.REINITIALZE_ERROR, { error });
+          this.emit(IovPlayer.events.REINITIALZE_ERROR, { error });
         }
       });
 
@@ -599,7 +599,7 @@ export default class IovPlayer extends EventEmitter {
         // This also makes it so that all of the event listeners don't have to
         // catch the error thrown by this method, which if not caught would result
         // in an uncaught error exception.
-        this.events.emit(IovPlayer.events.REINITIALZE_ERROR, { error });
+        this.emit(IovPlayer.events.REINITIALZE_ERROR, { error });
       }
       else {
         throw error;
@@ -622,7 +622,7 @@ export default class IovPlayer extends EventEmitter {
       return;
     }
 
-    this.events.emit(IovPlayer.events.VIDEO_RECEIVED);
+    this.emit(IovPlayer.events.VIDEO_RECEIVED);
     // @todo @metrics
     this.#getSegmentIntervalMetrics();
 

@@ -127,7 +127,7 @@ export default class MSEWrapper extends EventEmitter {
     this.mediaSource = MediaSource.factory(this.logId);
 
     this.mediaSource.on(MediaSource.events.ERROR, (event) => {
-      this.events.emit(MSEWrapper.events.MEDIA_SOURCE_ERROR, event);
+      this.emit(MSEWrapper.events.MEDIA_SOURCE_ERROR, event);
     });
 
     if (this.sourceBuffer) {
@@ -171,7 +171,7 @@ export default class MSEWrapper extends EventEmitter {
     this.metric('sourceBuffer.created', 1);
 
     this.sourceBuffer.on(SourceBuffer.events.ERROR, (event) => {
-      this.events.emit(MSEWrapper.events.SOURCE_BUFFER_ERROR, event);
+      this.emit(MSEWrapper.events.SOURCE_BUFFER_ERROR, event);
     });
 
     this.sourceBuffer.on(SourceBuffer.events.UPDATE_END, (event) => {
@@ -376,7 +376,7 @@ export default class MSEWrapper extends EventEmitter {
       // append threshold with same time end has been crossed.  Reinitialize frozen stream.
       if (this.appendsSinceTimeEndUpdated > this.APPENDS_WITH_SAME_TIME_END_THRESHOLD) {
         this.logger.info('stream frozen!');
-        this.events.emit(MSEWrapper.events.STREAM_FROZEN);
+        this.emit(MSEWrapper.events.STREAM_FROZEN);
         return;
       }
     }
@@ -384,7 +384,7 @@ export default class MSEWrapper extends EventEmitter {
     this.appendsSinceTimeEndUpdated = 0;
     this.previousTimeEnd = info.bufferTimeEnd;
 
-    this.events.emit(MSEWrapper.events.VIDEO_SEGMENT_SHOWN, { info });
+    this.emit(MSEWrapper.events.VIDEO_SEGMENT_SHOWN, { info });
 
     try {
       this.sourceBuffer.trim(info);
@@ -419,7 +419,7 @@ export default class MSEWrapper extends EventEmitter {
     }
     catch (error) {
       this.logger.info('Error while showing video segment! failed!');
-      this.events.emit(MSEWrapper.events.SHOW_VIDEO_SEGMENT_ERROR, { error });
+      this.emit(MSEWrapper.events.SHOW_VIDEO_SEGMENT_ERROR, { error });
     }
   }
 

@@ -192,7 +192,7 @@ export default class SourceBuffer extends EventEmitter {
     const estimatedDrift = (Date.now() - timestamp) / 1000;
 
     if (estimatedDrift > this.DRIFT_THRESHOLD) {
-      this.events.emit(SourceBuffer.events.DRIFT_THRESHOLD_EXCEEDED, {
+      this.emit(SourceBuffer.events.DRIFT_THRESHOLD_EXCEEDED, {
         estimatedDrift,
         driftThreshold: this.DRIFT_THRESHOLD,
       });
@@ -386,7 +386,7 @@ export default class SourceBuffer extends EventEmitter {
       catch (error) {
         this.metric('error.sourceBuffer.abort', 1);
 
-        this.events.emit(SourceBuffer.events.ABORT_ERROR, { error });
+        this.emit(SourceBuffer.events.ABORT_ERROR, { error });
       }
     }
 
@@ -407,7 +407,7 @@ export default class SourceBuffer extends EventEmitter {
       return;
     }
 
-    this.events.emit(SourceBuffer.events.UPDATE_END, event);
+    this.emit(SourceBuffer.events.UPDATE_END, event);
   };
 
   /**
@@ -416,7 +416,7 @@ export default class SourceBuffer extends EventEmitter {
    * @param {objec} event
    */
   #onError = (event) => {
-    this.events.emit(SourceBuffer.events.ERROR, event);
+    this.emit(SourceBuffer.events.ERROR, event);
   };
 
   // @todo @metrics

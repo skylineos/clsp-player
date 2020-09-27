@@ -270,7 +270,7 @@ export default class RouterIframeManager extends RouterBaseManager {
       // rather than letting the CLSP Player manage it.  In this instance,
       // we recognize that this happened, but do not show nor throw an error.
       this.logger.info('Iframe destroyed externally!');
-      this.events.emit(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY);
+      this.emit(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY);
       return;
     }
 

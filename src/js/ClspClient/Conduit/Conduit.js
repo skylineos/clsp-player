@@ -121,7 +121,7 @@ export default class Conduit extends EventEmitter {
 
   async initialize () {
     this.routerIframeManager.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
-      this.events.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
+      this.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
 
       // This doesn't really do anything since the iframe is already
       // destroyed, it just allows the disconnection to run in parallel with
@@ -133,7 +133,7 @@ export default class Conduit extends EventEmitter {
 
     // Allow the caller to react every time there is a reconnection event
     this.routerConnectionManager.on(RouterConnectionManager.events.RECONNECT_SUCCESS, () => {
-      this.events.emit(Conduit.events.RECONNECT_SUCCESS);
+      this.emit(Conduit.events.RECONNECT_SUCCESS);
     });
     this.routerConnectionManager.on(RouterConnectionManager.events.RECONNECT_FAILURE, ({ error }) => {
       // @todo - currently, the default is to reconnect indefinitely.  but if
@@ -141,13 +141,13 @@ export default class Conduit extends EventEmitter {
       // reconnection fails for the last time?  does this event indicate that
       // the last reconnection attempt failed and another attempt will not be
       // made?
-      this.events.emit(Conduit.events.RECONNECT_FAILURE, { error });
+      this.emit(Conduit.events.RECONNECT_FAILURE, { error });
     });
 
     this.routerStreamManager.on(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, (data) => {
       // @todo - if a stream has to "resync", how are we supposed to respond
       // to that?
-      this.events.emit(Conduit.events.RESYNC_STREAM_COMPLETE, data);
+      this.emit(Conduit.events.RESYNC_STREAM_COMPLETE, data);
     });
 
     // This is the big one - transmit the video segments upstreama
@@ -155,7 +155,7 @@ export default class Conduit extends EventEmitter {
       // @todo - if a video segment isn't received for some interval after the
       // previous video segment was received, some sort of remediation should
       // take place.
-      this.events.emit(Conduit.events.VIDEO_SEGMENT_RECEIVED, data);
+      this.emit(Conduit.events.VIDEO_SEGMENT_RECEIVED, data);
     });
 
     this.routerStreamManager.on(RouterStreamManager.events.VIDEO_SEGMENT_TIMEOUT, (data) => {
@@ -163,7 +163,7 @@ export default class Conduit extends EventEmitter {
 
       // No need to await here since we're in an event listener
       this.routerConnectionManager.reconnect();
-    })
+    });
 
     await this.routerIframeManager.create();
 
@@ -218,7 +218,7 @@ export default class Conduit extends EventEmitter {
     catch (error) {
       this.logger.error(`Error trying to play stream ${this.routerStreamManager.streamName}`);
 
-      // @todo - we could retry
+      // @todo - we could retry?
       await this.stop();
 
       throw error;
@@ -337,7 +337,7 @@ export default class Conduit extends EventEmitter {
       this.logger.error('onMessageError');
       this.logger.error(error);
 
-      this.events.emit(Conduit.events.ROUTER_EVENT_ERROR, { error });
+      this.emit(Conduit.events.ROUTER_EVENT_ERROR, { error });
     }
   }
 

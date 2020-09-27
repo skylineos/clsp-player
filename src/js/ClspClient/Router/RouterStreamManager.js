@@ -116,7 +116,7 @@ export default class RouterStreamManager extends RouterBaseManager {
       this.routerTransactionManager.subscribe(`iov/video/${this.guid}/resync`, () => {
         // @todo - what about a resync stream error?  is there any data that can
         // be passed with the event?
-        this.events.emit(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, {
+        this.emit(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, {
           guid: this.guid,
           streamName: this.streamName,
         });
@@ -301,9 +301,11 @@ export default class RouterStreamManager extends RouterBaseManager {
   async _requestStreamData () {
     this.logger.debug('Requesting Stream...');
 
-    const {
-      payloadString: videoMetaData,
-    } = await this.routerTransactionManager.transaction(
+    // NOTE - when the "/request" request times out, it means there is a
+    // significant problem with this stream on the SFS (perhaps it doesn't
+    // exist?).  As opposed to the "/play" request timing out...
+    // @todo - add a condition for this
+    const { payloadString: videoMetaData } = await this.routerTransactionManager.transaction(
       `iov/video/${window.btoa(this.streamName)}/request`,
       {
         clientId: this.clientId,
@@ -348,15 +350,21 @@ export default class RouterStreamManager extends RouterBaseManager {
    *   The moov
    */
   async _requestMoov () {
+    if (this.isDestroyed) {
+      throw new Error('Tried to request moov while destroyed');
+    }
+
     this.logger.info('Requesting the moov...');
 
     if (!this.guid) {
       throw new Error('The guid must be set before requesting the moov');
     }
 
-    const {
-      payloadBytes: moov,
-    } = await this.routerTransactionManager.transaction(
+    // NOTE - when the "/play" request times out, it means the SFS can correctly
+    // handle your request for this stream, but something is wrong with the
+    // stream on the SFS.
+    // @todo - add a condition for this
+    const { payloadBytes: moov } = await this.routerTransactionManager.transaction(
       `iov/video/${this.guid}/play`,
       {
         initSegmentTopic: this.moovRequestTopic,
@@ -388,6 +396,10 @@ export default class RouterStreamManager extends RouterBaseManager {
    *     FIRST_MOOF_TIMEOUT_DURATION
    */
   async _requestMoofs () {
+    if (this.isDestroyed) {
+      throw new Error('Tried to request moofs while destroyed');
+    }
+
     this.logger.info('Setting up moof listener...');
 
     if (!this.guid) {
@@ -448,12 +460,12 @@ export default class RouterStreamManager extends RouterBaseManager {
             return;
           }
 
-          this.events.emit(RouterStreamManager.events.VIDEO_SEGMENT_TIMEOUT, {
+          this.emit(RouterStreamManager.events.VIDEO_SEGMENT_TIMEOUT, {
             timeout: this.MOOF_TIMEOUT_DURATION,
           });
         }, this.MOOF_TIMEOUT_DURATION * 1000);
 
-        this.events.emit(RouterStreamManager.events.VIDEO_SEGMENT_RECEIVED, {
+        this.emit(RouterStreamManager.events.VIDEO_SEGMENT_RECEIVED, {
           clspMessage,
         });
       });

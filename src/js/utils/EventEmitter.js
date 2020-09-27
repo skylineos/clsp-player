@@ -39,9 +39,23 @@ export default class EventEmitter extends Destroyable {
       throw new Error(`Unable to register for event "${eventName}" without a handler`);
     }
 
+    if (this.isDestroyed) {
+      this.logger.error(`Tried to register handler for event "${eventName}" while destroyed!`);
+      return this;
+    }
+
     this.events.on(eventName, handler);
 
     return this;
+  }
+
+  emit (eventName, data) {
+    if (this.isDestroyed) {
+      this.logger.error(`Tried to emit "${eventName}" while destroyed!`);
+      return;
+    }
+
+    this.events.emit(eventName, data);
   }
 
   async _destroy () {

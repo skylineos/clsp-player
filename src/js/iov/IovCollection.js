@@ -34,6 +34,7 @@ export default class IovCollection {
     this.logger.debug('Constructing...');
 
     this.iovs = {};
+    this.pendingRemoval = {};
 
     this.isDestroyed = false;
     this.isDestroyComplete = false;
@@ -53,11 +54,15 @@ export default class IovCollection {
   create (videoElementId) {
     const id = ++totalIovCount;
 
+    this.logger.info(`Creating Iov ${id}`);
+
     const iov = Iov.factory(
       `iov:${id}`,
       id,
       videoElementId,
     );
+
+    this.logger.info(`Created Iov ${id}`);
 
     iov.on(Iov.events.IFRAME_DESTROYED_EXTERNALLY, async () => {
       iov.logger.info('IovCollection: iframe was destroyed, removing iov...');
@@ -72,22 +77,77 @@ export default class IovCollection {
     });
 
     iov.on(Iov.events.REINITIALZE_ERROR, async () => {
-      iov.logger.info('IovCollection: reinitialize error, removing iov...');
+      iov.logger.info('IovCollection: REINITIALZE_ERROR error, retrying...');
 
       try {
-        await this.remove(iov.id);
+        await this.#retry(iov, videoElementId);
       }
       catch (error) {
-        iov.logger.error('IovCollection: error while removing iov from collection, continuing anyway...');
+        iov.logger.error('IovCollection: error while retrying on REINITIALZE_ERROR!');
         iov.logger.error(error);
       }
+    });
 
-      this.create(videoElementId);
+    iov.on(Iov.events.NO_STREAM_CONFIGURATION, async () => {
+      iov.logger.info('IovCollection: NO_STREAM_CONFIGURATION error, retrying...');
+
+      try {
+        await this.#retry(iov, videoElementId);
+      }
+      catch (error) {
+        iov.logger.error('IovCollection: error while retrying on NO_STREAM_CONFIGURATION!');
+        iov.logger.error(error);
+      }
+    });
+
+    iov.on(Iov.events.RETRY_ERROR, async () => {
+      iov.logger.info('IovCollection: RETRY_ERROR error, retrying...');
+
+      try {
+        await this.#retry(iov, videoElementId);
+      }
+      catch (error) {
+        iov.logger.error('IovCollection: error while retrying on RETRY_ERROR!');
+        iov.logger.error(error);
+      }
     });
 
     this.add(iov);
 
     return iov;
+  }
+
+  async #retry (iov, videoElementId) {
+    const id = iov.id;
+
+    // Don't retry a stream that has already been removed
+    if (!this.has(id)) {
+      this.logger.info(`Attempted to retry Iov ${id} which has already been removed`);
+      return;
+    }
+
+    // Use the last stream that was attempted to be played
+    const streamConfiguration = iov.pendingChangeSrcStreamConfiguration || iov.streamConfiguration;
+
+    try {
+      await this.remove(id);
+    }
+    catch (error) {
+      iov.logger.error('IovCollection: error while removing iov from collection, continuing anyway...');
+      iov.logger.error(error);
+    }
+
+    const newIov = this.create(videoElementId);
+
+    console.log(streamConfiguration);
+
+    try {
+      await newIov.changeSrc(streamConfiguration);
+    }
+    catch (error) {
+      newIov.logger.error('IovCollection: Error on changeSrc while retrying');
+      newIov.logger.error(error);
+    }
   }
 
   /**
@@ -109,6 +169,8 @@ export default class IovCollection {
       throw new Error('Cannot add an Iov with a previously-used id');
     }
 
+    this.logger.info(`Adding Iov ${id}`);
+
     this.iovs[id] = iov;
 
     return this;
@@ -127,6 +189,10 @@ export default class IovCollection {
    */
   has (id) {
     if (!id) {
+      return false;
+    }
+
+    if (this.pendingRemoval[id]) {
       return false;
     }
 
@@ -165,12 +231,23 @@ export default class IovCollection {
       return;
     }
 
-    delete this.iovs[id];
+    try {
+      this.pendingRemoval[id] = true;
 
-    iov.logger.info('IovCollection - removing iov...');
-    await iov.destroy();
+      delete this.iovs[id];
 
-    return this;
+      iov.logger.info('IovCollection - removing iov...');
+      await iov.destroy();
+
+      return this;
+    }
+    catch (error) {
+      this.logger.error(`Error destroying Iov ${id} while removing`);
+      this.logger.error(error);
+    }
+    finally {
+      delete this.pendingRemoval[id];
+    }
   }
 
   /**
@@ -195,7 +272,9 @@ export default class IovCollection {
       }
     }
 
+    // @todo - is it safe to dereference these?
     this.iovs = null;
+    this.pendingRemoval = null;
 
     this.isDestroyComplete = true;
 
