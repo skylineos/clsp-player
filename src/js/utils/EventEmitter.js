@@ -60,6 +60,12 @@ export default class EventEmitter extends Destroyable {
     this.events.emit(eventName, data);
   }
 
+  async _reset () {
+    this.events = new EventEmitter3();
+
+    await super._reset();
+  }
+
   async _destroy () {
     this.events.removeAllListeners();
     this.events = null;

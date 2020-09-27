@@ -62,7 +62,7 @@ function hardDestroy3 () {
 function changeSrc () {
   var streamUrl = document.getElementById('stream-src').value;
 
-  window.iov.changeSrc(streamUrl).firstFrameReceivedPromise.catch(function (error) {
+  window.iov.changeSrc(streamUrl).catch(function (error) {
     console.error('Error while playing stream in demo:');
     console.error(error);
   });
@@ -82,7 +82,7 @@ function initialize () {
 
   window.iov = window.iovCollection.create(videoElementId);
 
-  window.iov.changeSrc(url).firstFrameReceivedPromise.catch(function (error) {
+  window.iov.changeSrc(url).catch(function (error) {
     console.error('Error while playing stream in demo:');
     console.error(error);
   });

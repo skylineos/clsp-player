@@ -1,14 +1,14 @@
-import { v4 as uuidv4 } from 'uuid';
+import { sleepSeconds } from 'sleepjs';
 
 import utils from '../utils/utils';
 import EventEmitter from '../utils/EventEmitter';
 
+import IovPlayerCollection from './Player/IovPlayerCollection';
 import IovPlayer from './Player/IovPlayer';
 import StreamConfiguration from './StreamConfiguration';
 
 const DEFAULT_ENABLE_METRICS = false;
 const DEFAULT_CONNECTION_CHANGE_PLAY_DELAY = 5;
-const DEFAULT_MAX_RETRIES_ON_PLAY_ERROR = 20;
 
 /**
  * Internet of Video client. This module uses the MediaSource API to
@@ -17,13 +17,10 @@ const DEFAULT_MAX_RETRIES_ON_PLAY_ERROR = 20;
 export default class Iov extends EventEmitter {
   static events = {
     METRIC: 'metric',
-    NO_STREAM_CONFIGURATION: 'no-stream-configuration',
-    RETRY_ERROR: 'retry-error',
     FIRST_FRAME_SHOWN: IovPlayer.events.FIRST_FRAME_SHOWN,
     VIDEO_RECEIVED: IovPlayer.events.VIDEO_RECEIVED,
     VIDEO_INFO_RECEIVED: IovPlayer.events.VIDEO_INFO_RECEIVED,
     IFRAME_DESTROYED_EXTERNALLY: IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY,
-    REINITIALZE_ERROR: IovPlayer.events.REINITIALZE_ERROR,
   };
 
   static factory (
@@ -97,37 +94,57 @@ export default class Iov extends EventEmitter {
     // These can be configured manually after construction
     this.ENABLE_METRICS = DEFAULT_ENABLE_METRICS;
     this.CONNECTION_CHANGE_PLAY_DELAY = DEFAULT_CONNECTION_CHANGE_PLAY_DELAY;
-    this.MAX_RETRIES_ON_PLAY_ERROR = DEFAULT_MAX_RETRIES_ON_PLAY_ERROR;
+
+    this.iovPlayerCollection = IovPlayerCollection.factory(`${this.logId}.iovPlayerCollection`);
+
+    // Needed for videojs plugin
+    this.iovPlayerCollection.on(IovPlayerCollection.events.FIRST_FRAME_SHOWN, () => {
+      this.emit(Iov.events.FIRST_FRAME_SHOWN);
+    });
+
+    // Needed for videojs plugin
+    this.iovPlayerCollection.on(IovPlayerCollection.events.VIDEO_RECEIVED, () => {
+      this.emit(Iov.events.VIDEO_RECEIVED);
+    });
+
+    // Needed for videojs plugin
+    this.iovPlayerCollection.on(IovPlayerCollection.events.VIDEO_INFO_RECEIVED, () => {
+      this.emit(Iov.events.VIDEO_INFO_RECEIVED);
+    });
+
+    // This means there's no chance of retrying...
+    this.iovPlayerCollection.on(IovPlayerCollection.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+      this.emit(Iov.events.IFRAME_DESTROYED_EXTERNALLY);
+    });
   }
 
   onConnectionChange = async () => {
-    if (window.navigator.onLine) {
-      this.logger.info('Back online...');
+    if (!window.navigator.onLine) {
+      this.logger.info('Offline!');
 
       try {
-        await this.restart();
+        await this.stop();
       }
       catch (error) {
-        this.logger.error('Error while trying to restart during online event');
+        this.logger.warn('Error encountered while stopping during offline event:');
         this.logger.error(error);
       }
 
       return;
     }
 
-    this.logger.info('Offline!');
+    this.logger.info('Back online...');
 
     try {
-      await this.stop();
+      await this.restart();
     }
     catch (error) {
-      this.logger.warn('Error encountered while stopping during offline event:');
+      this.logger.error('Error while trying to restart during online event');
       this.logger.error(error);
     }
   };
 
   onVisibilityChange = async () => {
-    // If it is currently hidden, do nothing
     if (document[utils.windowStateNames.hiddenStateName]) {
       try {
         await this.stop();
@@ -139,6 +156,8 @@ export default class Iov extends EventEmitter {
 
       return;
     }
+
+    this.logger.info('Back in focus...');
 
     try {
       await this.restart();
@@ -185,17 +204,6 @@ export default class Iov extends EventEmitter {
     return clspVideoElement;
   }
 
-  generatePlayerLogId () {
-    return `${this.logId}.player:${this.iovPlayerCount}`;
-  }
-
-  _clearNextPlayerTimeout () {
-    if (this.nextPlayerTimeout) {
-      clearTimeout(this.nextPlayerTimeout);
-      this.nextPlayerTimeout = null;
-    }
-  }
-
   enterFullscreen () {
     if (!window.document.fullscreenElement) {
       // Since the iov and player take control of the video element and its
@@ -234,60 +242,12 @@ export default class Iov extends EventEmitter {
   }
 
   /**
-   * Meant to be run as soon as the next player (after awaiting changeSrc) has
-   * recevied its first frame.
-   */
-  async showNextStream () {
-    this.logger.info('About to show next player');
-
-    // The next player is actually playing / displaying video, but it isn't
-    // visible because the old player is still in front of it.  The destruction
-    // of the old player is what actually causes the next player to become
-    // visible.
-    if (this.iovPlayer) {
-      // async, but we don't need to wait for it
-      // @todo - what do we do about errors?  should we await this?
-      await this.stop(false);
-    }
-
-    this._clearNextPlayerTimeout();
-
-    if (this.pendingChangeSrcIovPlayer) {
-      this.streamConfiguration = this.pendingChangeSrcStreamConfiguration;
-      this.iovPlayer = this.pendingChangeSrcIovPlayer;
-
-      this.pendingChangeSrcStreamConfiguration = null;
-      this.pendingChangeSrcIovPlayer = null;
-    }
-  }
-
-  async cancelChangeSrc () {
-    if (!this.pendingChangeSrcIovPlayer) {
-      return;
-    }
-
-    this.logger.info('Cancelling changeSrc, destroying pending player...');
-
-    try {
-      await this.pendingChangeSrcIovPlayer.destroy();
-    }
-    catch (error) {
-      this.logger.error('Error while destroying pending IovPlayer, continuing anyway...');
-      this.logger.error(error);
-    }
-
-    this.pendingChangeSrcId = null;
-    this.pendingChangeSrcStreamConfiguration = null;
-    this.pendingChangeSrcIovPlayer = null;
-  }
-
-  /**
    * @param {StreamConfiguration|String} url
    *   The StreamConfiguration or url of the new stream
    * @param {Boolean} showOnFirstFrame
    *   if true, when the new stream has received its first frame,
    */
-  changeSrc (url, showOnFirstFrame = true) {
+  async changeSrc (url) {
     if (this.isDestroyed) {
       this.logger.info('Tried to changeSrc while destroyed');
       return;
@@ -303,192 +263,61 @@ export default class Iov extends EventEmitter {
       throw new Error('url is required to changeSrc');
     }
 
-    // Handle the case of multiple changeSrc requests.  Only change to the last
-    // stream that was requested
-    if (this.pendingChangeSrcIovPlayer) {
-      this._clearNextPlayerTimeout();
-      // @todo - should we await this?
-      this.cancelChangeSrc();
-    }
-
     const clspVideoElement = this._prepareVideoElement();
 
-    const streamConfiguration = StreamConfiguration.isStreamConfiguration(url)
+    this.streamConfiguration = StreamConfiguration.isStreamConfiguration(url)
       ? url
       : StreamConfiguration.fromUrl(url);
 
-    const changeSrcId = uuidv4();
-    this.iovPlayerCount++;
-    const iovPlayer = IovPlayer.factory(
-      this.generatePlayerLogId(),
-      this.videoElementParent,
-      clspVideoElement,
-    );
+    let iovPlayerId;
 
-    // @todo - this seems to be videojs specific, and should be removed or moved
-    // somewhere else
-    iovPlayer.on(IovPlayer.events.FIRST_FRAME_SHOWN, () => {
-      this.emit(Iov.events.FIRST_FRAME_SHOWN);
-    });
+    try {
+      iovPlayerId = await this.iovPlayerCollection.create(
+        this.videoElementParent,
+        clspVideoElement,
+        this.streamConfiguration,
+      );
+    }
+    catch (error) {
+      this.logger.error(`Error while creating / playing the player for stream ${this.streamConfiguration.streamName}`);
+      this.logger.error(error);
+      throw error;
+    }
 
-    iovPlayer.on(IovPlayer.events.VIDEO_RECEIVED, () => {
-      this.emit(Iov.events.VIDEO_RECEIVED);
-    });
+    if (!iovPlayerId) {
+      throw new Error('IovPlayer was created, but no id was returned');
+    }
 
-    iovPlayer.on(IovPlayer.events.VIDEO_INFO_RECEIVED, () => {
-      this.emit(Iov.events.VIDEO_INFO_RECEIVED);
-    });
+    // changeSrc will only complete when the video is actually playing
+    await new Promise((resolve, reject) => {
+      this.iovPlayerCollection.on(IovPlayerCollection.events.FIRST_FRAME_SHOWN, async ({ id }) => {
+        // This first frame shown was for a different player
+        if (iovPlayerId !== id) {
+          // Note, we are not resolving nor rejecting here
+          return;
+        }
 
-    iovPlayer.on(IovPlayer.events.RECONNECT_FAILURE, ({ error }) => {
-      // Don't try to clean anything up, just destroy it and start over
-      // @todo - there should be a more graceful way to handle this...
-      this.emit(Iov.events.REINITIALZE_ERROR, { error });
-    });
+        this.logger.info('Next player has received its first frame...');
+        await sleepSeconds(this.SHOW_NEXT_VIDEO_DELAY);
 
-    iovPlayer.on(IovPlayer.events.ROUTER_EVENT_ERROR, ({ error }) => {
-      // Don't try to clean anything up, just destroy it and start over
-      // @todo - there should be a more graceful way to handle this...
-      this.emit(Iov.events.REINITIALZE_ERROR, { error });
-    });
-
-    iovPlayer.on(IovPlayer.events.REINITIALZE_ERROR, ({ error }) => {
-      // Don't try to clean anything up, just destroy it and start over
-      // @todo - there should be a more graceful way to handle this...
-      this.emit(Iov.events.REINITIALZE_ERROR, { error });
-    });
-
-    // This means there's no chance of retrying...
-    iovPlayer.on(IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY, () => {
-      this.emit(Iov.events.IFRAME_DESTROYED_EXTERNALLY);
-    });
-
-    this.pendingChangeSrcId = changeSrcId;
-    this.pendingChangeSrcStreamConfiguration = streamConfiguration;
-    this.pendingChangeSrcIovPlayer = iovPlayer;
-
-    const firstFrameReceivedPromise = new Promise(async (resolve, reject) => {
-      iovPlayer.on(IovPlayer.events.FIRST_FRAME_SHOWN, () => {
-        this.nextPlayerTimeout = setTimeout(() => {
-          this._clearNextPlayerTimeout();
-
+        try {
           if (this.isDestroyed) {
-            return reject(new Error('Next player received first frame while destroyed!'));
-          }
-
-          this.logger.info('Next player has received its first frame...');
-
-          if (showOnFirstFrame) {
-            this.showNextStream().catch(reject);
+            throw new Error('Next player received first frame while destroyed!');
           }
 
           resolve();
-        }, this.SHOW_NEXT_VIDEO_DELAY * 1000);
+        }
+        catch (error) {
+          this.logger.error('Error while handling first frame shown event!');
+          reject(error);
+        }
       });
-
-      try {
-        iovPlayer.setStreamConfiguration(streamConfiguration);
-
-        await iovPlayer.initialize();
-
-        // @todo - should the play method only resolve once the first frame has
-        // been shown?  right now it resolves on first moof recevied
-        await this.play(iovPlayer);
-      }
-      catch (error) {
-        this.logger.error('Error while trying to change source!');
-        reject(error);
-      }
     });
-
-    return {
-      id: changeSrcId,
-      firstFrameReceivedPromise,
-    };
   }
 
-  /**
-   * @param {StreamConfiguration|url} streamConfiguration
-   *   The StreamConfiguration or url of the stream to use with the cloned
-   *   player
-   */
-  clone (streamConfiguration = this.streamConfiguration) {
-    if (this.isDestroyed) {
-      throw new Error('Tried to clone while destroyed!');
-    }
-
-    this.logger.info('clone');
-
-    const newStreamConfiguration = StreamConfiguration.isStreamConfiguration(streamConfiguration)
-      ? streamConfiguration.clone()
-      : StreamConfiguration.fromUrl(streamConfiguration);
-
-    // @todo - is it possible to reuse the iov player?
-    return Iov.factory(this.videoElement, newStreamConfiguration);
-  }
-
-  /**
-   * Whenever possible, use the changeSrc method instead, since it minimizes the
-   * number of black (empty) frames when playing or resuming a stream
-   * @param {IovPlayer} iovPlayer
-   */
-  async play (iovPlayer = this.iovPlayer) {
-    if (this.isDestroyed) {
-      throw new Error('Tried to play while destroyed');
-    }
-
-    this.logger.info('Play');
-
-    try {
-      await iovPlayer.play();
-    }
-    catch (error) {
-      this.logger.warn('Error while trying to play from IovPlayer, destroying IovPlayer...');
-      this.logger.error(error);
-
-      if (this.MAX_RETRIES_ON_PLAY_ERROR > 0) {
-        await this.#retryPlay(iovPlayer);
-      }
-      else {
-        // @todo - display a message in the page (aka to the user) saying that
-        // the stream couldn't be played?
-        await iovPlayer.destroy();
-
-        throw error;
-      }
-    }
-  }
-
-  async #retryPlay (iovPlayer) {
-    if (this.isDestroyed) {
-      this.logger.error('Tried to retry play while destroyed');
-      return;
-    }
-
-    if (this.retryCount >= this.MAX_RETRIES_ON_PLAY_ERROR) {
-      const retryCount = this.retryCount;
-
-      this.retryCount = 0;
-
-      // @todo - we shouldn't need to throw this, but root cause has not yet
-      // been determined
-      // this.emit(Iov.events.RETRY_ERROR);
-
-      throw new Error(`Failed to play after ${retryCount} retries!`);
-    }
-
-    this.retryCount++;
-
-    await this.play(iovPlayer);
-  }
-
-  async stop (stopPendingPlayer = true) {
+  async stop () {
     if (this.isDestroyComplete) {
       throw new Error('Tried to stop while destroyed');
-    }
-
-    if (!this.iovPlayer && !this.pendingChangeSrcIovPlayer) {
-      this.logger.info('Already stopped');
-      return;
     }
 
     if (this.isStopping) {
@@ -498,48 +327,11 @@ export default class Iov extends EventEmitter {
 
     this.isStopping = true;
 
-    // When we get back online, if the first frame was not shown yet, this will
-    // enable the restart command to work, because cancelChangeSrc will null
-    // out pendingChangeSrcStreamConfiguration
-    if (!this.streamConfiguration && this.pendingChangeSrcStreamConfiguration) {
-      this.streamConfiguration = this.pendingChangeSrcStreamConfiguration;
+    try {
+      await this.iovPlayerCollection.removeAll();
     }
-
-    this.logger.info('Stopping by destroying current IovPlayer...');
-
-    const stopOperations = [];
-
-    if (this.iovPlayer) {
-      stopOperations.push(this.iovPlayer.destroy());
-    }
-
-    // If the iov is in the process of being destroyed, we will not accept the
-    // stopPendingPlayer override
-    if (stopPendingPlayer && !this.isDestroyed) {
-      stopOperations.push(this.cancelChangeSrc());
-    }
-
-    const results = await Promise.allSettled(stopOperations);
-
-    const errors = results.reduce((acc, cur) => {
-      if (cur.status !== 'fulfilled') {
-        acc.push(cur);
-      }
-
-      return acc;
-    }, []);
-
-    this.iovPlayer = null;
-    this.isStopping = false;
-
-    if (errors.length) {
-      this.logger.warn('Error(s) encountered while stopping during offline event:');
-
-      errors.forEach((error) => {
-        this.logger.error(error.reason);
-      });
-
-      throw errors[0].reason;
+    finally {
+      this.isStopping = false;
     }
   }
 
@@ -562,16 +354,13 @@ export default class Iov extends EventEmitter {
     }
 
     try {
-      // Account for restart being called before the first frame was shown
-      const streamConfiguration = this.pendingChangeSrcStreamConfiguration || this.streamConfiguration;
-
-      // @todo - do we need to handle firstFrameReceivedPromise rejecting here?
-      await this.changeSrc(streamConfiguration).firstFrameReceivedPromise;
+      await this.changeSrc(this.streamConfiguration);
     }
     catch (error) {
       this.logger.error('Failed to changeSrc while restarting!');
 
-      // @todo - on failure, should we continue retrying?
+      // @todo - on failure, should we continue retrying?  maybe not since play
+      // has its own retry logic in IovPlayerCollection
 
       throw error;
     }
@@ -620,7 +409,15 @@ export default class Iov extends EventEmitter {
       await this.stop();
     }
     catch (error) {
-      this.logger.error('Error while destroying IOV Player while destroying IOV');
+      this.logger.error('Error while stopping while destroying');
+      this.logger.error(error);
+    }
+
+    try {
+      await this.iovPlayerCollection.destroy();
+    }
+    catch (error) {
+      this.logger.error('Error while destroying IOV Player Collection while destroying');
       this.logger.error(error);
     }
 

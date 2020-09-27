@@ -76,58 +76,22 @@ export default class IovCollection {
       }
     });
 
-    iov.on(Iov.events.REINITIALZE_ERROR, async () => {
-      iov.logger.info('IovCollection: REINITIALZE_ERROR error, retrying...');
-
-      try {
-        await this.#retry(iov, videoElementId);
-      }
-      catch (error) {
-        iov.logger.error('IovCollection: error while retrying on REINITIALZE_ERROR!');
-        iov.logger.error(error);
-      }
-    });
-
-    iov.on(Iov.events.NO_STREAM_CONFIGURATION, async () => {
-      iov.logger.info('IovCollection: NO_STREAM_CONFIGURATION error, retrying...');
-
-      try {
-        await this.#retry(iov, videoElementId);
-      }
-      catch (error) {
-        iov.logger.error('IovCollection: error while retrying on NO_STREAM_CONFIGURATION!');
-        iov.logger.error(error);
-      }
-    });
-
-    iov.on(Iov.events.RETRY_ERROR, async () => {
-      iov.logger.info('IovCollection: RETRY_ERROR error, retrying...');
-
-      try {
-        await this.#retry(iov, videoElementId);
-      }
-      catch (error) {
-        iov.logger.error('IovCollection: error while retrying on RETRY_ERROR!');
-        iov.logger.error(error);
-      }
-    });
-
     this.add(iov);
 
     return iov;
   }
 
-  async #retry (iov, videoElementId) {
-    const id = iov.id;
+  async #retry (id) {
+    const iov = this.get(id);
 
     // Don't retry a stream that has already been removed
-    if (!this.has(id)) {
+    if (iov === null) {
       this.logger.info(`Attempted to retry Iov ${id} which has already been removed`);
       return;
     }
 
-    // Use the last stream that was attempted to be played
-    const streamConfiguration = iov.pendingChangeSrcStreamConfiguration || iov.streamConfiguration;
+    const videoElementId = iov.videoElementId;
+    const streamConfiguration = iov.streamConfiguration;
 
     try {
       await this.remove(id);
@@ -236,8 +200,6 @@ export default class IovCollection {
 
       iov.logger.info('IovCollection - removing iov...');
       await iov.destroy();
-
-      return this;
     }
     catch (error) {
       this.logger.error(`Error destroying Iov ${id} while removing`);

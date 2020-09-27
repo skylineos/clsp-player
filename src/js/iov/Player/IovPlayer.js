@@ -65,11 +65,13 @@ export default class IovPlayer extends EventEmitter {
    */
   static factory (
     logId,
+    id,
     containerElement,
     videoElement,
   ) {
     return new IovPlayer(
       logId,
+      id,
       containerElement,
       videoElement,
     );
@@ -131,10 +133,15 @@ export default class IovPlayer extends EventEmitter {
    */
   constructor (
     logId,
+    id,
     containerElement,
     videoElement,
   ) {
     super(logId);
+
+    if (!id) {
+      throw new Error('Tried to construct without an id');
+    }
 
     if (!containerElement) {
       throw new Error('Tried to construct without a container element');
@@ -144,6 +151,7 @@ export default class IovPlayer extends EventEmitter {
       throw new Error('Tried to construct without a video element');
     }
 
+    this.id = id;
     this.containerElement = containerElement;
     this.videoElement = videoElement;
 
@@ -164,7 +172,7 @@ export default class IovPlayer extends EventEmitter {
     this.streamConfiguration = streamConfiguration;
   }
 
-  async initialize () {
+  async initialize (force = false) {
     if (this.isDestroyed) {
       this.logger.error('Tried to initialize while destroyed');
       return;
@@ -172,6 +180,11 @@ export default class IovPlayer extends EventEmitter {
 
     if (this.isInitializing) {
       this.logger.info('Initialization already in progress');
+      return;
+    }
+
+    if (this.isInitialized && !force) {
+      this.logger.info('Already initialized');
       return;
     }
 
@@ -184,6 +197,10 @@ export default class IovPlayer extends EventEmitter {
       this.clientId = IovPlayer.generateClientId();
       this.videoElement.id = this.clientId;
       this.videoElement.dataset.name = this.streamConfiguration.streamName;
+
+      if (this.clspClient) {
+        await this.clspClient.destroy();
+      }
 
       this.clspClient = null;
 
@@ -284,15 +301,7 @@ export default class IovPlayer extends EventEmitter {
       const needToReinitialize = !this.videoElement.src;
 
       await this.stop();
-
-      if (needToReinitialize) {
-        if (this.clspClient) {
-          await this.clspClient.destroy();
-        }
-
-        await this.initialize();
-      }
-
+      await this.initialize(needToReinitialize);
       await this.play();
 
       if (needToReinitialize) {
@@ -471,7 +480,7 @@ export default class IovPlayer extends EventEmitter {
     });
 
     this.mseWrapper.on(MSEWrapper.events.SOURCE_BUFFER_ERROR, (event) => {
-      this.logger.warn('sourceBuffer.generic --> sourceBuffer error');
+      this.logger.debug('sourceBuffer.generic --> sourceBuffer error');
       // console.log(event);
 
       // No need to await since we're inside an event listener
