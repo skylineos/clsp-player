@@ -80,7 +80,9 @@ function initialize () {
 
   window.iovCollection = window.CLSP.IovCollection.asSingleton();
 
-  window.iov = window.iovCollection.create(videoElementId);
+  window.iov = window.iovCollection.create({
+    videoElementId: videoElementId,
+  });
 
   window.iov.changeSrc(url).catch(function (error) {
     console.error('Error while playing stream in demo:');

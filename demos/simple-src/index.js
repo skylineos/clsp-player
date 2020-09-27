@@ -115,10 +115,7 @@ async function main () {
     const url = document.getElementById('stream-src').value;
 
     iovCollection = IovCollection.asSingleton();
-    iov = iovCollection.create(videoElementId);
-
-    // iov.registerContainerElement();
-    // iov.registerVideoElement();
+    iov = iovCollection.create({ videoElementId });
 
     iov.changeSrc(url).catch(function (error) {
       console.error('Error while playing stream in demo:');
@@ -126,7 +123,7 @@ async function main () {
     });
   }
   catch (error) {
-    document.getElementById('browser-not-supported').style.display = 'block';
+    document.getElementById('demo-error').style.display = 'block';
     document.getElementById(videoElementId).style.display = 'none';
     console.error(error);
   }

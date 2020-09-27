@@ -154,28 +154,33 @@ export default class RouterTransactionManager extends RouterBaseManager {
 
     return new Promise(async (resolve, reject) => {
       const finished = async (error, response) => {
-        // Step 3:
-        // At this point, we defined a responseTopic that we want the CLSP
-        // server to broadcast on, we subscribed to that responseTopic, then
-        // we published to the actual requestTopic, which included telling the
-        // server what responseTopic to broadcast the response on.  Assuming
-        // things went well, the server broadcast the response to the
-        // responseTopic, and we received it in the subscribe handler.  Since
-        // this operation was meant to be a "transaction", meaning we only
-        // needed a single response to our requestTopic, we can unsubscribe
-        // from our responseTopic.
-        await this.unsubscribe(responseTopic);
+        try {
+          // Step 3:
+          // At this point, we defined a responseTopic that we want the CLSP
+          // server to broadcast on, we subscribed to that responseTopic, then
+          // we published to the actual requestTopic, which included telling the
+          // server what responseTopic to broadcast the response on.  Assuming
+          // things went well, the server broadcast the response to the
+          // responseTopic, and we received it in the subscribe handler.  Since
+          // this operation was meant to be a "transaction", meaning we only
+          // needed a single response to our requestTopic, we can unsubscribe
+          // from our responseTopic.
+          await this.unsubscribe(responseTopic);
 
-        if (this.pendingTransactions[transactionId].timeout) {
-          clearTimeout(this.pendingTransactions[transactionId].timeout);
-          this.pendingTransactions[transactionId].timeout = null;
+          if (this.pendingTransactions[transactionId].timeout) {
+            clearTimeout(this.pendingTransactions[transactionId].timeout);
+            this.pendingTransactions[transactionId].timeout = null;
+          }
+
+          if (error) {
+            throw error;
+          }
+
+          resolve(this._formatTransactionResponsePayload(response));
         }
-
-        if (error) {
-          return reject(error);
+        catch (error) {
+          reject(error);
         }
-
-        resolve(this._formatTransactionResponsePayload(response));
       };
 
       try {

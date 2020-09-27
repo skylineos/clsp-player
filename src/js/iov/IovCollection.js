@@ -1,5 +1,7 @@
+import isNil from 'lodash/isNil';
+
 import Iov from './Iov';
-import Logger from '../utils/Logger';
+import Destroyable from '../utils/Destroyable';
 
 // @todo - this could cause an overflow!
 let totalIovCount = 0;
@@ -13,7 +15,7 @@ let collection;
  * to window messages and route the relevant messages to the appropriate Iov
  * instance.
  */
-export default class IovCollection {
+export default class IovCollection extends Destroyable {
   static asSingleton () {
     if (!collection) {
       collection = IovCollection.factory();
@@ -22,6 +24,9 @@ export default class IovCollection {
     return collection;
   }
 
+  /**
+   * @private
+   */
   static factory () {
     return new IovCollection();
   }
@@ -30,14 +35,11 @@ export default class IovCollection {
    * @private
    */
   constructor () {
-    this.logger = Logger().factory('IovCollection');
-    this.logger.debug('Constructing...');
+    // @todo - right now, only a single collection (index 0) is supported
+    super('0');
 
     this.iovs = {};
     this.pendingRemoval = {};
-
-    this.isDestroyed = false;
-    this.isDestroyComplete = false;
   }
 
   /**
@@ -45,21 +47,20 @@ export default class IovCollection {
    *
    * @param {String} url
    *   The url to the clsp stream
-   * @param {DOMNode} videoElementId
-   *   The id of the video element that will serve as the video player in the
-   *   DOM
    *
    * @returns {Iov}
    */
-  create (videoElementId) {
-    const id = ++totalIovCount;
+  create (config = {}) {
+    const id = totalIovCount;
+
+    totalIovCount++;
 
     this.logger.info(`Creating Iov ${id}`);
 
     const iov = Iov.factory(
       `iov:${id}`,
       id,
-      videoElementId,
+      config,
     );
 
     this.logger.info(`Created Iov ${id}`);
@@ -90,7 +91,8 @@ export default class IovCollection {
       return;
     }
 
-    const videoElementId = iov.videoElementId;
+    const config = iov._config;
+
     const streamConfiguration = iov.streamConfiguration;
 
     try {
@@ -101,7 +103,7 @@ export default class IovCollection {
       iov.logger.error(error);
     }
 
-    const newIov = this.create(videoElementId);
+    const newIov = this.create(config);
 
     try {
       await newIov.changeSrc(streamConfiguration);
@@ -123,7 +125,7 @@ export default class IovCollection {
   add (iov) {
     const id = iov.id;
 
-    if (!id) {
+    if (isNil(id)) {
       throw new Error('Tried to add Iov without id');
     }
 
@@ -150,7 +152,7 @@ export default class IovCollection {
    *   False if the iov with the given id does not exist
    */
   has (id) {
-    if (!id) {
+    if (isNil(id)) {
       return false;
     }
 
@@ -189,7 +191,7 @@ export default class IovCollection {
   async remove (id) {
     const iov = this.get(id);
 
-    if (!iov) {
+    if (iov === null) {
       return;
     }
 
@@ -215,13 +217,7 @@ export default class IovCollection {
    *
    * @returns {void}
    */
-  async destroy () {
-    if (this.isDestroyed) {
-      return;
-    }
-
-    this.isDestroyed = true;
-
+  async _destroy () {
     for (const id in this.iovs) {
       try {
         await this.remove(id);
@@ -236,8 +232,6 @@ export default class IovCollection {
     this.iovs = null;
     this.pendingRemoval = null;
 
-    this.isDestroyComplete = true;
-
-    this.logger.info('destroy complete');
+    await super._destroy();
   }
 }

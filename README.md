@@ -158,7 +158,9 @@ A `CLSP` object is attached to `window`, which contains the classes and utils yo
   var iovCollection = window.CLSP.IovCollection.asSingleton();
 
   // Instantiate the iov instance for the target video element
-  var iov = iovCollection.create(videoElementId)
+  var iov = iovCollection.create({
+    videoElementId: videoElementId,
+  })
 
   // do something with the iov instance
   await iov.changeSrc(urls[0]);
@@ -231,7 +233,7 @@ try {
   const iovCollection = IovCollection.asSingleton();
 
   // Instantiate the iov instance for the target video element
-  const iov = iovCollection.create(videoElementId);
+  const iov = iovCollection.create({ videoElementId });
 
   // do something with the iov instance
   await iov.changeSrc(urls[0]);

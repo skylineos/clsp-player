@@ -87,7 +87,7 @@ async function createPlayer (index, playerOptions) {
     $container.find('.video-stream .url').text(url);
     $container.find('.video-stream .url').attr('title', url);
 
-    const iov = iovCollection.create(videoElementId);
+    const iov = iovCollection.create({ videoElementId });
 
     iov.changeSrc(url).catch(function (error) {
       console.error('Error while playing stream in demo:');
