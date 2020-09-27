@@ -335,9 +335,9 @@ export default class IovPlayerCollection extends EventEmitter {
     }
 
     try {
-      this.pendingRemoval[id] = true;
-
       const iovPlayer = this.get(id);
+
+      this.pendingRemoval[id] = true;
 
       iovPlayer.logger.info('IovPlayerCollection - removing player...');
       await iovPlayer.destroy();
