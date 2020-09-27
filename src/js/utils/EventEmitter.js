@@ -17,7 +17,6 @@ export default class EventEmitter extends Destroyable {
     this.events = new EventEmitter3();
   }
 
-
   /**
    * Register an event listener for this IovPlayer.
    *

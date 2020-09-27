@@ -145,8 +145,8 @@ A `CLSP` object is attached to `window`, which contains the classes and utils yo
 <script>
   var videoElementId = 'my-video';
   var urls = [
-    'clsp://172.28.12.57/FairfaxVideo0520',
-    'clsp://172.28.12.57/FairfaxVideo0420',
+    'clsps://bd-demo-sfs1.skyvdn.com/testpattern',
+    'clsps://bd-demo-sfs1.skyvdn.com/testpattern',
   ];
 
   // If you are using a Skyline SFS that uses a default CLSP stream port that
@@ -199,7 +199,7 @@ This tells the browser exactly what codec to use to decode and play the video.  
       playsinline
     >
       <source
-        src="clsp://172.28.12.57/FairfaxVideo0520"
+        src="clsps://bd-demo-sfs1.skyvdn.com/testpattern"
         type="video/mp4; codecs='avc1.42E01E'"
       />
     </video>
@@ -222,8 +222,8 @@ import {
 
 const videoElementId = 'my-video';
 const urls = [
-  'clsp://172.28.12.57/FairfaxVideo0520',
-  'clsp://172.28.12.57/FairfaxVideo0420',
+  'clsps://bd-demo-sfs1.skyvdn.com/testpattern',
+  'clsps://bd-demo-sfs1.skyvdn.com/testpattern',
 ];
 
 try {

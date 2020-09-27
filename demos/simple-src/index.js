@@ -88,7 +88,10 @@ function registerHandlers () {
   function changeSrc () {
     const streamUrl = document.getElementById('stream-src').value;
 
-    iov.changeSrc(streamUrl);
+    iov.changeSrc(streamUrl).firstFrameReceivedPromise.catch(function (error) {
+      console.error('Error while playing stream in demo:');
+      console.error(error);
+    });
   }
 
   window.clspPlayerControls = {
@@ -117,7 +120,10 @@ async function main () {
     // iov.registerContainerElement();
     // iov.registerVideoElement();
 
-    iov.changeSrc(url);
+    iov.changeSrc(url).firstFrameReceivedPromise.catch(function (error) {
+      console.error('Error while playing stream in demo:');
+      console.error(error);
+    });
   }
   catch (error) {
     document.getElementById('browser-not-supported').style.display = 'block';

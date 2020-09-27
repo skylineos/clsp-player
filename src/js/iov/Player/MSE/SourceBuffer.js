@@ -16,7 +16,9 @@ import EventEmitter from '../../../utils/EventEmitter';
 // and cannot free space to append additional buffers.";
 const FULL_BUFFER_ERROR = 'and cannot free space to append additional buffers';
 
-const DEFAULT_IS_READY_INTERVAL = 0.5;
+// Check at this interval to see if the SourceBuffer is ready
+const DEFAULT_IS_READY_INTERVAL = 0.25;
+// Give the SourceBuffer this many seconds to become ready
 const DEFAULT_IS_READY_TIMEOUT = 10;
 
 const DEFAULT_DRIFT_THRESHOLD = 2;
@@ -95,10 +97,18 @@ export default class SourceBuffer extends EventEmitter {
   ) {
     super(logId);
 
+    if (!mimeCodec) {
+      throw new Error('`mimeCodec` is required to instantiate a SourceBuffer');
+    }
+
+    if (!mediaSource) {
+      throw new Error('`mediaSource` is required to instantiate a SourceBuffer');
+    }
+
     this.mimeCodec = mimeCodec;
     this.mediaSource = mediaSource;
     // @todo - should the MediaSource be responsible for this?
-    this.sourceBuffer = this.mediaSource.addSourceBuffer(this.mimeCodec);
+    this.sourceBuffer = this.mediaSource.mediaSource.addSourceBuffer(this.mimeCodec);
 
     this.sourceBuffer.mode = 'sequence';
 
@@ -143,26 +153,20 @@ export default class SourceBuffer extends EventEmitter {
       return;
     }
 
-    try {
-      await interval(
-        async (iteration, stop) => {
-          if (this.isReady()) {
-            stop();
-          }
-        },
-        this.IS_READY_INTERVAL,
-        {
-          iterations: (this.IS_READY_TIMEOUT / this.IS_READY_INTERVAL),
-        },
-      );
-    }
-    catch (error) {
-      const message = 'SourceBuffer `updating` timed out!';
+    await interval(
+      async (iteration, stop) => {
+        if (this.isReady()) {
+          stop();
+        }
+      },
+      this.IS_READY_INTERVAL * 1000,
+      {
+        iterations: (this.IS_READY_TIMEOUT / this.IS_READY_INTERVAL),
+      },
+    );
 
-      this.logger.error(message);
-      this.logger.error(error);
-
-      throw new Error(message);
+    if (!this.isReady()) {
+      throw new Error('SourceBuffer `updating` timed out!');
     }
   }
 
@@ -188,7 +192,7 @@ export default class SourceBuffer extends EventEmitter {
     const estimatedDrift = (Date.now() - timestamp) / 1000;
 
     if (estimatedDrift > this.DRIFT_THRESHOLD) {
-      this.event.emit(SourceBuffer.events.DRIFT_THRESHOLD_EXCEEDED, {
+      this.events.emit(SourceBuffer.events.DRIFT_THRESHOLD_EXCEEDED, {
         estimatedDrift,
         driftThreshold: this.DRIFT_THRESHOLD,
       });
@@ -308,7 +312,7 @@ export default class SourceBuffer extends EventEmitter {
     }
 
     // @todo - should we wait for isReady here?
-    if (!this.sourceBuffer.isReady()) {
+    if (!this.isReady()) {
       this.logger.info('Need to trim, but not ready...');
       return;
     }
@@ -356,6 +360,7 @@ export default class SourceBuffer extends EventEmitter {
    * before destroying the parent MediaSource...
    */
   clear () {
+    this.logger.info('Clearing buffer...');
     this.trim(undefined, true);
   }
 
@@ -454,7 +459,7 @@ export default class SourceBuffer extends EventEmitter {
     this.sourceBuffer.removeEventListener('updateend', this.#onUpdateEnd);
     this.sourceBuffer.removeEventListener('error', this.#onError);
 
-    // this.mediaSource.removeSourceBuffer(this.sourceBuffer);
+    // this.mediaSource.mediaSource.removeSourceBuffer(this.sourceBuffer);
 
     this.mimeCodec = null;
     this.mediaSource = null;

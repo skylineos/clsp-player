@@ -158,10 +158,9 @@ export default class MSEWrapper extends EventEmitter {
 
     if (this.sourceBuffer) {
       // Kill the existing source buffer
+      // @todo - error handling?
       await this.sourceBuffer.destroy();
     }
-
-    this.metric('sourceBuffer.created', 1);
 
     this.sourceBuffer = SourceBuffer.factory(
       this.logId,
@@ -169,7 +168,9 @@ export default class MSEWrapper extends EventEmitter {
       this.mediaSource,
     );
 
-    this.mediaSource.on(SourceBuffer.events.ERROR, (event) => {
+    this.metric('sourceBuffer.created', 1);
+
+    this.sourceBuffer.on(SourceBuffer.events.ERROR, (event) => {
       this.events.emit(MSEWrapper.events.SOURCE_BUFFER_ERROR, event);
     });
 
@@ -241,11 +242,18 @@ export default class MSEWrapper extends EventEmitter {
 
     // Do not wait until ready since we're dealing with a live stream
     if (!this.mediaSource.isReady()) {
-      this.logger.debug('The mediaSource is not ready');
+      this.logger.info('The mediaSource is not ready');
       this.metric('queue.mediaSourceNotReady', 1);
       this.metric('queue.cannotProcessNext', 1);
       // @todo - we can safely drop frames here, right?
       // this.segmentQueue.shift();
+      return;
+    }
+
+    // @todo - if the initialization logic was more properly implemented, this
+    // check wouldn't be necessary
+    if (!this.sourceBuffer) {
+      this.logger.info('Tried to play before the SourceBuffer was initialized');
       return;
     }
 
@@ -367,7 +375,7 @@ export default class MSEWrapper extends EventEmitter {
 
       // append threshold with same time end has been crossed.  Reinitialize frozen stream.
       if (this.appendsSinceTimeEndUpdated > this.APPENDS_WITH_SAME_TIME_END_THRESHOLD) {
-        this.logger.debug('stream frozen!');
+        this.logger.info('stream frozen!');
         this.events.emit(MSEWrapper.events.STREAM_FROZEN);
         return;
       }
@@ -424,13 +432,15 @@ export default class MSEWrapper extends EventEmitter {
 
     this.metric('sourceBuffer.destroyed', 1);
 
-    this.logger.debug('Destroying mediaSource...');
+    this.logger.info('Destroying mediaSource...');
 
     try {
-      // We must do this PRIOR to the sourceBuffer being destroyed, to ensure that the
-      // 'buffered' property is still available, which is necessary for completely
-      // emptying the sourceBuffer.
-      this.sourceBuffer.clear();
+      if (this.sourceBuffer) {
+        // We must do this PRIOR to the sourceBuffer being destroyed, to ensure that the
+        // 'buffered' property is still available, which is necessary for completely
+        // emptying the sourceBuffer.
+        this.sourceBuffer.clear();
+      }
     }
     catch (error) {
       this.#onSourceBufferTrimError(error);
