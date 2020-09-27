@@ -1,3 +1,5 @@
+import URL from 'url';
+
 import utils from '../utils/utils';
 
 export default class StreamConfiguration {
@@ -34,10 +36,8 @@ export default class StreamConfiguration {
       throw new Error('No source was given to be parsed!');
     }
 
-    // We use an anchor tag here beacuse, when an href is added to
-    // an anchor dom Element, the parsing is done for you by the
-    // browser.
-    const parser = document.createElement('a');
+    /* eslint-disable-next-line node/no-deprecated-api */
+    const parsed = URL.parse(url);
 
     let useSSL;
     let defaultPort;
@@ -45,30 +45,28 @@ export default class StreamConfiguration {
     let b64HashAccessUrl = '';
     let hash = '';
 
+    parsed.protocol = parsed.protocol.toLowerCase();
+
     // Chrome is the only browser that allows non-http protocols in
     // the anchor tag's href, so change them all to http here so we
     // get the benefits of the anchor tag's parsing
-    if (url.substring(0, 10).toLowerCase() === 'clsps-hash') {
+    if (parsed.protocol === 'clsps-hash:') {
       useSSL = true;
-      parser.href = url.replace('clsps-hash', 'https');
       defaultPort = utils.getDefaultStreamPort('clsps');
       hashUrl = true;
     }
-    else if (url.substring(0, 9).toLowerCase() === 'clsp-hash') {
+    else if (parsed.protocol === 'clsp-hash:') {
       useSSL = false;
-      parser.href = url.replace('clsp-hash', 'http');
       defaultPort = utils.getDefaultStreamPort('clsp');
       hashUrl = true;
     }
-    else if (url.substring(0, 5).toLowerCase() === 'clsps') {
+    else if (parsed.protocol === 'clsps:') {
       useSSL = true;
-      parser.href = url.replace('clsps', 'https');
       defaultPort = utils.getDefaultStreamPort('clsps');
       hashUrl = false;
     }
-    else if (url.substring(0, 4).toLowerCase() === 'clsp') {
+    else if (parsed.protocol === 'clsp:') {
       useSSL = false;
-      parser.href = url.replace('clsp', 'http');
       defaultPort = utils.getDefaultStreamPort('clsp');
       hashUrl = false;
     }
@@ -76,13 +74,13 @@ export default class StreamConfiguration {
       throw new Error('The given source is not a clsp url, and therefore cannot be parsed.');
     }
 
-    const paths = parser.pathname.split('/');
+    const paths = parsed.pathname.split('/');
     const streamName = paths[paths.length - 1];
 
-    let host = parser.hostname;
-    let port = parser.port;
+    let host = parsed.hostname;
+    let port = parsed.port;
 
-    if (port.length === 0) {
+    if (!port || port.length === 0) {
       port = defaultPort;
     }
 
@@ -95,9 +93,9 @@ export default class StreamConfiguration {
 
     if (hashUrl === true) {
       // URL: clsp[s]-hash://<sfs-addr>[:<port>]/<stream>?start=...&end=...&token=...
-      const qpOffset = url.indexOf(parser.pathname) + parser.pathname.length;
+      const qpOffset = url.indexOf(parsed.pathname) + parsed.pathname.length;
 
-      const qrArgs = url.substr(qpOffset).split('?')[1];
+      const qrArgs = url.substr(qpOffset).split('?')[1] || '';
       const query = {};
 
       const pairs = qrArgs.split('&');

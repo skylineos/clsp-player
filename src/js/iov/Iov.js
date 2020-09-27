@@ -100,56 +100,6 @@ export default class Iov extends EventEmitter {
     this.MAX_RETRIES_ON_PLAY_ERROR = DEFAULT_MAX_RETRIES_ON_PLAY_ERROR;
   }
 
-  // @todo - this is a blunt instrument to account for edge cases that arose
-  // during testing where some players would stop playing under certain
-  // conditions.  Those conditions should be discovered and accounted for, and
-  // this method should be removed.
-  startCheckingForWorkingPlayer () {
-    return;
-
-    if (this.isDestroyed) {
-      return;
-    }
-
-    if (this.workingPlayerCheck) {
-      return;
-    }
-
-    this.workingPlayerCheck = setInterval(() => {
-      this.logger.info('Checking for working player...');
-
-      if (this.isDestroyed) {
-        this.logger.info('Checked for working player while destroyed');
-        this.stopCheckingForWorkingPlayer();
-        return;
-      }
-
-      if (this.iovPlayer || this.pendingChangeSrcIovPlayer) {
-        return;
-      }
-
-      this.logger.warn('Working player not found, restarting this iov...');
-
-      this.restart().catch((error) => {
-        this.logger.warn('Error while restarting while working player not found!');
-        this.logger.error(error);
-        this.stopCheckingForWorkingPlayer();
-      });
-    }, 10 * 1000);
-  }
-
-  stopCheckingForWorkingPlayer () {
-    if (!this.workingPlayerCheck) {
-      return;
-    }
-
-    this.logger.info('Stopping the check for working player...');
-
-    clearInterval(this.workingPlayerCheck);
-
-    this.workingPlayerCheck = null;
-  }
-
   onConnectionChange = async () => {
     if (window.navigator.onLine) {
       this.logger.info('Back online...');
@@ -353,8 +303,6 @@ export default class Iov extends EventEmitter {
       throw new Error('url is required to changeSrc');
     }
 
-    this.startCheckingForWorkingPlayer();
-
     // Handle the case of multiple changeSrc requests.  Only change to the last
     // stream that was requested
     if (this.pendingChangeSrcIovPlayer) {
@@ -548,8 +496,6 @@ export default class Iov extends EventEmitter {
       return;
     }
 
-    this.stopCheckingForWorkingPlayer();
-
     this.isStopping = true;
 
     // When we get back online, if the first frame was not shown yet, this will
@@ -562,9 +508,6 @@ export default class Iov extends EventEmitter {
     this.logger.info('Stopping by destroying current IovPlayer...');
 
     const stopOperations = [];
-
-    console.log(this.iovPlayer)
-    console.log(this.pendingChangeSrcIovPlayer)
 
     if (this.iovPlayer) {
       stopOperations.push(this.iovPlayer.destroy());

@@ -350,7 +350,7 @@ export default function (Paho) {
       // the error written to the console here will still allow errors under
       // "normal" operations to be written to the console, but will suppress the
       // final unwanted error.
-      // eslint-disable-next-line no-console
+      /* eslint-disable-next-line no-console */
       console.error(error);
     }
   };

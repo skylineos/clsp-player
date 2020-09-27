@@ -66,7 +66,7 @@ export default function () {
         return router;
       }
       catch (error) {
-        // eslint-disable-next-line no-console
+        /* eslint-disable-next-line no-console */
         console.error(logId + ' onload - Error while loading:');
         console.error(error);
 
@@ -100,7 +100,7 @@ export default function () {
       // @todo - validate arguments
 
       if (!router) {
-        // eslint-disable-next-line no-console
+        /* eslint-disable-next-line no-console */
         console.warn(logId + ' onunload - Router not instantiated, exiting...');
         return;
       }
