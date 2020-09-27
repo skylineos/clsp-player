@@ -38,6 +38,22 @@ export default class Destroyable {
   /**
    * Put your class's destroy logic in this method.
    */
+  async _reset () {}
+
+  async reset () {
+    this.logger.info('Resetting...');
+
+    this.isDestroyed = false;
+    this.isDestroyComplete = false;
+
+    await this._reset();
+
+    this.logger.info('Reset complete');
+  }
+
+  /**
+   * Put your class's destroy logic in this method.
+   */
   async _destroy () {}
 
   /**
@@ -61,6 +77,6 @@ export default class Destroyable {
 
     this.isDestroyComplete = true;
 
-    this.logger.info('destroy complete');
+    this.logger.info('Destroy complete');
   }
 }

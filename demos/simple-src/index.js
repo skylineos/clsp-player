@@ -88,7 +88,7 @@ function registerHandlers () {
   function changeSrc () {
     const streamUrl = document.getElementById('stream-src').value;
 
-    iov.changeSrc(streamUrl).firstFrameReceivedPromise.catch(function (error) {
+    iov.changeSrc(streamUrl).catch(function (error) {
       console.error('Error while playing stream in demo:');
       console.error(error);
     });
@@ -120,7 +120,7 @@ async function main () {
     // iov.registerContainerElement();
     // iov.registerVideoElement();
 
-    iov.changeSrc(url).firstFrameReceivedPromise.catch(function (error) {
+    iov.changeSrc(url).catch(function (error) {
       console.error('Error while playing stream in demo:');
       console.error(error);
     });

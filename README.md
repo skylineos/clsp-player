@@ -161,7 +161,7 @@ A `CLSP` object is attached to `window`, which contains the classes and utils yo
   var iov = iovCollection.create(videoElementId)
 
   // do something with the iov instance
-  iov.changeSrc(urls[0]);
+  await iov.changeSrc(urls[0]);
 
   // Or instantiate a tour
   var tour = window.CLSP.TourController.factory(
@@ -234,7 +234,7 @@ try {
   const iov = iovCollection.create(videoElementId);
 
   // do something with the iov instance
-  iov.changeSrc(urls[0]);
+  await iov.changeSrc(urls[0]);
 
   // Or instantiate a tour
   const tour = TourController.factory(
