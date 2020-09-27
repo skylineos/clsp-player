@@ -72,7 +72,10 @@ async function createPlayer (index, playerOptions) {
 
     const iov = await iovCollection.create(videoElementId);
 
-    iov.changeSrc(url);
+    iov.changeSrc(url).firstFrameReceivedPromise.catch(function (error) {
+      console.error('Error while playing stream in demo:');
+      console.error(error);
+    });
 
     wallPlayers.push(iov);
 

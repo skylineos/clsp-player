@@ -10,8 +10,10 @@ import interval from 'interval-promise';
 import EventEmitter from '../../../utils/EventEmitter';
 
 const DEFAULT_DURATION = 10;
-const DEFAULT_IS_READY_INTERVAL = 0.5;
-const DEFAULT_IS_READY_TIMEOUT = 10;
+// Check at this interval to see if the MediaSource is ready
+const DEFAULT_IS_READY_INTERVAL = 0.25;
+// Give the MediaSource this many seconds to become ready
+const DEFAULT_IS_READY_TIMEOUT = 1;
 
 export default class MediaSource extends EventEmitter {
   /**
@@ -43,6 +45,10 @@ export default class MediaSource extends EventEmitter {
    *   - false if the mimeCodec is not supported
    */
   static isMimeCodecSupported (mimeCodec) {
+    if (!mimeCodec) {
+      return false;
+    }
+
     return window.MediaSource.isTypeSupported(mimeCodec);
   }
 
@@ -122,26 +128,20 @@ export default class MediaSource extends EventEmitter {
       return;
     }
 
-    try {
-      await interval(
-        async (iteration, stop) => {
-          if (this.isReady()) {
-            stop();
-          }
-        },
-        this.IS_READY_INTERVAL,
-        {
-          iterations: (this.IS_READY_TIMEOUT / this.IS_READY_INTERVAL),
-        },
-      );
-    }
-    catch (error) {
-      const message = 'MediaSource `readyState` timed out waiting to be `open`!';
+    await interval(
+      async (iteration, stop) => {
+        if (this.isReady()) {
+          stop();
+        }
+      },
+      this.IS_READY_INTERVAL * 1000,
+      {
+        iterations: (this.IS_READY_TIMEOUT / this.IS_READY_INTERVAL),
+      },
+    );
 
-      this.logger.error(message);
-      this.logger.error(error);
-
-      throw new Error(message);
+    if (!this.isReady()) {
+      throw new Error('MediaSource `readyState` timed out waiting to be `open`!');
     }
   }
 
@@ -265,16 +265,17 @@ export default class MediaSource extends EventEmitter {
    * @returns {void}
    */
   #removeAllSourceBuffers () {
-    // let sourceBuffers = this.mediaSource.sourceBuffers;
+    let sourceBuffers = this.mediaSource.sourceBuffers;
 
-    // if (sourceBuffers.SourceBuffers) {
-    //   //
-    //   sourceBuffers = sourceBuffers.SourceBuffers();
-    // }
+    if (sourceBuffers.SourceBuffers) {
+      sourceBuffers = sourceBuffers.SourceBuffers();
+    }
 
-    // for (let i = 0; i < sourceBuffers.length; i++) {
-    //   this.mediaSource.removeSourceBuffer(sourceBuffers[i]);
-    // }
+    for (let i = 0; i < sourceBuffers.length; i++) {
+      const sourceBuffer = sourceBuffers[i];
+
+      this.mediaSource.removeSourceBuffer(sourceBuffer);
+    }
   }
 
   async _destroy () {
@@ -282,20 +283,22 @@ export default class MediaSource extends EventEmitter {
     this.mediaSource.removeEventListener('sourceended', this.#onSourceEnded);
     this.mediaSource.removeEventListener('error', this.#onError);
 
-    // @todo - this code existed, but was never used...
-    // this.#removeAllSourceBuffers();
-
     try {
       await this.waitUntilReady();
+
+      // `endOfStream` can only be called when the mediaSource is ready
+      this.mediaSource.endOfStream();
     }
     catch (error) {
-      this.logger.warn('MediaSource did not become ready while destroying, continuing destroy anyway...');
-      this.logger.error(error);
+      this.logger.info('MediaSource did not become ready while destroying, continuing destroy anyway...');
+      this.logger.info(error);
     }
 
-    this.mediaSource.endOfStream();
     // @todo - can this be done in the SourceBuffer destroy?
-    this.mediaSource.removeSourceBuffer(this.sourceBuffer.sourceBuffer);
+    // @todo - if the destroy logic was more properly implemented, this could
+    // be done elsewhere...
+    this.#removeAllSourceBuffers();
+    // this.mediaSource.removeSourceBuffer(this.sourceBuffer.sourceBuffer);
 
     this.#revokeObjectURL();
 

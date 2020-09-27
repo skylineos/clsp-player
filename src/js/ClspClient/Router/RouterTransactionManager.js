@@ -180,6 +180,14 @@ export default class RouterTransactionManager extends RouterBaseManager {
 
       try {
         this.pendingTransactions[transactionId].timeout = setTimeout(() => {
+          // @todo - somehow, this condition is possible...
+          // Encountered when disconnecting from the network / internet while
+          // testing
+          if (!this.pendingTransactions || !this.pendingTransactions[transactionId]) {
+            this.logger.warn(`Pending transaction for ${transactionId} was not cancelled...`);
+            return;
+          }
+
           if (this.pendingTransactions[transactionId].hasTimedOut) {
             return;
           }

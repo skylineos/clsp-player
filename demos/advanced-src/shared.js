@@ -5,11 +5,9 @@ import humanize from 'humanize';
 let wallInterval = null;
 
 const defaultClspUrls = [
-  'clsp://172.28.12.248/testpattern',
-  'clsp://172.28.12.247/testpattern',
-  'clsps://sky-qa-dionysus.qa.skyline.local/testpattern',
-  'clsp://172.28.12.57/FairfaxVideo0520',
-  'clsp://172.28.12.57/40004',
+  'clsps://bd-demo-sfs1.skyvdn.com/testpattern',
+  'clsps://bd-demo-sfs1.skyvdn.com/testpattern',
+  'clsps://bd-demo-sfs1.skyvdn.com/testpattern',
 ];
 
 // Get a demo local storage value

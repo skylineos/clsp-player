@@ -16,6 +16,7 @@ export default class RouterStreamManager extends RouterBaseManager {
   static events = {
     RESYNC_STREAM_COMPLETE: 'resync-stream-complete',
     VIDEO_SEGMENT_RECEIVED: 'video-segment-received',
+    VIDEO_SEGMENT_TIMEOUT: 'video-segment-timeout',
   }
 
   /**
@@ -115,7 +116,10 @@ export default class RouterStreamManager extends RouterBaseManager {
       this.routerTransactionManager.subscribe(`iov/video/${this.guid}/resync`, () => {
         // @todo - what about a resync stream error?  is there any data that can
         // be passed with the event?
-        this.events.emit(RouterStreamManager.events.RESYNC_STREAM_COMPLETE);
+        this.events.emit(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, {
+          guid: this.guid,
+          streamName: this.streamName,
+        });
       });
 
       // Get the moov first
@@ -152,6 +156,9 @@ export default class RouterStreamManager extends RouterBaseManager {
    * @returns {void}
    */
   async stop () {
+    this._clearFirstMoofTimeout();
+    this._clearMoofTimeout();
+
     if (this.isDestroyComplete) {
       return;
     }
@@ -160,8 +167,6 @@ export default class RouterStreamManager extends RouterBaseManager {
       return;
     }
 
-    this._clearFirstMoofTimeout();
-    this._clearMoofTimeout();
 
     if (!this.guid) {
       // @todo - is this condition a symptom of a problem?
@@ -199,10 +204,12 @@ export default class RouterStreamManager extends RouterBaseManager {
     if (errors.length) {
       this.logger.warn('Error(s) encountered while stopping:');
 
-      errors.foreach((error) => this.logger.error(error));
+      errors.forEach((error) => {
+        this.logger.error(error.reason);
+      });
 
       // @todo - is there a better way to do this?
-      throw errors[0];
+      throw errors[0].reason;
     }
   }
 
@@ -407,6 +414,11 @@ export default class RouterStreamManager extends RouterBaseManager {
 
       // Set up the listener for the stream itself (the moof video segments)
       this.routerTransactionManager.subscribe(moofReceivedTopic, (clspMessage) => {
+        if (this.isDestroyed) {
+          this.logger.info('Received moof while destroyed!');
+          return;
+        }
+
         if (!hasReceivedFirstMoof) {
           // If we received the first moof after the timeout, do nothing
           if (hasFirstMoofTimedOut) {
@@ -431,7 +443,14 @@ export default class RouterStreamManager extends RouterBaseManager {
         this._clearMoofTimeout();
 
         this.moofTimeout = setTimeout(() => {
-          this.routerConnectionManager.reconnect();
+          if (this.isDestroyed) {
+            this.logger.info('Moof timeout reached while destroyed');
+            return;
+          }
+
+          this.events.emit(RouterStreamManager.events.VIDEO_SEGMENT_TIMEOUT, {
+            timeout: this.MOOF_TIMEOUT_DURATION,
+          });
         }, this.MOOF_TIMEOUT_DURATION * 1000);
 
         this.events.emit(RouterStreamManager.events.VIDEO_SEGMENT_RECEIVED, {

@@ -51,17 +51,37 @@ export default class IovCollection {
    * @returns {Iov}
    */
   create (videoElementId) {
+    const id = ++totalIovCount;
+
     const iov = Iov.factory(
-      (++totalIovCount).toString(),
+      `iov:${id}`,
+      id,
       videoElementId,
     );
 
-    iov.on(Iov.events.IFRAME_DESTROYED_EXTERNALLY, () => {
-      this.remove(iov.id);
+    iov.on(Iov.events.IFRAME_DESTROYED_EXTERNALLY, async () => {
+      iov.logger.info('IovCollection: iframe was destroyed, removing iov...');
+
+      try {
+        await this.remove(iov.id);
+      }
+      catch (error) {
+        iov.logger.error('IovCollection: error while removing iov from collection!');
+        iov.logger.error(error);
+      }
     });
 
     iov.on(Iov.events.REINITIALZE_ERROR, async () => {
-      await this.remove(iov.id);
+      iov.logger.info('IovCollection: reinitialize error, removing iov...');
+
+      try {
+        await this.remove(iov.id);
+      }
+      catch (error) {
+        iov.logger.error('IovCollection: error while removing iov from collection, continuing anyway...');
+        iov.logger.error(error);
+      }
+
       this.create(videoElementId);
     });
 
@@ -81,6 +101,14 @@ export default class IovCollection {
   add (iov) {
     const id = iov.id;
 
+    if (!id) {
+      throw new Error('Tried to add Iov without id');
+    }
+
+    if (this.has(id)) {
+      throw new Error('Cannot add an Iov with a previously-used id');
+    }
+
     this.iovs[id] = iov;
 
     return this;
@@ -98,6 +126,10 @@ export default class IovCollection {
    *   False if the iov with the given id does not exist
    */
   has (id) {
+    if (!id) {
+      return false;
+    }
+
     return Object.prototype.hasOwnProperty.call(this.iovs, id);
   }
 
@@ -107,10 +139,14 @@ export default class IovCollection {
    * @param {String} id
    *   The id of the iov instance to get
    *
-   * @returns {Iov|undefined}
+   * @returns {Iov|null}
    *   If an iov with this id doest not exist, undefined is returned.
    */
   get (id) {
+    if (!this.has(id)) {
+      return null;
+    }
+
     return this.iovs[id];
   }
 
@@ -131,6 +167,7 @@ export default class IovCollection {
 
     delete this.iovs[id];
 
+    iov.logger.info('IovCollection - removing iov...');
     await iov.destroy();
 
     return this;

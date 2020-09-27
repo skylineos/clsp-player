@@ -1,14 +1,11 @@
-import {
-  sleepSeconds,
-} from 'sleepjs';
-import {
-  timeout as PromiseTimeout,
-} from 'promise-timeout';
+import { sleepSeconds } from 'sleepjs';
+import { timeout as PromiseTimeout } from 'promise-timeout';
 
 import RouterBaseManager from './RouterBaseManager';
 import RouterStatsManager from './RouterStatsManager';
 
-const DEFAULT_MAX_RECONNECTION_ATTEMPTS = 0;
+// If 3 reconnection attempts fail, allow the caller to decided what to do
+const DEFAULT_MAX_RECONNECTION_ATTEMPTS = 3;
 const DEFAULT_MAX_RECONNECTION_TIME = 0;
 // When trying to reconnect, try every 5 seconds for the first 2 minutes, then
 // try every 30 seconds after 2 minutes.
@@ -247,9 +244,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
       this.logger.error('Failed to reconnect');
 
       if (emit) {
-        this.events.emit(RouterConnectionManager.events.RECONNECT_FAILURE, {
-          error,
-        });
+        this.events.emit(RouterConnectionManager.events.RECONNECT_FAILURE, { error });
       }
     }
     finally {

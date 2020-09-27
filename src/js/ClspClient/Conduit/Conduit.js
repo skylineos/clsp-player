@@ -135,19 +135,19 @@ export default class Conduit extends EventEmitter {
     this.routerConnectionManager.on(RouterConnectionManager.events.RECONNECT_SUCCESS, () => {
       this.events.emit(Conduit.events.RECONNECT_SUCCESS);
     });
-    this.routerConnectionManager.on(RouterConnectionManager.events.RECONNECT_FAILURE, (data) => {
+    this.routerConnectionManager.on(RouterConnectionManager.events.RECONNECT_FAILURE, ({ error }) => {
       // @todo - currently, the default is to reconnect indefinitely.  but if
       // a reconnection attempt limit is set, what should happen when the
       // reconnection fails for the last time?  does this event indicate that
       // the last reconnection attempt failed and another attempt will not be
       // made?
-      this.events.emit(Conduit.events.RECONNECT_FAILURE, data);
+      this.events.emit(Conduit.events.RECONNECT_FAILURE, { error });
     });
 
-    this.routerStreamManager.on(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, () => {
+    this.routerStreamManager.on(RouterStreamManager.events.RESYNC_STREAM_COMPLETE, (data) => {
       // @todo - if a stream has to "resync", how are we supposed to respond
       // to that?
-      this.events.emit(Conduit.events.RESYNC_STREAM_COMPLETE);
+      this.events.emit(Conduit.events.RESYNC_STREAM_COMPLETE, data);
     });
 
     // This is the big one - transmit the video segments upstreama
@@ -157,6 +157,13 @@ export default class Conduit extends EventEmitter {
       // take place.
       this.events.emit(Conduit.events.VIDEO_SEGMENT_RECEIVED, data);
     });
+
+    this.routerStreamManager.on(RouterStreamManager.events.VIDEO_SEGMENT_TIMEOUT, (data) => {
+      this.logger.warn(`Did not receive a video segment for ${this.routerStreamManager.streamName} in ${data.timeout} seconds, attempting to reconnect...`);
+
+      // No need to await here since we're in an event listener
+      this.routerConnectionManager.reconnect();
+    })
 
     await this.routerIframeManager.create();
 
@@ -330,9 +337,7 @@ export default class Conduit extends EventEmitter {
       this.logger.error('onMessageError');
       this.logger.error(error);
 
-      this.events.emit(Conduit.events.ROUTER_EVENT_ERROR, {
-        error,
-      });
+      this.events.emit(Conduit.events.ROUTER_EVENT_ERROR, { error });
     }
   }
 

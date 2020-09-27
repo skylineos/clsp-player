@@ -287,8 +287,7 @@ export default class RouterIframeManager extends RouterBaseManager {
     }
     catch (error) {
       // @todo - we should probably throw here...
-      // eslint-disable-next-line no-console
-      console.error(error);
+      this.logger.error(error);
     }
   }
 

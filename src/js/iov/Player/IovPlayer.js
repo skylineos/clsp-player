@@ -9,6 +9,7 @@ import ClspClient from '../../ClspClient/ClspClient';
 import MSEWrapper from './MSE/MSEWrapper';
 import MediaSource from './MSE/MediaSource';
 import StreamConfiguration from '../StreamConfiguration';
+import Conduit from '../../ClspClient/Conduit/Conduit';
 
 const DEFAULT_ENABLE_METRICS = false;
 const DEFAULT_SEGMENT_INTERVAL_SAMPLE_SIZE = 5;
@@ -37,7 +38,9 @@ export default class IovPlayer extends EventEmitter {
     VIDEO_RECEIVED: 'videoReceived',
     VIDEO_INFO_RECEIVED: 'videoInfoReceived',
     REINITIALZE_ERROR: 'reinitialize-error',
-    IFRAME_DESTROYED_EXTERNALLY: 'IframeDestroyedExternally',
+    IFRAME_DESTROYED_EXTERNALLY: Conduit.events.IFRAME_DESTROYED_EXTERNALLY,
+    RECONNECT_FAILURE: Conduit.events.RECONNECT_FAILURE,
+    ROUTER_EVENT_ERROR: Conduit.events.ROUTER_EVENT_ERROR,
   };
 
   // @todo @metrics
@@ -59,24 +62,16 @@ export default class IovPlayer extends EventEmitter {
    *   The container element that will contain the iframe
    * @param {HTMLElement} videoElement
    *   The video element that will be used to play the CLSP stream
-   * @param {*} onClspClientRouterEventError
-   *   A callback to call when there is a CLSP Client error
-   * @param {*} onPlayError
-   *   A callback to call when there is an IovPlayer play error
    */
   static factory (
     logId,
     containerElement,
     videoElement,
-    onClspClientRouterEventError,
-    onPlayError,
   ) {
     return new IovPlayer(
       logId,
       containerElement,
       videoElement,
-      onClspClientRouterEventError,
-      onPlayError,
     );
   }
 
@@ -133,62 +128,14 @@ export default class IovPlayer extends EventEmitter {
    *   The container element that will contain the iframe
    * @param {HTMLElement} videoElement
    *   The video element that will be used to play the CLSP stream
-   * @param {*} onClspClientRouterEventError
-   *   A callback to call when there is a CLSP Client error
-   * @param {*} onPlayError
-   *   A callback to call when there is an IovPlayer play error
    */
   constructor (
     logId,
     containerElement,
     videoElement,
-    onClspClientRouterEventError,
-    onPlayError,
   ) {
     super(logId);
 
-    if (!onClspClientRouterEventError) {
-      onClspClientRouterEventError = this.#onClspClientRouterEventError;
-    }
-
-    if (!onPlayError) {
-      onPlayError = this.#onPlayError;
-    }
-
-    this.#constructorArgumentsBouncer(
-      containerElement,
-      videoElement,
-      onClspClientRouterEventError,
-      onPlayError,
-    );
-
-    this.containerElement = containerElement;
-    this.videoElement = videoElement;
-    this.#onClspClientRouterEventError = onClspClientRouterEventError;
-    // @todo - even though this is here, it's never actually called.  We need
-    // a way (an event) to determine when there has been some problem with the
-    // CLSP stream at the conduit level...
-    this.#onPlayError = onPlayError;
-
-    // @todo @metrics
-    // this.metrics = {};
-  }
-
-  /**
-   * @private
-   *
-   * Throw an error if any constructor arguments are invalid.
-   *
-   * @see IovPlayer#constructor
-   *
-   * @returns {void}
-   */
-  #constructorArgumentsBouncer (
-    containerElement,
-    videoElement,
-    onClspClientRouterEventError,
-    onPlayError,
-  ) {
     if (!containerElement) {
       throw new Error('Tried to construct without a container element');
     }
@@ -197,13 +144,11 @@ export default class IovPlayer extends EventEmitter {
       throw new Error('Tried to construct without a video element');
     }
 
-    if (typeof onClspClientRouterEventError !== 'function') {
-      throw new Error('Tried to construct with an invalid onClspClientRouterEventError');
-    }
+    this.containerElement = containerElement;
+    this.videoElement = videoElement;
 
-    if (typeof onPlayError !== 'function') {
-      throw new Error('Tried to construct with an invalid onPlayError');
-    }
+    // @todo @metrics
+    // this.metrics = {};
   }
 
   setStreamConfiguration (streamConfiguration) {
@@ -233,7 +178,7 @@ export default class IovPlayer extends EventEmitter {
     this.isInitialized = false;
     this.isInitializing = true;
 
-    this.logger.debug(`Initializing with ${this.streamConfiguration.streamName}`);
+    this.logger.info(`Initializing with ${this.streamConfiguration.streamName}`);
 
     try {
       this.clientId = IovPlayer.generateClientId();
@@ -261,23 +206,33 @@ export default class IovPlayer extends EventEmitter {
         catch (error) {
           this.logger.error('Error while restarting after reconnection!');
           this.logger.error(error);
+
+          // @todo - there could be a dedicated event for this...
+          this.events.emit(IovPlayer.events.RECONNECT_FAILURE, { error });
         }
       });
 
-      this.clspClient.conduit.on(ClspClient.events.RECONNECT_FAILURE, (data) => {
-        this.logger.error('ClspClient Reconnect Failure!');
-        this.logger.error(data.error);
+      this.clspClient.conduit.on(ClspClient.events.RECONNECT_FAILURE, ({ error }) => {
+        this.events.emit(IovPlayer.events.RECONNECT_FAILURE, { error });
       });
 
-      this.clspClient.conduit.on(ClspClient.events.ROUTER_EVENT_ERROR, (data) => {
-        this.#onClspClientRouterEventError(data.error, data);
+      this.clspClient.conduit.on(ClspClient.events.ROUTER_EVENT_ERROR, ({ error }) => {
+        this.events.emit(IovPlayer.events.ROUTER_EVENT_ERROR, { error });
       });
 
-      this.clspClient.conduit.on(ClspClient.events.RESYNC_STREAM_COMPLETE, () => {
-        this.logger.warn('Resyncing stream...');
+      // @todo - the intended resync logic doesn't currently work, so we have
+      // to emit an error on successful resync to force a restart...
+      this.clspClient.conduit.on(ClspClient.events.RESYNC_STREAM_COMPLETE, (data) => {
+        this.logger.warn(`Resyncing stream ${data.streamName}...`);
 
-        // No need to await since we're inside an event listener
-        this.#reinitializeMseWrapper();
+        // spoofing an error...
+        this.events.emit(IovPlayer.events.RECONNECT_FAILURE, {
+          error: new Error('Resync detected'),
+        });
+
+        // @todo - we should be able to do something like this...
+        // // No need to await since we're inside an event listener
+        // this.#reinitializeMseWrapper();
       });
 
       this.clspClient.conduit.on(ClspClient.events.VIDEO_SEGMENT_RECEIVED, (data) => {
@@ -315,7 +270,7 @@ export default class IovPlayer extends EventEmitter {
       return;
     }
 
-    this.logger.debug('restart');
+    this.logger.info('restart');
 
     this.isRestarting = true;
 
@@ -378,7 +333,7 @@ export default class IovPlayer extends EventEmitter {
       return;
     }
 
-    this.logger.debug('play');
+    this.logger.info('play');
 
     this.isTryingToPlay = true;
 
@@ -431,7 +386,7 @@ export default class IovPlayer extends EventEmitter {
       return;
     }
 
-    this.logger.debug('stop...');
+    this.logger.info('stop...');
 
     this.isStopping = true;
     this.moov = null;
@@ -446,7 +401,7 @@ export default class IovPlayer extends EventEmitter {
       }
 
       if (!this.mseWrapper) {
-        this.logger.debug('stop succeeded...');
+        this.logger.info('stop succeeded...');
         return;
       }
 
@@ -456,7 +411,7 @@ export default class IovPlayer extends EventEmitter {
 
       this.mseWrapper = null;
 
-      this.logger.debug('stop succeeded...');
+      this.logger.info('stop succeeded after destroying mseWrapper...');
     }
     catch (error) {
       this.logger.error('stop failed...');
@@ -471,6 +426,8 @@ export default class IovPlayer extends EventEmitter {
   }
 
   async #reinitializeMseWrapper (shouldEmitOnError = true) {
+    this.logger.info('reinitializeMseWrapper');
+
     if (this.mseWrapper) {
       await this.mseWrapper.destroy();
     }
@@ -515,12 +472,7 @@ export default class IovPlayer extends EventEmitter {
 
     this.mseWrapper.on(MSEWrapper.events.SOURCE_BUFFER_ERROR, (event) => {
       this.logger.warn('sourceBuffer.generic --> sourceBuffer error');
-      // @todo - sometimes, this error is an event rather than an error!
-      // If different onError calls use different method signatures, that
-      // needs to be accounted for in the MSEWrapper, and the actual error
-      // that was thrown must ALWAYS be the first argument here.  As a
-      // shortcut, we can log `...args` here instead.
-      this.logger.error(event);
+      // console.log(event);
 
       // No need to await since we're inside an event listener
       this.#reinitializeMseWrapper();
@@ -528,14 +480,6 @@ export default class IovPlayer extends EventEmitter {
 
     this.mseWrapper.on(MSEWrapper.events.STREAM_FROZEN, () => {
       this.logger.info('stream appears to be frozen - reinitializing...');
-
-      // No need to await since we're inside an event listener
-      this.#reinitializeMseWrapper();
-    });
-
-    this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_OPEN_ERROR, ({ error }) => {
-      this.logger.error('Failed to initialize mediaSource - Error on "sourceopen" event:');
-      this.logger.error(error);
 
       // No need to await since we're inside an event listener
       this.#reinitializeMseWrapper();
@@ -578,58 +522,76 @@ export default class IovPlayer extends EventEmitter {
       }
     });
 
-    // When the MediaSource first becomes ready, send it the moov
-    // @todo - all of this logic should be handled by the MSEWrapper!!
-    this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_OPEN, async (event) => {
-      this.logger.debug('on mediaSource sourceopen');
+    try {
+      await this.mseWrapper.initialize();
 
-      try {
-        try {
-          await this.mseWrapper.initializeSourceBuffer(this.mimeCodec);
-        }
-        catch (error) {
-          this.logger.warn('Error while initializing SourceBuffer!');
+      // Error events
 
-          throw error;
-        }
-
-        this.events.emit(IovPlayer.events.VIDEO_INFO_RECEIVED);
-
-        try {
-          this.mseWrapper.appendMoov(this.moov);
-        }
-        catch (error) {
-          // internal error, this has been observed to happen the tab
-          // in the browser where this video player lives is hidden
-          // then reselected. 'ex' is undefined the error is bug
-          // within the MSE C++ implementation in the browser.
-          this.logger.warn('Error while appending moov!');
-
-          throw error;
-        }
-      }
-      catch (error) {
+      this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_OPEN_ERROR, ({ error }) => {
+        this.logger.error('Failed to initialize mediaSource - Error on "sourceopen" event:');
         this.logger.error(error);
 
         // No need to await since we're inside an event listener
         this.#reinitializeMseWrapper();
-      }
-    });
+      });
 
-    this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_ENDED, async (event) => {
-      this.logger.debug('on mediaSource sourceended');
+      // Non-Error events
 
-      try {
-        await this.stop();
-      }
-      catch (error) {
-        this.logger.error('Error while stopping in SOURCE_ENDED event!');
-        this.logger.error(error);
-      }
-    });
+      // When the MediaSource first becomes ready, send it the moov
+      // @todo - all of this logic should be handled by the MSEWrapper!!
+      this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_OPEN, async (event) => {
+        this.logger.info('on mediaSource sourceopen');
 
-    try {
-      await this.mseWrapper.initialize();
+        try {
+          try {
+            await this.mseWrapper.initializeSourceBuffer(this.mimeCodec);
+          }
+          catch (error) {
+            this.logger.warn('Error while initializing SourceBuffer!');
+
+            throw error;
+          }
+
+          this.events.emit(IovPlayer.events.VIDEO_INFO_RECEIVED);
+
+          try {
+            this.mseWrapper.appendMoov(this.moov);
+          }
+          catch (error) {
+            // internal error, this has been observed to happen the tab
+            // in the browser where this video player lives is hidden
+            // then reselected. 'ex' is undefined the error is bug
+            // within the MSE C++ implementation in the browser.
+            this.logger.warn('Error while appending moov!');
+
+            throw error;
+          }
+        }
+        catch (error) {
+          this.logger.warn(error);
+
+          // @todo - this is not the proper event to emit here, but it will
+          // work for now becauase it will force the iov to recreate the player.
+          // In testing, it was found that under certain circumstances, the
+          // mimeCodec can be undefined, yet the SourceBuffer will still somehow
+          // be attempted to be initialized.
+          // One of the conditions that causes this problem is when resync
+          // stream is triggered.
+          this.events.emit(IovPlayer.events.REINITIALZE_ERROR, { error });
+        }
+      });
+
+      this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_ENDED, async (event) => {
+        this.logger.info('on mediaSource sourceended');
+
+        try {
+          await this.stop();
+        }
+        catch (error) {
+          this.logger.error('Error while stopping in SOURCE_ENDED event!');
+          this.logger.error(error);
+        }
+      });
     }
     catch (error) {
       if (shouldEmitOnError) {
@@ -653,16 +615,6 @@ export default class IovPlayer extends EventEmitter {
   #generateClspClientLogId () {
     return `${this.logId}.clspClient:${++this.clspClientCount}`;
   }
-
-  #onClspClientRouterEventError = (error) => {
-    this.logger.error('Router Event Error!');
-    this.logger.error(error);
-  };
-
-  #onPlayError = (error) => {
-    this.logger.error('Player Error!');
-    this.logger.error(error);
-  };
 
   #showVideoSegment (videoSegement) {
     // @todo - this seems like a hack...
@@ -690,7 +642,7 @@ export default class IovPlayer extends EventEmitter {
     }
 
     try {
-      this.mseWrapper.showVideoSegement(videoSegement);
+      this.mseWrapper.showVideoSegment(videoSegement);
       this.clspClient.conduit.segmentUsed(videoSegement);
     }
     catch (error) {

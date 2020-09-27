@@ -62,7 +62,10 @@ function hardDestroy3 () {
 function changeSrc () {
   var streamUrl = document.getElementById('stream-src').value;
 
-  window.iov.changeSrc(streamUrl);
+  window.iov.changeSrc(streamUrl).firstFrameReceivedPromise.catch(function (error) {
+    console.error('Error while playing stream in demo:');
+    console.error(error);
+  });
 }
 
 function initialize () {
@@ -80,7 +83,10 @@ function initialize () {
   window.iovCollection.create(videoElementId)
     .then(function (iov) {
       window.iov = iov;
-      window.iov.changeSrc(url);
+      window.iov.changeSrc(url).firstFrameReceivedPromise.catch(function (error) {
+        console.error('Error while playing stream in demo:');
+        console.error(error);
+      });
     })
     .catch(function (error) {
       document.getElementById('browser-not-supported').style.display = 'block';
