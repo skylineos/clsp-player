@@ -1,3 +1,12 @@
+/**
+ * The Iov is responsible for:
+ * - providing an interface to callers trying to play CLSP streams
+ * - managing the container and video elements used for playing CLSP streams
+ *
+ * The caller should only ever interact with an Iov instance and the Iov
+ * Collection singleton.
+ */
+
 import { sleepSeconds } from 'sleepjs';
 import isNil from 'lodash/isNil';
 
@@ -25,6 +34,7 @@ export default class Iov extends EventEmitter {
     VIDEO_RECEIVED: IovPlayer.events.VIDEO_RECEIVED,
     VIDEO_INFO_RECEIVED: IovPlayer.events.VIDEO_INFO_RECEIVED,
     IFRAME_DESTROYED_EXTERNALLY: IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY,
+    DESTROYING: 'destroying',
   };
 
   static factory (
@@ -486,5 +496,14 @@ export default class Iov extends EventEmitter {
     const timeToDestroy = (timeFinished - timeStarted) / 1000;
 
     this.logger.info(`Destroy complete in ${timeToDestroy} seconds...`);
+  }
+
+  async destroy () {
+    // Since this Iov instance may be destroyed without the caller's explicit
+    // invocation (e.g. when the iframe is destroyed externally), emit an event
+    // that the caller may listen to to know when this Iov has been destroyed
+    this.emit(Iov.events.DESTROYING, { iov: this });
+
+    await super.destroy();
   }
 }
