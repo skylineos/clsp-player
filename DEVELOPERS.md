@@ -5,6 +5,9 @@
 - [Getting Started](#getting-started)
     - [Prepare Node environment](#prepare-node-environment)
     - [Run development server](#run-development-server)
+- [Logging](#logging)
+    - [Enable logging](#enable-logging)
+    - [Disable logging](#disable-logging)
 - [Lint](#lint)
 - [Test](#test)
 - [Versioning](#versioning)
@@ -31,6 +34,28 @@
 1. navigate to [http://localhost:8080](http://localhost:8080) in a supported browser
 1. add a `clsp` url to any of the inputs, then click submit
 1. click play on the video element (if not using an autoplay player)
+
+
+## Logging
+
+### Enable logging
+
+Open the developer console and run the following:
+
+```
+window.localStorage.setItem('skylineos.clsp-player.logLevel', [logLevel]);
+```
+
+where `[logLevel]` is a valid log level, which is currently a number from 0 - 4.  See `src/js/utils/logger.js`.
+
+### Disable logging
+
+Open the developer console and run the following:
+
+```
+window.localStorage.setItem('skylineos.clsp-player.logLevel', null);
+```
+
 
 ## Lint
 
