@@ -1,7 +1,7 @@
 'use strict';
 
 import Iov from './Iov';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 
 // @todo - this could cause an overflow!
 let totalIovCount = 0;

@@ -1,7 +1,7 @@
 'use strict';
 
 import StreamConfiguration from './StreamConfiguration';
-import Logger from '../utils/logger';
+import Logger from '../utils/Logger';
 
 const DEFAULT_TOUR_INTERVAL_DURATION = 10;
 const DEFAULT_TOUR_PRELOAD_DURATION = 9;
