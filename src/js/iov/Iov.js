@@ -256,6 +256,13 @@ export default class Iov extends EventEmitter {
   };
 
   onVisibilityChange = async () => {
+    // @todo the player doesn't HAVE to restart on visibility change.  If the
+    // MSEWrapper is changed to NOT put moofs on the segment queue when the
+    // document is not in focus, the player can remain and not have to be
+    // destroyed and restarted every time.  Perhaps only after a configurable
+    // timeout should the destroy and restart be used - that way the SFS isn't
+    // serving the stream segments to players that aren't using them.
+
     if (utils.isDocumentHidden()) {
       try {
         await this.stop();
@@ -269,6 +276,12 @@ export default class Iov extends EventEmitter {
     }
 
     this.logger.info('Back in focus...');
+
+    if (!this.streamConfiguration) {
+      // If streamConfiguration doesn't exist, it means that this Iov was
+      // created, but was never played.
+      return;
+    }
 
     try {
       await this.restart();
