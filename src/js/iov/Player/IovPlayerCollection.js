@@ -139,7 +139,7 @@ export default class IovPlayerCollection extends EventEmitter {
     iovPlayer.on(IovPlayer.events.RECONNECT_FAILURE, async ({ error }) => {
       try {
         this.logger.info(`Critical player error RECONNECT_FAILURE for player ${this.playerLogMessageIds[id]}`);
-        await this.#handleCriticalIovPlayerError(id);
+        await this.#handleCriticalIovPlayerError(id, IovPlayer.events.RECONNECT_FAILURE);
       }
       catch (error) {
         this.logger.error(`Error while handling player error RECONNECT_FAILURE for player ${this.playerLogMessageIds[id]}`);
@@ -151,7 +151,7 @@ export default class IovPlayerCollection extends EventEmitter {
     iovPlayer.on(IovPlayer.events.ROUTER_EVENT_ERROR, async ({ error }) => {
       try {
         this.logger.info(`Critical player error ROUTER_EVENT_ERROR for player ${this.playerLogMessageIds[id]}`);
-        await this.#handleCriticalIovPlayerError(id);
+        await this.#handleCriticalIovPlayerError(id, IovPlayer.events.ROUTER_EVENT_ERROR);
       }
       catch (error) {
         this.logger.error(`Error while handling player error ROUTER_EVENT_ERROR for player ${this.playerLogMessageIds[id]}`);
@@ -163,7 +163,7 @@ export default class IovPlayerCollection extends EventEmitter {
     iovPlayer.on(IovPlayer.events.REINITIALZE_ERROR, async ({ error }) => {
       try {
         this.logger.info(`Critical player error REINITIALZE_ERROR for player ${this.playerLogMessageIds[id]}`);
-        await this.#handleCriticalIovPlayerError(id);
+        await this.#handleCriticalIovPlayerError(id, IovPlayer.events.REINITIALZE_ERROR);
       }
       catch (error) {
         this.logger.error(`Error while handling player error REINITIALZE_ERROR for player ${this.playerLogMessageIds[id]}`);
@@ -174,28 +174,28 @@ export default class IovPlayerCollection extends EventEmitter {
     return iovPlayer;
   }
 
-  async #handleCriticalIovPlayerError (id) {
-    if (id !== this.mostRecentlyPlayedId && id !== this.mostRecentlyAddedId) {
-      this.logger.info(`Stale IovPlayer ${this.playerLogMessageIds[id]} emitted a RECONNECT_FAILURE, destroying it...`);
+  async #handleCriticalIovPlayerError (id, eventName) {
+    if (id === this.mostRecentlyPlayedId || id === this.mostRecentlyAddedId) {
+      this.logger.info(`Active IovPlayer ${this.playerLogMessageIds[id]} emitted the "${eventName}" event, recreating it...`);
 
       try {
-        await this.remove(id);
+        await this.#recreate(id);
       }
       catch (error) {
-        this.logger.error(`Error while removing IovPlayer ${this.playerLogMessageIds[id]} during stale RECONNECT_FAILURE, continuing anyway...`);
+        this.logger.error(`Error while recreating ${this.playerLogMessageIds[id]}`);
         this.logger.error(error);
       }
 
       return;
     }
 
-    // Don't try to clean anything up, just destroy it and start over
-    // @todo - there should be a more graceful way to handle this...
+    this.logger.info(`Stale IovPlayer ${this.playerLogMessageIds[id]} emitted the "${eventName}" event, destroying it...`);
+
     try {
-      await this.#recreate(id);
+      await this.remove(id);
     }
     catch (error) {
-      this.logger.error(`Error while recreating ${this.playerLogMessageIds[id]}`);
+      this.logger.error(`Error while removing Stale IovPlayer ${this.playerLogMessageIds[id]} during "${eventName}" event, continuing anyway...`);
       this.logger.error(error);
     }
   }
@@ -235,6 +235,8 @@ export default class IovPlayerCollection extends EventEmitter {
       throw new Error(`Cannot recreate IovPlayer with non-existent id ${oldId}`);
     }
 
+    const oldPlayerLogMessageId = this.playerLogMessageIds[oldId];
+
     const iovPlayer = this._create(
       oldIovPlayer.containerElement,
       oldIovPlayer.videoElement,
@@ -255,6 +257,12 @@ export default class IovPlayerCollection extends EventEmitter {
     if (this.mostRecentlyPlayedId === oldId) {
       this.mostRecentlyPlayedId = id;
     }
+
+    // We do not need to await this
+    this.remove(oldId).catch((error) => {
+      this.logger.error(`Error while recreating player ${oldPlayerLogMessageId}, continuing anyway...`);
+      this.logger.error(error);
+    });
 
     await this.#play(id);
   }
@@ -337,25 +345,47 @@ export default class IovPlayerCollection extends EventEmitter {
       return;
     }
 
-    try {
-      this.pendingRemoval[id] = true;
+    iovPlayer.logger.info('IovPlayerCollection - removing player...');
 
-      iovPlayer.logger.info('IovPlayerCollection - removing player...');
+    const playerLogMessageId = this.playerLogMessageIds[id];
+
+    this.pendingRemoval[id] = true;
+
+    // It is no longer the most recently played
+    if (this.mostRecentlyPlayedId === id) {
+      this.mostRecentlyPlayedId = null;
+    }
+
+    // remove it from the stack
+    const index = this.playerStack.indexOf(id);
+
+    if (index !== -1) {
+      this.playerStack.splice(index, 1);
+    }
+
+    // it is no longer the most recently added
+    if (this.mostRecentlyAddedId === id) {
+      const stackLength = this.playerStack.length;
+
+      if (stackLength === 0) {
+        this.mostRecentlyAddedId = null;
+      }
+      else {
+        this.mostRecentlyAddedId = this.playerStack[stackLength - 1];
+      }
+    }
+
+    // remove it from all internal state
+    delete this.players[id];
+    delete this.playerLogMessageIds[id];
+    delete this.pendingRemoval[id];
+
+    try {
       await iovPlayer.destroy();
     }
     catch (error) {
-      this.logger.error(`Error destroying IovPlayer ${this.playerLogMessageIds[id]} while removing, continuing anyway`);
+      this.logger.error(`Error destroying IovPlayer ${playerLogMessageId} while removing, continuing anyway`);
       this.logger.error(error);
-    }
-    finally {
-      delete this.players[id];
-      delete this.playerLogMessageIds[id];
-      delete this.pendingRemoval[id];
-
-      const index = this.playerStack.indexOf(id);
-      if (index !== -1) {
-        this.playerStack.splice(index, 1);
-      }
     }
   }
 

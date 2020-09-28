@@ -65,17 +65,9 @@ export default class MSEWrapper extends EventEmitter {
    * @param {string|object} logId
    *   a string that identifies this SourceBuffer in log messages
    *   @see - src/js/utils/Destroyable
-   * @param {string} videoElement
-   *   The HTML5 video tag that will be used to play video
    */
-  static factory (
-    logId,
-    videoElement,
-  ) {
-    return new MSEWrapper(
-      logId,
-      videoElement,
-    );
+  static factory (logId) {
+    return new MSEWrapper(logId);
   }
 
   /**
@@ -86,20 +78,9 @@ export default class MSEWrapper extends EventEmitter {
    * @param {string|object} logId
    *   a string that identifies this SourceBuffer in log messages
    *   @see - src/js/utils/Destroyable
-   * @param {string} videoElement
-   *   The HTML5 video tag that will be used to play video
    */
-  constructor (
-    logId,
-    videoElement,
-  ) {
+  constructor (logId) {
     super(logId);
-
-    if (!videoElement) {
-      throw new Error('videoElement is required to construct an MSEWrapper.');
-    }
-
-    this.videoElement = videoElement;
 
     this.segmentQueue = [];
     this.sequenceNumber = 0;
@@ -133,11 +114,6 @@ export default class MSEWrapper extends EventEmitter {
     if (this.sourceBuffer) {
       this.sourceBuffer.abort();
     }
-
-    // reallocate, this will call media source open which will
-    // append the MOOV atom.
-    this.videoElement.src = '';
-    this.videoElement.src = this.mediaSource.asObjectURL();
   }
 
   async initializeSourceBuffer (mimeCodec) {
@@ -418,7 +394,7 @@ export default class MSEWrapper extends EventEmitter {
       this.#processNextInQueue();
     }
     catch (error) {
-      this.logger.info('Error while showing video segment! failed!');
+      this.logger.info('Error while showing video segment!');
       this.emit(MSEWrapper.events.SHOW_VIDEO_SEGMENT_ERROR, { error });
     }
   }
@@ -463,8 +439,6 @@ export default class MSEWrapper extends EventEmitter {
       // prior to removing the source buffers?
       this.sourceBuffer.abort();
     }
-
-    this.videoElement.src = '';
 
     this.metric('mediaSource.destroyed', 1);
   }
@@ -524,8 +498,6 @@ export default class MSEWrapper extends EventEmitter {
     // resources.
     this.mediaSource = null;
     this.sourceBuffer = null;
-
-    this.videoElement = null;
 
     this.previousTimeEnd = null;
     this.segmentQueue = null;

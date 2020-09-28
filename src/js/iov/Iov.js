@@ -126,6 +126,8 @@ export default class Iov extends EventEmitter {
     containerElementId,
     containerElement,
   }) {
+    this.logger.info('Initializing elements...');
+
     if (containerElementId) {
       containerElement = document.getElementById(containerElementId);
     }
@@ -186,6 +188,8 @@ export default class Iov extends EventEmitter {
   }
 
   #uninitializeElements () {
+    this.logger.info('Unnitializing elements...');
+
     this.containerElement.classList.remove(CONTAINER_CLASS);
 
     this.videoElement.classList.remove(VIDEO_CLASS);
