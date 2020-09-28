@@ -22,6 +22,11 @@ import {
 // for the simple demo, we're just going to use one player.
 let iov;
 
+let videoElement;
+let containerElement;
+
+window.$ = $;
+
 function displayVersions () {
   document.title = `v${utils.version} ${document.title}`;
   $('#version').text(utils.version);
@@ -29,11 +34,7 @@ function displayVersions () {
 
 function registerHandlers () {
   async function play () {
-    if (!iov) {
-      return;
-    }
-
-    await window.clspPlayerControls.changeSrc();
+    await changeSrc();
   }
 
   async function stop () {
@@ -108,6 +109,10 @@ function registerHandlers () {
   async function changeSrc () {
     const streamUrl = document.getElementById('stream-src').value;
 
+    if (!iov) {
+      await main(streamUrl);
+    }
+
     try {
       await iov.changeSrc(streamUrl);
     }
@@ -115,6 +120,54 @@ function registerHandlers () {
       console.error('Error while changing source!');
       console.error(error);
     }
+  }
+
+  function useManagedVideoElement () {
+    containerElement = $('.clsp-player-container')[0];
+    videoElement = document.createElement('video');
+
+    videoElement.id = 'my-video';
+
+    videoElement.addEventListener('play', (event) => {
+      console.log('Successfully played with supplied video element!');
+    });
+
+    videoElement.addEventListener('ended', (event) => {
+      console.log('Successfully stopped with supplied video element!');
+    });
+
+    // videoElement.classList.add(VIDEO_CLASS);
+    // videoElement.muted = true;
+    // videoElement.playsinline = true;
+
+    containerElement.appendChild(videoElement);
+
+    enableControls();
+
+    changeSrc();
+  }
+
+  function doNotSupplyVideoElement () {
+    containerElement = $('.clsp-player-container')[0];
+
+    enableControls();
+
+    changeSrc();
+  }
+
+  function enableControls () {
+    $('.element-control button').each(function () {
+      $(this).prop('disabled', true);
+    });
+    $('.stream-control button').each(function () {
+      $(this).prop('disabled', false);
+    });
+    $('.display-control button').each(function () {
+      $(this).prop('disabled', false);
+    });
+    $('.destroy-control button').each(function () {
+      $(this).prop('disabled', false);
+    });
   }
 
   window.clspPlayerControls = {
@@ -126,27 +179,27 @@ function registerHandlers () {
     hardDestroy2,
     hardDestroy3,
     changeSrc,
+    useManagedVideoElement,
+    doNotSupplyVideoElement,
+    enableControls,
   };
 }
 
 async function main () {
-  const videoElementId = 'my-video';
-
   try {
     utils.setDefaultStreamPort('clsp', 9001);
 
-    // const url = document.getElementById('stream-src').value;
-
     // utils.disablePlayerLogging();
 
-    iov = IovCollection.asSingleton().create({ videoElementId });
-
-    // iov.changeSrc(url);
+    iov = IovCollection.asSingleton().create({
+      videoElement,
+      containerElement,
+    });
   }
   catch (error) {
     console.error('Error while playing stream in demo:');
-    document.getElementById('demo-error').style.display = 'block';
-    document.getElementById(videoElementId).style.display = 'none';
+    document.getElementById('player-error').style.display = 'block';
+    // document.getElementById(videoElementId).style.display = 'none';
     console.error(error);
   }
 }
@@ -154,5 +207,5 @@ async function main () {
 $(() => {
   displayVersions();
   registerHandlers();
-  main();
+  // main();
 });

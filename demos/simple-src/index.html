@@ -30,6 +30,23 @@
 
     <div class="content container-fit">
       <div class="controls">
+        <section class="element-control">
+          <h2>Element Control</h2>
+          <div class="control-group">
+            <button
+              onclick="window.clspPlayerControls.useManagedVideoElement()"
+              title="Change Stream"
+            >
+              <span>Supply Video Element</span>
+            </button>
+            <button
+              onclick="window.clspPlayerControls.doNotSupplyVideoElement()"
+              title="Change Stream"
+            >
+              <span>Let CLSP Player Create Video Element</span>
+            </button>
+          </div>
+        </section>
         <section class="stream-control">
           <h2>Stream Control</h2>
           <div class="control-group">
@@ -39,6 +56,7 @@
               value="clsps://bd-demo-sfs1.skyvdn.com/CAM014"
             />
             <button
+              disabled
               onclick="window.clspPlayerControls.changeSrc()"
               title="Change Stream"
             >
@@ -46,6 +64,7 @@
               <span>Change Stream</span>
             </button>
             <button
+              disabled
               onclick="window.clspPlayerControls.play()"
               title="play"
             >
@@ -53,6 +72,7 @@
               <span>Play</span>
             </button>
             <button
+              disabled
               onclick="window.clspPlayerControls.stop()"
               title="stop"
             >
@@ -65,6 +85,7 @@
           <h2>Display Control</h2>
           <div class="control-group">
             <button
+              disabled
               onclick="window.clspPlayerControls.toggleFullscreen()"
               title="fullscreen"
             >
@@ -77,6 +98,7 @@
           <h2>Destroy Options</h2>
           <div class="control-group">
             <button
+              disabled
               onclick="window.clspPlayerControls.destroy()"
               title="destroy"
             >
@@ -84,6 +106,7 @@
               <span>Destroy gracefully</span>
             </button>
             <button
+              disabled
               onclick="window.clspPlayerControls.hardDestroy1()"
               title="hard-destroy"
             >
@@ -92,14 +115,16 @@
               <span>Destroy player without waiting, then destroy element</span>
             </button>
             <button
-                onclick="window.clspPlayerControls.hardDestroy2()"
-                title="hard-destroy"
+              disabled
+              onclick="window.clspPlayerControls.hardDestroy2()"
+              title="hard-destroy"
             >
               <i class="fas fa-bomb"></i>
               <i class="fas fa-bomb"></i>
               <span>Destroy element, then destroy player without waiting</span>
             </button>
             <button
+              disabled
               onclick="window.clspPlayerControls.hardDestroy3()"
               title="hard-destroy"
             >
@@ -113,7 +138,7 @@
       <div class="stream-container">
         <div class="clsp-player-container clsp-container-fit">
           <span id="player-error">Error while setting up the demo</span>
-          <video id="my-video"></video>
+          <!-- <video id="my-video"></video> -->
         </div>
       </div>
     </div>
