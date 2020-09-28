@@ -9,7 +9,7 @@
  * We use this in the router as well, so keep it light and ES5 only!
  */
 
-module.exports = function (logLevel) {
+module.exports = function (logLevel, disableLogging) {
   function Logger (prefix, prefixStyle) {
     if (logLevel === undefined && typeof window !== 'undefined') {
       // The logLevel may be set in localstorage
@@ -65,37 +65,49 @@ module.exports = function (logLevel) {
   Logger.prototype.silly = function (message) {
     var sillyIndex = 4;
 
-    if (this.logLevel >= sillyIndex) {
-      console.log.apply(console, this._constructMessage(Logger.logLevels[sillyIndex], message));
+    if (this.logLevel < sillyIndex || disableLogging) {
+      return;
     }
+
+    console.log.apply(console, this._constructMessage(Logger.logLevels[sillyIndex], message));
   };
 
   Logger.prototype.debug = function (message) {
     var debugIndex = 3;
 
-    if (this.logLevel >= debugIndex) {
-      console.log.apply(console, this._constructMessage(Logger.logLevels[debugIndex], message));
+    if (this.logLevel < debugIndex || disableLogging) {
+      return;
     }
+
+    console.log.apply(console, this._constructMessage(Logger.logLevels[debugIndex], message));
   };
 
   Logger.prototype.info = function (message) {
     var infoIndex = 2;
 
-    if (this.logLevel >= infoIndex) {
-      console.log.apply(console, this._constructMessage(Logger.logLevels[infoIndex], message));
+    if (this.logLevel < infoIndex || disableLogging) {
+      return;
     }
+
+    console.log.apply(console, this._constructMessage(Logger.logLevels[infoIndex], message));
   };
 
   Logger.prototype.warn = function (message) {
     var warnIndex = 1;
 
-    if (this.logLevel >= warnIndex) {
-      console.warn.apply(console, this._constructMessage(Logger.logLevels[warnIndex], message));
+    if (this.logLevel < warnIndex || disableLogging) {
+      return;
     }
+
+    console.warn.apply(console, this._constructMessage(Logger.logLevels[warnIndex], message));
   };
 
   Logger.prototype.error = function (message) {
     var errorIndex = 0;
+
+    if (disableLogging) {
+      return;
+    }
 
     console.error.apply(console, this._constructMessage(Logger.logLevels[errorIndex], message));
   };

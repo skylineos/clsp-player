@@ -120,6 +120,9 @@ export default function (Paho) {
     this.CONNECTION_TIMEOUT = options.CONNECTION_TIMEOUT;
     this.KEEP_ALIVE_INTERVAL = options.KEEP_ALIVE_INTERVAL;
     this.PUBLISH_TIMEOUT = options.PUBLISH_TIMEOUT;
+
+    this.isDestroyed = false;
+    this.isDestroyComplete = false;
   }
 
   Router.constructorArgumentsBouncer = function (

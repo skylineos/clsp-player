@@ -89,8 +89,6 @@ export default class Conduit extends EventEmitter {
     this.containerElement = containerElement;
 
     this.isInitialized = false;
-    this.isDestroyed = false;
-    this.isDestroyComplete = false;
 
     this.routerIframeManager = RouterIframeManager.factory(
       this.logId,

@@ -12,6 +12,8 @@ const Logger = require('./Logger');
 // @todo - remove this side-effect
 const logger = Logger().factory();
 
+let _isPlayerLoggingEnabled = true;
+
 // CLSP default port for SFS >= 5.2.0 is 80
 // CLSP default port for SFS < 5.2.0 is 9001
 const DEFAULT_CLSP_PORT = 80;
@@ -238,6 +240,24 @@ function setDefaultStreamPort (protocol, port) {
   streamPorts[protocol] = port;
 }
 
+function enablePlayerLogging () {
+  _isPlayerLoggingEnabled = true;
+}
+
+function disablePlayerLogging () {
+  _isPlayerLoggingEnabled = false;
+}
+
+function isPlayerLoggingDisabled () {
+  return !_isPlayerLoggingEnabled;
+}
+
+const windowStateNames = getWindowStateNames();
+
+function isDocumentHidden () {
+  return document[windowStateNames.hiddenStateName];
+}
+
 module.exports = {
   name,
   version,
@@ -246,7 +266,11 @@ module.exports = {
   DEFAULT_STREAM_TIMEOUT,
   supported: isBrowserCompatable,
   isSupportedMimeType,
-  windowStateNames: getWindowStateNames(),
+  windowStateNames,
+  isDocumentHidden,
   getDefaultStreamPort,
   setDefaultStreamPort,
+  enablePlayerLogging,
+  disablePlayerLogging,
+  isPlayerLoggingDisabled,
 };

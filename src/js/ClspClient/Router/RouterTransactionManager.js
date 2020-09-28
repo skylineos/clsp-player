@@ -377,7 +377,10 @@ export default class RouterTransactionManager extends RouterBaseManager {
     }
 
     if (!this.subscribeHandlers[topic]) {
-      this.logger.warn(`No handler for subscribe topic "${topic}" for message event "${eventType}"`);
+      // @todo - this should trigger a warning, not an info, but it happens
+      // when switching tabs, which is too much noise in the console.
+      this.logger.info(`No handler for subscribe topic "${topic}" for message event "${eventType}"`);
+
       return;
     }
 

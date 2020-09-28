@@ -3,6 +3,7 @@
  */
 
 import Logger from './Logger';
+import utils from './utils';
 
 export default class Destroyable {
   logId = null;
@@ -31,7 +32,10 @@ export default class Destroyable {
       this.logColor = 'black';
     }
 
-    this.logger = Logger().factory(`${this.constructor.name} ${this.logId}`, `color: ${this.logColor};`);
+    this.logger = Logger(undefined, utils.isPlayerLoggingDisabled()).factory(
+      `${this.constructor.name} ${this.logId}`,
+      `color: ${this.logColor};`,
+    );
     this.logger.info(`Constructing new ${this.constructor.name} instance`);
   }
 

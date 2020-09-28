@@ -29,9 +29,6 @@ export default class ConduitCollection extends Destroyable {
     this.conduits = {};
     this.deletedConduitClientIds = [];
 
-    this.isDestroyed = false;
-    this.isDestroyComplete = false;
-
     Paho.register();
 
     // This is the Window Message listener for EVERY Conduit / Router on the

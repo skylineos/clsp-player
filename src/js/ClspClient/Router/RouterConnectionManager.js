@@ -289,7 +289,9 @@ export default class RouterConnectionManager extends RouterBaseManager {
       throw new Error(`Failed to reconnect after ${this.MAX_RECONNECTION_TIME} seconds.`);
     }
 
-    this.logger.warn(`Reconnection attempt #${reconnectionAttempts}...`);
+    if (reconnectionAttempts > 1) {
+      this.logger.warn(`Reconnection attempt #${reconnectionAttempts}...`);
+    }
 
     try {
       await this.disconnect(false);

@@ -246,7 +246,7 @@ export default class Iov extends EventEmitter {
   };
 
   onVisibilityChange = async () => {
-    if (document[utils.windowStateNames.hiddenStateName]) {
+    if (utils.isDocumentHidden()) {
       try {
         await this.stop();
       }
@@ -312,6 +312,13 @@ export default class Iov extends EventEmitter {
     this.streamConfiguration = StreamConfiguration.isStreamConfiguration(url)
       ? url
       : StreamConfiguration.fromUrl(url);
+
+    if (utils.isDocumentHidden()) {
+      // @todo - it would be better to do something other than just log info
+      // here...
+      this.logger.info('Tried to changeSrc while tab was hidden!');
+      return;
+    }
 
     let iovPlayerId;
 

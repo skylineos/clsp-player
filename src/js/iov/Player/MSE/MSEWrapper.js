@@ -207,7 +207,7 @@ export default class MSEWrapper extends EventEmitter {
 
     this.logger.silly('#processNextInQueue');
 
-    if (document[utils.windowStateNames.hiddenStateName]) {
+    if (utils.isDocumentHidden()) {
       this.logger.debug('Tab not in focus - dropping frame...');
       this.metric('frameDrop.hiddenTab', 1);
       this.metric('queue.cannotProcessNext', 1);
