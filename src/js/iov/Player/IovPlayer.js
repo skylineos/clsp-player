@@ -432,7 +432,12 @@ export default class IovPlayer extends EventEmitter {
 
   async #destroyMseWrapper () {
     if (this.mseWrapper) {
-      this.videoElement.src = '';
+      // @todo - this can sometimes be called when it "shouldn't" be, like when
+      // changeSrc is called on the Iov.  When reusing a videoElement, this
+      // causes the stream that should be playing to be wiped out.  Having this
+      // commented out shouldn't cause a memory issue since it's always reset
+      // during reinitializeMseWrapper, and when the Iov is destroyed.
+      // this.videoElement.src = '';
 
       try {
         await this.mseWrapper.destroy();

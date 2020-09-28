@@ -67,6 +67,11 @@ export default class Iov extends EventEmitter {
     this.videoElement = null;
 
     this._config = config;
+    // It's worth noting here that regardless of whether or not the caller
+    // passes in a videoElement to be reused, the Iov instance will always use
+    // the same videoElement for all IovPlayers until the Iov is destroyed.
+    // This is different from the previous implementation, which would use a
+    // different videoElement for every changeSrc command.
     this.#initializeElements(config);
 
     const {
