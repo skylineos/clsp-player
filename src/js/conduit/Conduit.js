@@ -15,6 +15,7 @@ import {
 
 import utils from '../utils/utils';
 import Router from './Router';
+import iframeEventHandlers from './iframeEventHandlers';
 import Logger from '../utils/logger';
 import StreamConfiguration from '../iov/StreamConfiguration';
 
@@ -49,7 +50,7 @@ export default class Conduit {
     SEND: 'send',
   };
 
-  static routerEvents = Router().Router.events;
+  static routerEvents = Router().events;
 
   static factory (
     logId,
@@ -1094,8 +1095,6 @@ export default class Conduit {
       <html>
         <head>
           <script type="text/javascript">
-            // Include the logger
-            window.Logger = ${Logger.toString()};
 
             // Configure the CLSP properties
             window.clspRouterConfig = {
@@ -1107,16 +1106,24 @@ export default class Conduit {
               CONNECTION_TIMEOUT: ${this.ROUTER_CONNECTION_TIMEOUT},
               KEEP_ALIVE_INTERVAL: ${this.ROUTER_KEEP_ALIVE_INTERVAL},
               PUBLISH_TIMEOUT: ${this.ROUTER_PUBLISH_TIMEOUT},
+              Logger: ${Logger.toString()},
+              conduitCommands: ${JSON.stringify(Conduit.iframeCommands)},
             };
 
-            window.conduitCommands = ${JSON.stringify(Conduit.iframeCommands)};
-
-            window.iframeEventHandlers = ${Router.toString()}();
+            window.Router = ${Router.toString()}(window.parent.Paho);
+            window.iframeEventHandlers = ${iframeEventHandlers.toString()}();
           </script>
         </head>
         <body
-          onload="window.iframeEventHandlers.onload();"
-          onunload="window.iframeEventHandlers.onunload();"
+          onload="window.router = window.iframeEventHandlers.onload(
+            '${this.logId}',
+            window.Router,
+            window.clspRouterConfig
+          );"
+          onunload="window.iframeEventHandlers.onunload(
+            '${this.logId}',
+            window.router
+          );"
         >
           <div id="message"></div>
         </body>
