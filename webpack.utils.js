@@ -24,7 +24,9 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 
 const babelConfig = require('./babel.config')();
 
-const devMode = process.env.NODE_ENV !== 'production';
+const isDevMode = true;
+// @todo - this fails when running `NODE_ENV=production yarn run build`...
+// const isDevMode = process.env.NODE_ENV !== 'production';
 
 /**
  * @private
@@ -124,7 +126,7 @@ function generateConfig (name, entry) {
             {
               loader: MiniCssExtractPlugin.loader,
               options: {
-                hmr: devMode,
+                hmr: isDevMode,
               },
             },
             'css-loader',
@@ -143,10 +145,10 @@ function generateConfig (name, entry) {
     plugins: [
       generateProgressBarPlugin(name),
       new MiniCssExtractPlugin({
-        filename: devMode
+        filename: isDevMode
           ? '[name].css'
           : '[name].[hash].css',
-        chunkFilename: devMode
+        chunkFilename: isDevMode
           ? '[id].css'
           : '[id].[hash].css',
       }),
@@ -170,7 +172,7 @@ function generateConfig (name, entry) {
  */
 function exportAsDevConfig (webpackConfigs) {
   return webpackConfigs.map((webpackConfig) => {
-    return {
+    const config = {
       ...webpackConfig,
       mode: 'development',
       devtool: 'eval-source-map',
@@ -187,6 +189,8 @@ function exportAsDevConfig (webpackConfigs) {
         }),
       ],
     };
+
+    return config;
   });
 }
 
@@ -239,6 +243,7 @@ function exportAsProdConfig (webpackConfigs) {
 }
 
 module.exports = {
+  isDevMode,
   outputPath,
   generateConfig,
   exportAsDevConfig,

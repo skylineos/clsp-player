@@ -35,7 +35,7 @@
         <input
           id="stream-src"
           name="stream-src"
-          value="clsp://172.28.12.57:9001/FairfaxVideo0520"
+          value="clsps://bd-demo-sfs1.skyvdn.com/testpattern"
         />
         <button
           onclick="window.clspPlayerControls.changeSrc()"
@@ -44,14 +44,14 @@
       </div>
       <div class="video-container container-fit">
         <div class="clsp-container-fit">
-          <span id="browser-not-supported">This browser is not supported</span>
+          <span id="demo-error">Error while setting up the demo</span>
           <video
             id="my-video"
             muted
             playsinline
           >
             <source
-              src="clsp://172.28.12.57:9001/FairfaxVideo0520"
+              src="clsps://bd-demo-sfs1.skyvdn.com/testpattern"
               type="video/mp4; codecs='avc1.42E01E'"
             />
           </video>
@@ -80,6 +80,30 @@
           onclick="window.clspPlayerControls.destroy()"
           title="destroy"
         >
+          <i class="fas fa-bomb"></i>
+        </button>
+        <button
+          onclick="window.clspPlayerControls.hardDestroy1()"
+          title="hard-destroy"
+        >
+          <span>1</span>
+          <i class="fas fa-bomb"></i>
+          <i class="fas fa-bomb"></i>
+        </button>
+        <button
+            onclick="window.clspPlayerControls.hardDestroy2()"
+            title="hard-destroy"
+        >
+          <span>2</span>
+          <i class="fas fa-bomb"></i>
+          <i class="fas fa-bomb"></i>
+        </button>
+        <button
+          onclick="window.clspPlayerControls.hardDestroy3()"
+          title="hard-destroy"
+        >
+          <span>3</span>
+          <i class="fas fa-bomb"></i>
           <i class="fas fa-bomb"></i>
         </button>
       </div>

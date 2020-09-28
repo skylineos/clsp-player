@@ -87,9 +87,12 @@ async function createPlayer (index, playerOptions) {
     $container.find('.video-stream .url').text(url);
     $container.find('.video-stream .url').attr('title', url);
 
-    const iov = await iovCollection.create(videoElementId);
+    const iov = iovCollection.create({ videoElementId });
 
-    iov.changeSrc(url);
+    iov.changeSrc(url).catch(function (error) {
+      console.error('Error while playing stream in demo:');
+      console.error(error);
+    });
 
     wallPlayers.push(iov);
 
@@ -107,6 +110,8 @@ $(() => {
 
   const pageTitle = $('#page-title').html();
   $('#page-title').html(`${pageTitle} <br /> v${utils.version}`);
+
+  utils.setDefaultStreamPort('clsp', 9001);
 
   initializeWall(
     localStorageName,

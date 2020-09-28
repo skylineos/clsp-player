@@ -5,7 +5,7 @@ const mockConsole = require('jest-mock-console');
 // @todo - can we use module alias or something here?
 const {
   generateUniqueString,
-} = require('../../../../test/jest/utils');
+} = require('../../../../../test/jest/utils');
 
 const _iframeEventHandlers = require('../iframeEventHandlers');
 const Router = require('../Router');
@@ -28,7 +28,6 @@ describe('iframeEventHandlers', () => {
       KEEP_ALIVE_INTERVAL: generateUniqueString(),
       PUBLISH_TIMEOUT: generateUniqueString(),
       Logger: generateUniqueString(),
-      conduitCommands: generateUniqueString(),
     };
   }
 
@@ -56,19 +55,16 @@ describe('iframeEventHandlers', () => {
   });
 
   describe('onload', () => {
-    beforeEach(() => {
-      Router.mockClear();
-    });
-
     it('should construct the router', () => {
       const logId = generateLogId();
+      const clientId = generateLogId();
       const config = generateRouterConfig();
 
       const {
         onload,
       } = _iframeEventHandlers.default();
 
-      const router = onload(logId, Router, config);
+      const router = onload(logId, clientId, Router, config);
 
       expect(Router.factory.mock.calls).toHaveLength(1);
       expect(Router.factory.mock.calls[0][0]).toEqual(config.logId);
@@ -82,13 +78,11 @@ describe('iframeEventHandlers', () => {
         'KEEP_ALIVE_INTERVAL',
         'PUBLISH_TIMEOUT',
         'Logger',
-        'conduitCommands',
       ]);
       expect(Router.factory.mock.calls[0][5].CONNECTION_TIMEOUT).toEqual(config.CONNECTION_TIMEOUT);
       expect(Router.factory.mock.calls[0][5].KEEP_ALIVE_INTERVAL).toEqual(config.KEEP_ALIVE_INTERVAL);
       expect(Router.factory.mock.calls[0][5].PUBLISH_TIMEOUT).toEqual(config.PUBLISH_TIMEOUT);
       expect(Router.factory.mock.calls[0][5].Logger).toEqual(config.Logger);
-      expect(Router.factory.mock.calls[0][5].conduitCommands).toEqual(config.conduitCommands);
 
       expect(router).not.toBeNil();
 
@@ -98,25 +92,27 @@ describe('iframeEventHandlers', () => {
 
     it('should let the parent window know the router was successfully instantiated', () => {
       const logId = generateLogId();
+      const clientId = generateLogId();
       const config = generateRouterConfig();
 
       const {
         onload,
       } = _iframeEventHandlers.default();
 
-      const router = onload(logId, Router, config);
+      const router = onload(logId, clientId, Router, config);
 
       expect(router._sendToParentWindow.mock.calls).toHaveLength(1);
       expect(router._sendToParentWindow.mock.calls[0][0]).toBeObject();
       expect(router._sendToParentWindow.mock.calls[0][0]).toContainAllKeys([
         'event',
       ]);
-      expect(router._sendToParentWindow.mock.calls[0][0].event).toEqual(Router.events.CREATED);
+      expect(router._sendToParentWindow.mock.calls[0][0].event).toEqual(Router.events.CREATE_SUCCESS);
     });
 
     it('should let the parent window know if an error was encountered during instantiation', () => {
       const restoreConsole = mockConsole();
       const logId = generateLogId();
+      const clientId = generateLogId();
       const config = generateRouterConfig();
 
       const {
@@ -133,7 +129,7 @@ describe('iframeEventHandlers', () => {
       const originalPostMessage = window.parent.postMessage;
       window.parent.postMessage = jest.fn();
 
-      expect(() => onload(logId, Router, config)).not.toThrow();
+      expect(() => onload(logId, clientId, Router, config)).not.toThrow();
       expect(console.error.mock.calls).toHaveLength(2);
       expect(console.error.mock.calls[0][0]).toInclude(logId);
       expect(console.error.mock.calls[1][0]).toEqual(onloadError);
@@ -158,12 +154,13 @@ describe('iframeEventHandlers', () => {
           const restoreConsole = mockConsole();
 
           const logId = generateLogId();
+          const clientId = generateLogId();
 
           const {
             onunload,
           } = _iframeEventHandlers.default();
 
-          expect(() => onunload(logId)).not.toThrow();
+          expect(() => onunload(logId, clientId)).not.toThrow();
           expect(console.warn).toHaveBeenCalled();
           expect(console.warn.mock.calls[0][0]).toInclude(logId);
 
@@ -172,12 +169,9 @@ describe('iframeEventHandlers', () => {
       });
 
       describe('when the router has been instantiated', () => {
-        beforeEach(() => {
-          Router.mockClear();
-        });
-
         it('should destroy the router', () => {
           const logId = generateLogId();
+          const clientId = generateLogId();
 
           const {
             onunload,
@@ -185,7 +179,7 @@ describe('iframeEventHandlers', () => {
 
           const router = new Router();
 
-          onunload(logId, router);
+          onunload(logId, clientId, router);
 
           expect(router.destroy.mock.calls).toHaveLength(1);
           expect(router.logger.info.mock.calls).toHaveLength(2);
@@ -195,6 +189,7 @@ describe('iframeEventHandlers', () => {
 
         it('should log any unexpected error and does not throw', () => {
           const logId = generateLogId();
+          const clientId = generateLogId();
 
           const {
             onunload,
@@ -208,7 +203,7 @@ describe('iframeEventHandlers', () => {
             throw routerDestroyError;
           });
 
-          onunload(logId, router);
+          onunload(logId, clientId, router);
 
           expect(router.destroy.mock.calls).toHaveLength(1);
           expect(router.logger.error.mock.calls).toHaveLength(2);

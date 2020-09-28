@@ -62,10 +62,36 @@ function registerHandlers () {
     iov = null;
   }
 
+  function hardDestroy1 () {
+    // Perform the destroy without waiting for it to finish.  This will test
+    // whether or not the destroy logic will attempt to finish wihtout error
+    // even though the iframe has been destroyed prematurely
+    destroy();
+    $('.clsp-player-container').remove();
+  }
+
+  function hardDestroy2 () {
+    // Perform the destroy without waiting for it to finish.  This will test
+    // whether or not the destroy logic will attempt to finish wihtout error
+    // even though the iframe has been destroyed prematurely
+    $('.clsp-player-container').remove();
+    destroy();
+  }
+
+  function hardDestroy3 () {
+    // Perform the destroy without waiting for it to finish.  This will test
+    // whether or not the destroy logic will attempt to finish wihtout error
+    // even though the iframe has been destroyed prematurely
+    $('.clsp-player-container').remove();
+  }
+
   function changeSrc () {
     const streamUrl = document.getElementById('stream-src').value;
 
-    iov.changeSrc(streamUrl);
+    iov.changeSrc(streamUrl).catch(function (error) {
+      console.error('Error while playing stream in demo:');
+      console.error(error);
+    });
   }
 
   window.clspPlayerControls = {
@@ -73,6 +99,9 @@ function registerHandlers () {
     stop: stop,
     fullscreen: fullscreen,
     destroy: destroy,
+    hardDestroy1: hardDestroy1,
+    hardDestroy2: hardDestroy2,
+    hardDestroy3: hardDestroy3,
     changeSrc: changeSrc,
   };
 }
@@ -81,17 +110,20 @@ async function main () {
   const videoElementId = 'my-video';
 
   try {
-    const url = $(`#${videoElementId}`).find('source')[0].getAttribute('src');
+    utils.setDefaultStreamPort('clsp', 9001);
 
-    document.getElementById('stream-src').value = url;
+    const url = document.getElementById('stream-src').value;
 
     iovCollection = IovCollection.asSingleton();
-    iov = await iovCollection.create(videoElementId);
+    iov = iovCollection.create({ videoElementId });
 
-    iov.changeSrc(url);
+    iov.changeSrc(url).catch(function (error) {
+      console.error('Error while playing stream in demo:');
+      console.error(error);
+    });
   }
   catch (error) {
-    document.getElementById('browser-not-supported').style.display = 'block';
+    document.getElementById('demo-error').style.display = 'block';
     document.getElementById(videoElementId).style.display = 'none';
     console.error(error);
   }

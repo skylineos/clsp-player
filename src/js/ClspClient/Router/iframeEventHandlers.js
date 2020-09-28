@@ -19,6 +19,9 @@
  *   tag of the iframe.
  */
 export default function () {
+  // @todo - if we can somehow get an event to fire from here when the iframe
+  // is unloaded, it would make the iframe handling significantly more elegant
+  // and resilient...
   return {
     /**
      * The `onload` event handler for the `<body> onload` event.  This event
@@ -28,7 +31,7 @@ export default function () {
      * indicate success or failure.
      *
      * @param {string} logId
-     *   a string that identifies this conduit/router in log messages
+     *   a string that identifies this Conduit / Router in log messages
      * @param {class} Router
      *   The Router class
      * @param {object} config
@@ -37,8 +40,9 @@ export default function () {
      * @returns {Router|null}
      *   The instantiated router, or `null` if an error is encountered
      */
-    onload: function (logId, Router, config) {
+    onload: function (logId, clientId, Router, config) {
       try {
+        // @todo - validate arguments
         var router = Router.factory(
           config.logId,
           config.clientId,
@@ -50,12 +54,11 @@ export default function () {
             KEEP_ALIVE_INTERVAL: config.KEEP_ALIVE_INTERVAL,
             PUBLISH_TIMEOUT: config.PUBLISH_TIMEOUT,
             Logger: config.Logger,
-            conduitCommands: config.conduitCommands,
           },
         );
 
         router._sendToParentWindow({
-          event: Router.events.CREATED,
+          event: Router.events.CREATE_SUCCESS,
         });
 
         router.logger.info(logId + ' onload - Router created');
@@ -63,7 +66,7 @@ export default function () {
         return router;
       }
       catch (error) {
-        // eslint-disable-next-line no-console
+        /* eslint-disable-next-line no-console */
         console.error(logId + ' onload - Error while loading:');
         console.error(error);
 
@@ -81,15 +84,23 @@ export default function () {
      * event handler will destroy this iframe's Router if it exists.
      *
      * @param {string} logId
-     *   a string that identifies this conduit/router in log messages
+     *   a string that identifies this Conduit / Router in log messages
      * @param {Router} router
      *   The router that was instantiated for this iframe
      *
      * @returns {void}
      */
-    onunload: function (logId, router) {
+    onunload: function (logId, clientId, router) {
+      // @todo - use this to detect an externally destroyed iframe
+      // window.parent.postMessage({
+      //   clientId: clientId,
+      //   event: 'iframe-onunload',
+      // }, '*');
+
+      // @todo - validate arguments
+
       if (!router) {
-        // eslint-disable-next-line no-console
+        /* eslint-disable-next-line no-console */
         console.warn(logId + ' onunload - Router not instantiated, exiting...');
         return;
       }
