@@ -16,23 +16,10 @@ module.exports = function ({
 
         const router = Router.factory(...config.asArray);
 
+
         expect(router).not.toBeNil();
         expect(router.constructor).not.toBeNil();
         expect(router.constructor.name).toEqual('Router');
-      });
-      it('should throw with invalid arguments', () => {
-        const restoreConsole = mockConsole();
-
-        const config = utils.generateRouterConfig();
-        const Router = _Router.default(Paho.Paho);
-
-        config.asArray[0] = undefined;
-
-        expect(() => {
-          Router.factory(...config.asArray);
-        }).toThrow();
-
-        restoreConsole();
       });
     });
 
