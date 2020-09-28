@@ -120,9 +120,9 @@ $(() => {
     destroyAllPlayers,
   );
 
-  createWall(
-    localStorageName,
-    createPlayer,
-    destroyAllPlayers,
-  );
+  // createWall(
+  //   localStorageName,
+  //   createPlayer,
+  //   destroyAllPlayers,
+  // );
 });

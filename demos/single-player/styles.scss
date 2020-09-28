@@ -21,10 +21,18 @@
     margin: 0;
     padding: 0.5em;
     width: 25%;
+    overflow-y: auto;
 
     section {
       display: flex;
       flex-direction: column;
+      border: 1px solid white;
+      padding: 0.75em;
+
+      h2 {
+        margin: 0;
+        padding: 0.5em 0;
+      }
 
       .control-group {
         display: flex;

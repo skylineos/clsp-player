@@ -230,27 +230,27 @@ export default class Iov extends EventEmitter {
   }
 
   onConnectionChange = async () => {
-    if (!window.navigator.onLine) {
-      this.logger.info('Offline!');
+    if (utils.isOnline()) {
+      this.logger.info('Back online...');
 
       try {
-        await this.stop();
+        await this.restart();
       }
       catch (error) {
-        this.logger.warn('Error encountered while stopping during offline event:');
+        this.logger.error('Error while trying to restart during online event');
         this.logger.error(error);
       }
 
       return;
     }
 
-    this.logger.info('Back online...');
+    this.logger.info('Offline!');
 
     try {
-      await this.restart();
+      await this.stop();
     }
     catch (error) {
-      this.logger.error('Error while trying to restart during online event');
+      this.logger.warn('Error encountered while stopping during offline event:');
       this.logger.error(error);
     }
   };
@@ -340,6 +340,13 @@ export default class Iov extends EventEmitter {
       // @todo - it would be better to do something other than just log info
       // here...
       this.logger.info('Tried to changeSrc while tab was hidden!');
+      return;
+    }
+
+    if (!utils.isOnline()) {
+      // @todo - it would be better to do something other than just log info
+      // here...
+      this.logger.info('Tried to changeSrc while not connected to the internet!');
       return;
     }
 

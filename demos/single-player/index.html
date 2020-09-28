@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>CLSP Player Simple Demo ~ SRC ~</title>
+    <title>CLSP Player Demo</title>
     <link
       rel="shortcut icon"
       href="../favicon.ico"
@@ -15,33 +15,51 @@
     >
     <link
       rel="stylesheet"
-      href="../../dist/demos/simple-src.css"
+      href="../../dist/demos/single-player.css"
     >
   </head>
   <body>
     <div class="header">
       <a id="logo" href="..">
-        <img src="../skyline_logo.png" />
+        <img src="../skyline-logo.svg" />
       </a>
-      <span id="page-title">CLSP Player Simple Demo</span>
-      <span>~ SRC ~</span>
+      <span id="page-title">CLSP Player Demo</span>
       <span id="version"></span>
     </div>
 
     <div class="content container-fit">
       <div class="controls">
+        <section class="import-control">
+          <h2>CLSP JS Selection:</h2>
+          <div class="control-group">
+            <button
+              onclick="window.clspPlayerControls.useSourceFiles()"
+              title="Use /src files"
+            >
+              <span>Use /src files</span>
+            </button>
+            <button
+              onclick="window.clspPlayerControls.useDistFiles()"
+              title="Use /dist package"
+            >
+              <span>Use /dist package</span>
+            </button>
+          </div>
+        </section>
         <section class="element-control">
           <h2>Element Control</h2>
           <div class="control-group">
             <button
+              disabled
               onclick="window.clspPlayerControls.useManagedVideoElement()"
-              title="Change Stream"
+              title="Supply Video Element"
             >
               <span>Supply Video Element</span>
             </button>
             <button
+              disabled
               onclick="window.clspPlayerControls.doNotSupplyVideoElement()"
-              title="Change Stream"
+              title="Let CLSP Player Create Video Element"
             >
               <span>Let CLSP Player Create Video Element</span>
             </button>
@@ -145,7 +163,7 @@
 
     <script
       type="text/javascript"
-      src="../../dist/demos/simple-src.js"
+      src="../../dist/demos/single-player.js"
     ></script>
   </body>
 </html>

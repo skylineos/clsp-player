@@ -5,10 +5,16 @@ import $ from 'jquery';
 
 // simulate `import '@skylineos/clsp-player'`
 import {
-  IovCollection,
-  Iov,
-  utils,
+  IovCollection as srcIovCollection,
+  Iov as srcIov,
+  utils as srcUtils,
 } from '~root/dist/clsp-player.min.js';
+
+import {
+  IovCollection as distIovCollection,
+  Iov as distIov,
+  utils as distUtils,
+} from '../../dist/clsp-player.min.js';
 
 /**
  * or with `require`....
@@ -19,7 +25,10 @@ import {
  * } = require('~root/dist/clsp-player.min.js');
  */
 
-// for the simple demo, we're just going to use one player.
+let IovCollection;
+let Iov;
+let utils;
+
 let iov;
 
 let videoElement;
@@ -28,8 +37,8 @@ let containerElement;
 window.$ = $;
 
 function displayVersions () {
-  document.title = `v${utils.version} ${document.title}`;
-  $('#version').text(utils.version);
+  document.title = `v${srcUtils.version} ${document.title}`;
+  $('#version').text(srcUtils.version);
 }
 
 function registerHandlers () {
@@ -65,7 +74,7 @@ function registerHandlers () {
   function hardDestroy1 () {
     return new Promise((resolve, reject) => {
       iov.on(Iov.events.DESTROYING, () => {
-        console.warn(`Iov ${iov.id} was destroyed ungracefully...`);
+        // console.warn(`Iov ${iov.id} was destroyed ungracefully...`);
         resolve();
       });
 
@@ -80,7 +89,7 @@ function registerHandlers () {
   function hardDestroy2 () {
     return new Promise((resolve, reject) => {
       iov.on(Iov.events.DESTROYING, () => {
-        console.warn(`Iov ${iov.id} was destroyed ungracefully...`);
+        // console.warn(`Iov ${iov.id} was destroyed ungracefully...`);
         resolve();
       });
 
@@ -95,7 +104,7 @@ function registerHandlers () {
   function hardDestroy3 () {
     return new Promise((resolve, reject) => {
       iov.on(Iov.events.DESTROYING, () => {
-        console.warn(`Iov ${iov.id} was destroyed ungracefully...`);
+        // console.warn(`Iov ${iov.id} was destroyed ungracefully...`);
         resolve();
       });
 
@@ -122,7 +131,35 @@ function registerHandlers () {
     }
   }
 
-  function useManagedVideoElement () {
+  function useSourceFiles () {
+    IovCollection = srcIovCollection;
+    Iov = srcIov;
+    utils = srcUtils;
+
+    $('.element-control button').each(function () {
+      $(this).prop('disabled', false);
+    });
+
+    $('.import-control .control-group').each(function () {
+      $(this).html('Using /src files...');
+    });
+  }
+
+  function useDistFiles () {
+    IovCollection = distIovCollection;
+    Iov = distIov;
+    utils = distUtils;
+
+    $('.element-control button').each(function () {
+      $(this).prop('disabled', false);
+    });
+
+    $('.import-control .control-group').each(function () {
+      $(this).html('Using /dist package...');
+    });
+  }
+
+  async function useManagedVideoElement () {
     containerElement = $('.clsp-player-container')[0];
     videoElement = document.createElement('video');
 
@@ -136,29 +173,30 @@ function registerHandlers () {
       console.log('Successfully stopped with supplied video element!');
     });
 
-    // videoElement.classList.add(VIDEO_CLASS);
-    // videoElement.muted = true;
-    // videoElement.playsinline = true;
-
     containerElement.appendChild(videoElement);
 
-    enableControls();
+    $('.element-control .control-group').each(function () {
+      $(this).html('Supplying video element to CLSP Player. <br /><br /> Open console to see messages.');
+    });
 
-    changeSrc();
+    await changeSrc();
+
+    enableControls();
   }
 
-  function doNotSupplyVideoElement () {
+  async function doNotSupplyVideoElement () {
     containerElement = $('.clsp-player-container')[0];
 
-    enableControls();
+    $('.element-control .control-group').each(function () {
+      $(this).html('Letting CLSP Player create video element...');
+    });
 
-    changeSrc();
+    await changeSrc();
+
+    enableControls();
   }
 
   function enableControls () {
-    $('.element-control button').each(function () {
-      $(this).prop('disabled', true);
-    });
     $('.stream-control button').each(function () {
       $(this).prop('disabled', false);
     });
@@ -182,6 +220,8 @@ function registerHandlers () {
     useManagedVideoElement,
     doNotSupplyVideoElement,
     enableControls,
+    useSourceFiles,
+    useDistFiles,
   };
 }
 
@@ -199,7 +239,6 @@ async function main () {
   catch (error) {
     console.error('Error while playing stream in demo:');
     document.getElementById('player-error').style.display = 'block';
-    // document.getElementById(videoElementId).style.display = 'none';
     console.error(error);
   }
 }
@@ -207,5 +246,4 @@ async function main () {
 $(() => {
   displayVersions();
   registerHandlers();
-  // main();
 });
