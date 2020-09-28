@@ -6,6 +6,7 @@ import $ from 'jquery';
 // simulate `import '@skylineos/clsp-player'`
 import {
   IovCollection,
+  Iov,
   utils,
 } from '~root/dist/clsp-player.min.js';
 
@@ -18,34 +19,32 @@ import {
  * } = require('~root/dist/clsp-player.min.js');
  */
 
-let iovCollection;
+// for the simple demo, we're just going to use one player.
 let iov;
 
 function displayVersions () {
   document.title = `v${utils.version} ${document.title}`;
-
-  const pageTitle = $('#page-title').html();
-  $('#page-title').html(`${pageTitle} <br /> v${utils.version}`);
+  $('#version').text(utils.version);
 }
 
 function registerHandlers () {
-  function play () {
+  async function play () {
     if (!iov) {
       return;
     }
 
-    window.clspPlayerControls.changeSrc();
+    await window.clspPlayerControls.changeSrc();
   }
 
-  function stop () {
+  async function stop () {
     if (!iov) {
       return;
     }
 
-    iov.stop();
+    await iov.stop();
   }
 
-  function fullscreen () {
+  function toggleFullscreen () {
     if (!iov) {
       return;
     }
@@ -53,56 +52,80 @@ function registerHandlers () {
     iov.toggleFullscreen();
   }
 
-  function destroy () {
+  async function destroy () {
     if (!iov) {
       return;
     }
 
-    iovCollection.remove(iov.id);
+    await IovCollection.asSingleton().remove(iov.id);
     iov = null;
   }
 
   function hardDestroy1 () {
-    // Perform the destroy without waiting for it to finish.  This will test
-    // whether or not the destroy logic will attempt to finish wihtout error
-    // even though the iframe has been destroyed prematurely
-    destroy();
-    $('.clsp-player-container').remove();
-  }
+    return new Promise((resolve, reject) => {
+      iov.on(Iov.events.DESTROYING, () => {
+        console.warn(`Iov ${iov.id} was destroyed ungracefully...`);
+        resolve();
+      });
 
-  function hardDestroy2 () {
-    // Perform the destroy without waiting for it to finish.  This will test
-    // whether or not the destroy logic will attempt to finish wihtout error
-    // even though the iframe has been destroyed prematurely
-    $('.clsp-player-container').remove();
-    destroy();
-  }
-
-  function hardDestroy3 () {
-    // Perform the destroy without waiting for it to finish.  This will test
-    // whether or not the destroy logic will attempt to finish wihtout error
-    // even though the iframe has been destroyed prematurely
-    $('.clsp-player-container').remove();
-  }
-
-  function changeSrc () {
-    const streamUrl = document.getElementById('stream-src').value;
-
-    iov.changeSrc(streamUrl).catch(function (error) {
-      console.error('Error while playing stream in demo:');
-      console.error(error);
+      // Perform the destroy without waiting for it to finish.  This will test
+      // whether or not the destroy logic will attempt to finish wihtout error
+      // even though the iframe has been destroyed prematurely
+      destroy();
+      $('.clsp-player-container').remove();
     });
   }
 
+  function hardDestroy2 () {
+    return new Promise((resolve, reject) => {
+      iov.on(Iov.events.DESTROYING, () => {
+        console.warn(`Iov ${iov.id} was destroyed ungracefully...`);
+        resolve();
+      });
+
+      // Perform the destroy without waiting for it to finish.  This will test
+      // whether or not the destroy logic will attempt to finish wihtout error
+      // even though the iframe has been destroyed prematurely
+      $('.clsp-player-container').remove();
+      destroy();
+    });
+  }
+
+  function hardDestroy3 () {
+    return new Promise((resolve, reject) => {
+      iov.on(Iov.events.DESTROYING, () => {
+        console.warn(`Iov ${iov.id} was destroyed ungracefully...`);
+        resolve();
+      });
+
+      // Destroy the element directly without explicitly destroying.  This will test
+      // whether or not the destroy logic will attempt to finish wihtout error
+      // even though the iframe has been destroyed prematurely
+      $('.clsp-player-container').remove();
+    });
+  }
+
+  async function changeSrc () {
+    const streamUrl = document.getElementById('stream-src').value;
+
+    try {
+      await iov.changeSrc(streamUrl);
+    }
+    catch (error) {
+      console.error('Error while changing source!');
+      console.error(error);
+    }
+  }
+
   window.clspPlayerControls = {
-    play: play,
-    stop: stop,
-    fullscreen: fullscreen,
-    destroy: destroy,
-    hardDestroy1: hardDestroy1,
-    hardDestroy2: hardDestroy2,
-    hardDestroy3: hardDestroy3,
-    changeSrc: changeSrc,
+    play,
+    stop,
+    toggleFullscreen,
+    destroy,
+    hardDestroy1,
+    hardDestroy2,
+    hardDestroy3,
+    changeSrc,
   };
 }
 
@@ -112,17 +135,16 @@ async function main () {
   try {
     utils.setDefaultStreamPort('clsp', 9001);
 
-    const url = document.getElementById('stream-src').value;
+    // const url = document.getElementById('stream-src').value;
 
-    iovCollection = IovCollection.asSingleton();
-    iov = iovCollection.create({ videoElementId });
+    // utils.disablePlayerLogging();
 
-    iov.changeSrc(url).catch(function (error) {
-      console.error('Error while playing stream in demo:');
-      console.error(error);
-    });
+    iov = IovCollection.asSingleton().create({ videoElementId });
+
+    // iov.changeSrc(url);
   }
   catch (error) {
+    console.error('Error while playing stream in demo:');
     document.getElementById('demo-error').style.display = 'block';
     document.getElementById(videoElementId).style.display = 'none';
     console.error(error);
