@@ -21,6 +21,7 @@ import {
 
 import {
   initializeWall,
+  createWall,
 } from './shared';
 
 let wallPlayers = [];
@@ -114,6 +115,12 @@ $(() => {
   utils.setDefaultStreamPort('clsp', 9001);
 
   initializeWall(
+    localStorageName,
+    createPlayer,
+    destroyAllPlayers,
+  );
+
+  createWall(
     localStorageName,
     createPlayer,
     destroyAllPlayers,
