@@ -119,7 +119,7 @@ npm i @skylineos/clsp-player
 
 ### via `<script>` tag
 
-NOTE: See `demos/simple-dist/` and `demos/advanced-dist/` for full examples.
+NOTE: See `demos/single-player/` and `demos/advanced-dist/` for full examples.
 
 A `CLSP` object is attached to `window`, which contains the classes and utils you need to create players.
 
@@ -206,7 +206,7 @@ This tells the browser exactly what codec to use to decode and play the video.  
 
 ### via `import` or `require`
 
-NOTE: See `demos/simple-src/` and `demos/advanced-src/` for full examples.
+NOTE: See `demos/single-player/` and `demos/advanced-src/` for full examples.
 
 #### JS
 

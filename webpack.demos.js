@@ -37,17 +37,17 @@ const advancedDemoSrcConfig = generateConfig(
 
 advancedDemoSrcConfig.output.path = demoOutputPath;
 
-const simpleDemoSrcConfig = generateConfig(
-  'simple-src',
+const singlePlayerDemoSrcConfig = generateConfig(
+  'single-player',
   path.resolve(
     __dirname,
     'demos',
-    'simple-src',
+    'single-player',
     'index.js',
   ),
 );
 
-simpleDemoSrcConfig.output.path = demoOutputPath;
+singlePlayerDemoSrcConfig.output.path = demoOutputPath;
 
 const tourDemoSrcConfig = generateConfig(
   'tour-src',
@@ -66,7 +66,7 @@ module.exports = function () {
     // Note that the demo files depend on `dist/clsp-player.min.js`
     advancedDemoDistConfig,
     advancedDemoSrcConfig,
-    simpleDemoSrcConfig,
+    singlePlayerDemoSrcConfig,
     tourDemoSrcConfig,
   ]);
 };

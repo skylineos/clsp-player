@@ -143,7 +143,7 @@ export function createWall (name, createPlayer, destroyAllPlayers) {
         muted: true,
         playsinline: true,
         preload: 'auto',
-        poster: '../skyline_logo.png',
+        poster: '../skyline-logo.svg',
         controls: true,
         tour: {
           enabled: true,
@@ -169,7 +169,7 @@ export function createWall (name, createPlayer, destroyAllPlayers) {
           muted: true,
           playsinline: true,
           preload: 'auto',
-          poster: '../skyline_logo.png',
+          poster: '../skyline-logo.svg',
           controls: true,
           sources: [
             {
