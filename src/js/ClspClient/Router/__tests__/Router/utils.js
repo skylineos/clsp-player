@@ -1,7 +1,7 @@
 'use strict';
 
 // @todo - can we use module alias or something here?
-const utils = require('../../../../../test/jest/utils');
+const utils = require('../../../../../../test/jest/utils');
 
 module.exports = function ({
   Logger,
@@ -20,7 +20,6 @@ module.exports = function ({
           KEEP_ALIVE_INTERVAL: utils.generateUniqueString(),
           PUBLISH_TIMEOUT: utils.generateUniqueString(),
           Logger,
-          conduitCommands: {},
         },
       };
 

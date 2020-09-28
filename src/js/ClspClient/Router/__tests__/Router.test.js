@@ -8,22 +8,16 @@ const staticMethodsTests = require('./Router/static.methods');
 const instancePropertiesTests = require('./Router/instance.properties');
 const instanceMethodsTests = require('./Router/instance.methods');
 
-const Paho = require('../Paho');
+const Paho = require('../../Conduit/Paho');
 const _Router = require('../Router');
-const Logger = require('../../utils/Logger');
+const Logger = require('../../../utils/Logger');
 
-jest.mock('../Paho');
-jest.mock('../../utils/Logger');
+jest.mock('../../Conduit/Paho');
+jest.mock('../../../utils/Logger');
 
 describe('Router', () => {
   const utils = _utils({
     Logger,
-  });
-
-  beforeEach(() => {
-    Paho.Paho.MQTT.Client.mockClear();
-    Paho.Paho.MQTT.Message.mockClear();
-    Logger.mockClear();
   });
 
   describe('exports', () => {

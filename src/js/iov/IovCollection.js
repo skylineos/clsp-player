@@ -1,7 +1,7 @@
-'use strict';
+import isNil from 'lodash/isNil';
 
 import Iov from './Iov';
-import Logger from '../utils/Logger';
+import Destroyable from '../utils/Destroyable';
 
 // @todo - this could cause an overflow!
 let totalIovCount = 0;
@@ -15,7 +15,7 @@ let collection;
  * to window messages and route the relevant messages to the appropriate Iov
  * instance.
  */
-export default class IovCollection {
+export default class IovCollection extends Destroyable {
   static asSingleton () {
     if (!collection) {
       collection = IovCollection.factory();
@@ -24,6 +24,9 @@ export default class IovCollection {
     return collection;
   }
 
+  /**
+   * @private
+   */
   static factory () {
     return new IovCollection();
   }
@@ -32,10 +35,11 @@ export default class IovCollection {
    * @private
    */
   constructor () {
-    this.logger = Logger().factory('IovCollection');
-    this.logger.debug('Constructing...');
+    // @todo - right now, only a single collection (index 0) is supported
+    super('0');
 
     this.iovs = {};
+    this.pendingRemoval = {};
   }
 
   /**
@@ -43,23 +47,71 @@ export default class IovCollection {
    *
    * @param {String} url
    *   The url to the clsp stream
-   * @param {DOMNode} videoElementId
-   *   The id of the video element that will serve as the video player in the
-   *   DOM
    *
    * @returns {Iov}
    */
-  async create (videoElementId) {
+  create (config = {}) {
+    const id = totalIovCount;
+
+    totalIovCount++;
+
+    this.logger.info(`Creating Iov ${id}`);
+
     const iov = Iov.factory(
-      videoElementId,
-      {
-        id: (++totalIovCount).toString(),
-      },
+      `iov:${id}`,
+      id,
+      config,
     );
+
+    this.logger.info(`Created Iov ${id}`);
+
+    iov.on(Iov.events.IFRAME_DESTROYED_EXTERNALLY, async () => {
+      iov.logger.info('IovCollection: iframe was destroyed, removing iov...');
+
+      try {
+        await this.remove(iov.id);
+      }
+      catch (error) {
+        iov.logger.error('IovCollection: error while removing iov from collection!');
+        iov.logger.error(error);
+      }
+    });
 
     this.add(iov);
 
     return iov;
+  }
+
+  async #retry (id) {
+    const iov = this.get(id);
+
+    // Don't retry a stream that has already been removed
+    if (iov === null) {
+      this.logger.info(`Attempted to retry Iov ${id} which has already been removed`);
+      return;
+    }
+
+    const config = iov._config;
+
+    const streamConfiguration = iov.streamConfiguration;
+
+    try {
+      await this.remove(id);
+    }
+    catch (error) {
+      iov.logger.error('IovCollection: error while removing iov from collection, continuing anyway...');
+      iov.logger.error(error);
+    }
+
+    const newIov = this.create(config);
+
+    try {
+      await newIov.changeSrc(streamConfiguration);
+    }
+    catch (error) {
+      newIov.logger.error('IovCollection: Error on changeSrc while retrying');
+      newIov.logger.error(error);
+    }
   }
 
   /**
@@ -72,6 +124,16 @@ export default class IovCollection {
    */
   add (iov) {
     const id = iov.id;
+
+    if (isNil(id)) {
+      throw new Error('Tried to add Iov without id');
+    }
+
+    if (this.has(id)) {
+      throw new Error('Cannot add an Iov with a previously-used id');
+    }
+
+    this.logger.info(`Adding Iov ${id}`);
 
     this.iovs[id] = iov;
 
@@ -90,6 +152,14 @@ export default class IovCollection {
    *   False if the iov with the given id does not exist
    */
   has (id) {
+    if (isNil(id)) {
+      return false;
+    }
+
+    if (this.pendingRemoval[id]) {
+      return false;
+    }
+
     return Object.prototype.hasOwnProperty.call(this.iovs, id);
   }
 
@@ -99,10 +169,14 @@ export default class IovCollection {
    * @param {String} id
    *   The id of the iov instance to get
    *
-   * @returns {Iov|undefined}
+   * @returns {Iov|null}
    *   If an iov with this id doest not exist, undefined is returned.
    */
   get (id) {
+    if (!this.has(id)) {
+      return null;
+    }
+
     return this.iovs[id];
   }
 
@@ -114,18 +188,28 @@ export default class IovCollection {
    *
    * @returns {this}
    */
-  remove (id) {
+  async remove (id) {
     const iov = this.get(id);
 
-    if (!iov) {
+    if (iov === null) {
       return;
     }
 
-    delete this.iovs[id];
+    try {
+      this.pendingRemoval[id] = true;
 
-    iov.destroy();
+      delete this.iovs[id];
 
-    return this;
+      iov.logger.info('IovCollection - removing iov...');
+      await iov.destroy();
+    }
+    catch (error) {
+      this.logger.error(`Error destroying Iov ${id} while removing`);
+      this.logger.error(error);
+    }
+    finally {
+      delete this.pendingRemoval[id];
+    }
   }
 
   /**
@@ -133,19 +217,21 @@ export default class IovCollection {
    *
    * @returns {void}
    */
-  destroy () {
-    if (this.destroyed) {
-      return;
-    }
-
-    this.destroyed = true;
-
-    window.removeEventListener('message', this._onWindowMessage);
-
+  async _destroy () {
     for (const id in this.iovs) {
-      this.remove(id);
+      try {
+        await this.remove(id);
+      }
+      catch (error) {
+        this.logger.error(`Error while removing IOV ${id} while destroying`);
+        this.logger.error(error);
+      }
     }
 
+    // @todo - is it safe to dereference these?
     this.iovs = null;
+    this.pendingRemoval = null;
+
+    await super._destroy();
   }
 }

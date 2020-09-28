@@ -1,5 +1,10 @@
 import Paho from 'paho-mqtt';
 
+/**
+ * @see - https://www.eclipse.org/paho/index.php?page=clients/js/index.php#
+ * @see - https://www.eclipse.org/paho/files/jsdoc/index.html
+ */
+
 export default {
   Paho,
   register () {

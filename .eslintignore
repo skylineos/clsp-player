@@ -1,4 +1,4 @@
 !.eslintrc.js
 node_modules/*
 dist/*
-src/js/iov/mp4-inspect.js
+mp4-inspect.js

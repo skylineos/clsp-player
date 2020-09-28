@@ -23,7 +23,8 @@ module.exports = (api) => {
     // only, to be as light-weight as possible.  Therefore, no tranforms need to
     // be done on it.
     ignore: [
-      'src/js/conduit/Router.js',
+      'src/js/ClspClient/Router/Router.js',
+      'src/js/ClspClient/Router/iframeEventHandlers.js',
     ],
     presets: [
       [
@@ -40,6 +41,7 @@ module.exports = (api) => {
       '@babel/plugin-syntax-dynamic-import',
       '@babel/plugin-proposal-object-rest-spread',
       '@babel/plugin-proposal-class-properties',
+      '@babel/plugin-proposal-private-methods',
       [
         '@babel/plugin-transform-runtime',
         {

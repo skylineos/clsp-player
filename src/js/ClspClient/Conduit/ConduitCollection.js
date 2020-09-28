@@ -1,30 +1,28 @@
 import Conduit from './Conduit';
 import Paho from './Paho';
-import utils from '../utils/utils';
 
-import Logger from '../utils/Logger';
+import Destroyable from '../../utils/Destroyable';
 
 let collection;
 
-export default class ConduitCollection {
+export default class ConduitCollection extends Destroyable {
   static asSingleton () {
     if (!collection) {
-      collection = ConduitCollection.factory();
+      collection = ConduitCollection.factory('1');
     }
 
     return collection;
   }
 
-  static factory () {
-    return new ConduitCollection();
+  static factory (logId) {
+    return new ConduitCollection(logId);
   }
 
   /**
    * @private
    */
-  constructor () {
-    this.logger = Logger().factory('ConduitCollection');
-    this.logger.debug('Constructing...');
+  constructor (logId) {
+    super(logId);
 
     this.totalConduitCount = 0;
 
@@ -33,7 +31,9 @@ export default class ConduitCollection {
 
     Paho.register();
 
-    window.addEventListener('message', this._onWindowMessage);
+    // This is the Window Message listener for EVERY Conduit / Router on the
+    // page (assuming you are using the singleton pattern)
+    window.addEventListener('message', this._routeWindowMessageToTargetConduit);
   }
 
   /**
@@ -50,31 +50,33 @@ export default class ConduitCollection {
    *
    * @returns {void}
    */
-  _onWindowMessage = (event) => {
+  _routeWindowMessageToTargetConduit = (event) => {
     const clientId = event.data.clientId;
-    const eventType = event.data.event;
 
     if (!clientId) {
       // A window message was received that is not related to CLSP
       return;
     }
 
-    this.logger.debug('window on message');
+    this.logger.debug(`Received Window Message event for ${clientId}`);
+
+    const eventType = event.data.event;
 
     if (!this.has(clientId)) {
       // When the CLSP connection is interupted due to a listener being removed,
       // a fail event is always sent.  It is not necessary to log this as an error
       // in the console, because it is not an error.
-      // @todo - the fail event no longer exists - what is the name of the new
-      // corresponding event?
+      // @todo - the fail event no longer exists (or is it from Paho or
+      // something?) - what is the name of the new corresponding event?
       if (eventType === 'fail') {
         return;
       }
 
-      // Do not throw an error on disconnection
-      if (eventType === Conduit.routerEvents.DISCONNECT_SUCCESS) {
-        return;
-      }
+      // @todo - use this to detect an externally destroyed iframe
+      // if (eventType === 'iframe-onunload') {
+      //   console.log(event);
+      //   return;
+      // }
 
       // Don't show an error for iovs that have been deleted
       if (this.deletedConduitClientIds.includes(clientId)) {
@@ -85,17 +87,11 @@ export default class ConduitCollection {
       throw new Error(`Unable to route message of type ${eventType} for Conduit with clientId "${clientId}".  A Conduit with that clientId does not exist.`);
     }
 
-    // If the document is hidden, don't pass on the moofs.  All other forms of
-    // communication are fine, but the moofs occur at a rate that will exhaust
-    // the browser tab resources, ultimately resulting in a crash given enough
-    // time.
-    if (document[utils.windowStateNames.hiddenStateName] && eventType === Conduit.routerEvents.DATA_RECEIVED) {
-      return;
-    }
-
-    const conduit = this.get(clientId);
-
-    conduit.onMessage(event);
+    // Pass the Window Message event to the proper Conduit instance.  All we've
+    // done at this point is pass the event to the Conduit that it was intended
+    // for.  At this point, the Conduit is responsible for taking the necessary
+    // action based on the eventType
+    this.get(clientId).onRouterEvent(eventType, event);
   };
 
   /**
@@ -103,13 +99,11 @@ export default class ConduitCollection {
    *
    * @returns {Conduit}
    */
-  async create (
+  create (
     logId,
     clientId,
     streamConfiguration,
     containerElement,
-    onReconnect,
-    onMessageError,
   ) {
     this.logger.debug(`creating a conduit with logId ${logId} and clientId ${clientId}`);
 
@@ -118,8 +112,6 @@ export default class ConduitCollection {
       clientId,
       streamConfiguration,
       containerElement,
-      onReconnect,
-      onMessageError,
     );
 
     this._add(conduit);
@@ -183,16 +175,16 @@ export default class ConduitCollection {
    *
    * @returns {this}
    */
-  remove (clientId) {
+  async remove (clientId) {
     const conduit = this.get(clientId);
 
     if (!conduit) {
       return;
     }
 
-    delete this.conduits[clientId];
+    await conduit.destroy();
 
-    conduit.destroy();
+    delete this.conduits[clientId];
 
     this.deletedConduitClientIds.push(clientId);
 
@@ -204,20 +196,22 @@ export default class ConduitCollection {
    *
    * @returns {void}
    */
-  destroy () {
-    if (this.destroyed) {
-      return;
-    }
-
-    this.destroyed = true;
-
-    window.removeEventListener('message', this._onWindowMessage);
+  async _destroy () {
+    window.removeEventListener('message', this._routeWindowMessageToTargetConduit);
 
     for (const clientId in this.conduits) {
-      this.remove(clientId);
+      try {
+        await this.remove(clientId);
+      }
+      catch (error) {
+        this.logger.error(`Error while removing conduit ${clientId} while destroying`);
+        this.logger.error(error);
+      }
     }
 
     this.conduits = null;
     this.deletedConduitClientIds = null;
+
+    await super._destroy();
   }
 }
