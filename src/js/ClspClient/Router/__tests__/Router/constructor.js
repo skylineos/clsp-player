@@ -13,11 +13,27 @@ module.exports = function ({
       const config = utils.generateRouterConfig();
       const Router = _Router.default(Paho.Paho);
 
+      // @todo - is there a more proper way of mocking a static method on "real"
+      // class?
+      const originalMethod = Router.constructorArgumentsBouncer;
+      const mockMethod = jest.fn();
+
+      Router.constructorArgumentsBouncer = mockMethod;
+
       const router = new Router(...config.asArray);
 
       expect(router).not.toBeNil();
       expect(router.constructor).not.toBeNil();
       expect(router.constructor.name).toEqual('Router');
+      expect(mockMethod.mock.calls).toHaveLength(1);
+      expect(mockMethod.mock.calls[0][0]).toEqual(config.asArray[0]);
+      expect(mockMethod.mock.calls[0][1]).toEqual(config.asArray[1]);
+      expect(mockMethod.mock.calls[0][2]).toEqual(config.asArray[2]);
+      expect(mockMethod.mock.calls[0][3]).toEqual(config.asArray[3]);
+      expect(mockMethod.mock.calls[0][4]).toEqual(config.asArray[4]);
+      expect(mockMethod.mock.calls[0][5]).toEqual(config.asArray[5]);
+
+      Router.constructorArgumentsBouncer = originalMethod;
     });
     it('should throw if options.Logger cannot be instantiated', () => {
       const restoreConsole = mockConsole();
