@@ -450,7 +450,7 @@ export default class IovPlayer extends EventEmitter {
 
   async #reinitializeMseWrapper (shouldEmitOnError = true) {
     if (this.isDestroyed) {
-      this.logger.warn('Tried to reinitializeMseWrapper while destroyed...')
+      this.logger.warn('Tried to reinitializeMseWrapper while destroyed...');
       return;
     }
 
@@ -695,7 +695,7 @@ export default class IovPlayer extends EventEmitter {
     // handler. The moofs occur at a rate that will exhaust the browser
     // tab resources, ultimately resulting in a crash if given enough time.
     // @todo - this check should probably be moved to the MSEWrapper
-    if (document[utils.windowStateNames.hiddenStateName]) {
+    if (utils.isDocumentHidden()) {
       this.logger.info('Document is in hidden state, not appending moof');
       return;
     }

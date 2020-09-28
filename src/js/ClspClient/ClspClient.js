@@ -1,5 +1,3 @@
-import Logger from '../utils/Logger';
-
 import Destroyable from '../utils/Destroyable';
 import Conduit from './Conduit/Conduit';
 import ConduitCollection from './Conduit/ConduitCollection';
@@ -68,18 +66,12 @@ export default class ClspClient extends Destroyable {
     this.streamConfiguration = streamConfiguration;
     this.containerElement = containerElement;
 
-    this.logger = Logger().factory(`Conduit ${this.logId}`, 'color: orange;');
-    this.logger.debug('Constructing...');
-
     this.conduit = ConduitCollection.asSingleton().create(
       this.logId,
       this.clientId,
       this.streamConfiguration,
       this.containerElement,
     );
-
-    this.isDestroyed = false;
-    this.isDestroyComplete = false;
   }
 
   _constructorArgumentsBouncer (

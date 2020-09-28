@@ -178,6 +178,7 @@ export default class StreamConfiguration {
     this.tokenConfig = tokenConfig;
 
     this.isDestroyed = false;
+    this.isDestroyComplete = false;
   }
 
   clone (streamConfiguration) {

@@ -434,7 +434,7 @@ export default class SourceBuffer extends EventEmitter {
       };
 
       if (!this.sourceBuffer) {
-        return finish();
+        return resolve();
       }
 
       this.sourceBuffer.addEventListener('updateend', finish);
