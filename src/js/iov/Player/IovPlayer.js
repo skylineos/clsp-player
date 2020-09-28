@@ -194,8 +194,6 @@ export default class IovPlayer extends EventEmitter {
 
     try {
       this.clientId = IovPlayer.generateClientId();
-      this.videoElement.id = this.clientId;
-      this.videoElement.dataset.name = this.streamConfiguration.streamName;
 
       if (this.clspClient) {
         await this.clspClient.destroy();
@@ -408,18 +406,17 @@ export default class IovPlayer extends EventEmitter {
         this.logger.error(error);
       }
 
-      if (!this.mseWrapper) {
-        this.logger.info('stop succeeded...');
-        return;
-      }
-
       // Don't wait until the next play event or the destruction of this player
       // to clear the MSE
-      await this.mseWrapper.destroy();
+      try {
+        await this.#destroyMseWrapper();
+      }
+      catch (error) {
+        this.logger.error('Failed to destroy mseWrapper while stopping, continuing anyway...');
+        this.logger.error(error);
+      }
 
-      this.mseWrapper = null;
-
-      this.logger.info('stop succeeded after destroying mseWrapper...');
+      this.logger.info('stop succeeded');
     }
     catch (error) {
       this.logger.error('stop failed...');
@@ -433,11 +430,33 @@ export default class IovPlayer extends EventEmitter {
     }
   }
 
+  async #destroyMseWrapper () {
+    if (this.mseWrapper) {
+      this.videoElement.src = '';
+
+      try {
+        await this.mseWrapper.destroy();
+      }
+      finally {
+        this.mseWrapper = null;
+      }
+    }
+  }
+
   async #reinitializeMseWrapper (shouldEmitOnError = true) {
+    if (this.isDestroyed) {
+      this.logger.warn('Tried to reinitializeMseWrapper while destroyed...')
+      return;
+    }
+
     this.logger.info('reinitializeMseWrapper');
 
-    if (this.mseWrapper) {
-      await this.mseWrapper.destroy();
+    try {
+      await this.#destroyMseWrapper();
+    }
+    catch (error) {
+      this.logger.error('Failed to destroy mseWrapper while reinitializing mseWrapper, continuing anyway...');
+      this.logger.error(error);
     }
 
     this.mseWrapper = null;
@@ -496,10 +515,22 @@ export default class IovPlayer extends EventEmitter {
     // Non-Error events
 
     this.mseWrapper.on(MSEWrapper.events.VIDEO_SEGMENT_SHOWN, async ({ info }) => {
+      if (this.isDestroyed) {
+        this.logger.warn('Got video segement while destroyed...');
+        return;
+      }
+
       this.logger.silly('On Append Finish...');
 
       if (!this.firstFrameShown) {
         this.firstFrameShown = true;
+
+        // Since the video element can be shared with other IovPlayers, we only
+        // associate the video element with an IovPlayer after that IovPlayer
+        // has shown its first frame.
+        this.videoElement.id = this.clientId;
+        this.videoElement.dataset.name = this.streamConfiguration.streamName;
+
         this.emit(IovPlayer.events.FIRST_FRAME_SHOWN);
       }
 
@@ -532,6 +563,21 @@ export default class IovPlayer extends EventEmitter {
 
     try {
       await this.mseWrapper.initialize();
+
+      // @todo - this is what actually gives the HTML5 video element the
+      // ability to play video.  Remember, though, this videoElement is
+      // potentially shared with other IovPlayers.  Therefore, it would be
+      // better if:
+      // 1 - it was guaranteed that the stream was actually being received from
+      //     the SFS prior to potentially taking src control away from another,
+      //     already-playing IovPlayer
+      // 2 - since there is this struggle for control between IovPlayers, it
+      //     would be even better if there were a way for the IovPlayerController
+      //     to handle this...
+      // Therefore, this needs to have some relationship to either the play
+      // operation or VIDEO_SEGMENT_RECEIVED events or something...
+      this.videoElement.src = '';
+      this.videoElement.src = this.mseWrapper.mediaSource.asObjectURL();
 
       // Error events
 
@@ -658,7 +704,7 @@ export default class IovPlayer extends EventEmitter {
       // in the browser where this video player lives is hidden
       // then reselected. 'ex' is undefined the error is bug
       // within the MSE C++ implementation in the browser.
-      this.logger.error('Error while showing video segment!');
+      this.logger.error('Error while trying to show video segment!');
       this.logger.error(error);
 
       // no need to await this since it's only ever called in an event handler
