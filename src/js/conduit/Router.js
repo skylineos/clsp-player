@@ -1,34 +1,35 @@
 'use strict';
 
 /**
- * The Router is the lowest level controller of the actual CLSP connection.
+ * The Router contains the lowest-level logic of the actual CLSP connection.
+ * The Router will manage a CLSP connection for a given clientId, and pass
+ * the relevant data and messages back up to the Conduit.
  *
  * Note that this is the code that gets duplicated in each iframe.
  * Keep the contents of the exported function light and ES5 only.
+ *
+ * @see - https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe
+ * @see - https://developer.mozilla.org/en-US/docs/Web/HTML/Element/body
+ * @see - https://www.eclipse.org/paho/files/jsdoc/index.html
  *
  * @todo - have a custom loader for webpack that can convert this to ES5 and
  * minify it in a self-contained way at the time it is required so that we can
  * use ES6 and multiple files.
  *
  * @todo - should all thrown errors send a message to the parent Conduit?
- */
-
-/**
- * This Router will manage a CLSP connection for a given clientId, and pass
- * the relevant data and messages back up to the Conduit.
  *
- * @see - https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe
- * @see - https://developer.mozilla.org/en-US/docs/Web/HTML/Element/body
- * @see - https://www.eclipse.org/paho/files/jsdoc/index.html
+ * @param {object} Paho
+ *   The Paho instance to use for server communication.  This should be passed
+ *   in as `window.parent.Paho` to prevent the Paho library from being
+ *   duplicated for every CLSP iframe.
  *
  * @export - the function that provides the Router and constants
  */
-export default function () {
+export default function (Paho) {
   // The error code from Paho that represents the socket not being
   // connected
   var PAHO_ERROR_CODE_NOT_CONNECTED = 'AMQJS0011E';
   var PAHO_ERROR_CODE_ALREADY_CONNECTED = 'AMQJS0011E';
-  var Paho = window.parent.Paho;
 
   /**
    * A Router that can be used to set up a CLSP connection to the specified
@@ -59,7 +60,8 @@ export default function () {
     try {
       this.logId = logId;
 
-      this.logger = window.Logger().factory(`Router ${this.logId}`);
+      this.logger = options.Logger().factory(`Router ${this.logId}`);
+      this.conduitCommands = options.conduitCommands;
 
       this.clientId = clientId;
 
@@ -386,15 +388,15 @@ export default function () {
 
     try {
       switch (method) {
-        case window.conduitCommands.SUBSCRIBE: {
+        case this.conduitCommands.SUBSCRIBE: {
           this._subscribe(message.topic);
           break;
         }
-        case window.conduitCommands.UNSUBSCRIBE: {
+        case this.conduitCommands.UNSUBSCRIBE: {
           this._unsubscribe(message.topic);
           break;
         }
-        case window.conduitCommands.PUBLISH: {
+        case this.conduitCommands.PUBLISH: {
           var payload = null;
 
           try {
@@ -414,15 +416,15 @@ export default function () {
           );
           break;
         }
-        case window.conduitCommands.CONNECT: {
+        case this.conduitCommands.CONNECT: {
           this.connect();
           break;
         }
-        case window.conduitCommands.DISCONNECT: {
+        case this.conduitCommands.DISCONNECT: {
           this.disconnect();
           break;
         }
-        case window.conduitCommands.SEND: {
+        case this.conduitCommands.SEND: {
           this._publish(
             message.publishId, message.topic, message.byteArray,
           );
@@ -802,60 +804,5 @@ export default function () {
     this.clspClient = null;
   };
 
-  // This is a series of "controllers" to keep the conduit's iframe as dumb as
-  // possible.  Call each of these in the corresponding attribute on the
-  // "body" tag.
-  return {
-    onload: function () {
-      try {
-        window.router = Router.factory(
-          window.clspRouterConfig.logId,
-          window.clspRouterConfig.clientId,
-          window.clspRouterConfig.host,
-          window.clspRouterConfig.port,
-          window.clspRouterConfig.useSSL,
-          {
-            CONNECTION_TIMEOUT: window.clspRouterConfig.CONNECTION_TIMEOUT,
-            KEEP_ALIVE_INTERVAL: window.clspRouterConfig.KEEP_ALIVE_INTERVAL,
-            PUBLISH_TIMEOUT: window.clspRouterConfig.PUBLISH_TIMEOUT,
-          },
-        );
-
-        window.router._sendToParentWindow({
-          event: Router.events.CREATED,
-        });
-
-        window.router.logger.info('onload - Router created');
-      }
-      catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error);
-
-        window.parent.postMessage({
-          event: Router.events.CREATE_FAILURE,
-          reason: error,
-        }, '*');
-      }
-    },
-    onunload: function () {
-      if (!window.router) {
-        return;
-      }
-
-      try {
-        window.router.logger.info('onunload - Router being destroyed in onunload...');
-        window.router.destroy();
-        window.router.logger.info('onunload - Router destroyed in onunload');
-      }
-      catch (error) {
-        if (error.message.startsWith(PAHO_ERROR_CODE_NOT_CONNECTED)) {
-          // if there wasn't a connection, do not show an error
-          return;
-        }
-
-        window.router.logger.error(error);
-      }
-    },
-    Router: Router,
-  };
+  return Router;
 }
