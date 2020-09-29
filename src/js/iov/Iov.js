@@ -131,6 +131,11 @@ export default class Iov extends EventEmitter {
 
     // This means there's no chance of retrying...
     this.iovPlayerCollection.on(IovPlayerCollection.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+      if (this.isDestroyed) {
+        this.logger.info('Iframe was destroyed externally while in process of destroying');
+        return;
+      }
+
       this.emit(Iov.events.IFRAME_DESTROYED_EXTERNALLY);
     });
   }

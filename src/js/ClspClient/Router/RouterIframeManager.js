@@ -266,6 +266,11 @@ export default class RouterIframeManager extends RouterBaseManager {
     }
 
     if (this.wasIframeDestroyedExternally()) {
+      if (this.isDestroyed) {
+        this.logger.info('Iframe was destroyed externally while in process of destroying');
+        return;
+      }
+
       // @todo - maybe this should warn, but there are multiple commands that
       // still come through when the iframe is destroyed externally...
       this.logger.info('Cannot process command because the iframe is destroyed.');
@@ -281,6 +286,7 @@ export default class RouterIframeManager extends RouterBaseManager {
       // we recognize that this happened, but do not show nor throw an error.
       this.logger.info('Iframe destroyed externally!');
       this.emit(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY);
+
       return;
     }
 
