@@ -50,6 +50,7 @@ export default class EventEmitter extends Destroyable {
     return this;
   }
 
+  // @todo - should this be a private field?
   emit (eventName, data) {
     // @todo - should the caller have the ability to respond to this?
     if (this.isDestroyed) {
