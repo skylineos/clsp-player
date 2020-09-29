@@ -57,19 +57,19 @@ This file contains the class that contains the logic necessary for CLSP server c
 Each Router Manager file should handle a specific domain of CLSP server logic.  All domain logic is "composed" by the `Conduit` class.
 
 ```
-                                                                      |-> RouterIframeManager
-                                                                      |      |-> iframeEventHandlers
-                                                                      |      |-> Router
+                                                                      |-- RouterIframeManager
+                                       (window message)               |      |-- iframeEventHandlers
+                                            ---<-----<-----<-------<--|---<--|-- Router
+                                            |                         |
+                                            |                         |-- RouterTransactionManager
+IovCollection -- Iov -- IovPlayer -- ConduitCollection -- Conduit --- |      |-- (RouterIframeManager)
                                                                       |
-                                                                      |-> RouterTransactionManager
-IovCollection -> Iov -> IovPlayer -> ConduitCollection -> Conduit --> |      |-> (RouterIframeManager)
+                                                                      |-- RouterConnectionManager
+                                                                      |      |-- RouterStatsManager
+                                                                      |      |-- (RouterTransactionManager)
                                                                       |
-                                                                      |-> RouterConnectionManager
-                                                                      |      |-> RouterStatsManager
-                                                                      |      |-> (RouterTransactionManager)
-                                                                      |
-                                                                      |-> RouterStreamManager
-                                                                      |      |-> (RouterTransactionManager)
+                                                                      |-- RouterStreamManager
+                                                                      |      |-- (RouterTransactionManager)
 ```
 
 ## Workflow

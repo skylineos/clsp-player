@@ -1,0 +1,169 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>CLSP Player Demo</title>
+    <link
+      rel="shortcut icon"
+      href="../favicon.ico"
+    >
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.8.2/css/all.css"
+      integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay"
+      crossorigin="anonymous"
+    >
+    <link
+      rel="stylesheet"
+      href="../../dist/demos/single-player.css"
+    >
+  </head>
+  <body>
+    <div class="header">
+      <a id="logo" href="..">
+        <img src="../skyline-logo.svg" />
+      </a>
+      <span id="page-title">CLSP Player Demo</span>
+      <span id="version"></span>
+    </div>
+
+    <div class="content container-fit">
+      <div class="controls">
+        <section class="import-control">
+          <h2>CLSP JS Selection:</h2>
+          <div class="control-group">
+            <button
+              onclick="window.clspPlayerControls.useSourceFiles()"
+              title="Use /src files"
+            >
+              <span>Use /src files</span>
+            </button>
+            <button
+              onclick="window.clspPlayerControls.useDistFiles()"
+              title="Use /dist package"
+            >
+              <span>Use /dist package</span>
+            </button>
+          </div>
+        </section>
+        <section class="element-control">
+          <h2>Element Control</h2>
+          <div class="control-group">
+            <button
+              disabled
+              onclick="window.clspPlayerControls.useManagedVideoElement()"
+              title="Supply Video Element"
+            >
+              <span>Supply Video Element</span>
+            </button>
+            <button
+              disabled
+              onclick="window.clspPlayerControls.doNotSupplyVideoElement()"
+              title="Let CLSP Player Create Video Element"
+            >
+              <span>Let CLSP Player Create Video Element</span>
+            </button>
+          </div>
+        </section>
+        <section class="stream-control">
+          <h2>Stream Control</h2>
+          <div class="control-group">
+            <input
+              id="stream-src"
+              name="stream-src"
+              value="clsps://bd-demo-sfs1.skyvdn.com/CAM014"
+            />
+            <button
+              disabled
+              onclick="window.clspPlayerControls.changeSrc()"
+              title="Change Stream"
+            >
+              <i class="fas fa-video"></i>
+              <span>Change Stream</span>
+            </button>
+            <button
+              disabled
+              onclick="window.clspPlayerControls.play()"
+              title="play"
+            >
+              <i class="fas fa-play"></i>
+              <span>Play</span>
+            </button>
+            <button
+              disabled
+              onclick="window.clspPlayerControls.stop()"
+              title="stop"
+            >
+              <i class="fas fa-stop"></i>
+              <span>Stop</span>
+            </button>
+          </div>
+        </section>
+        <section class="display-control">
+          <h2>Display Control</h2>
+          <div class="control-group">
+            <button
+              disabled
+              onclick="window.clspPlayerControls.toggleFullscreen()"
+              title="fullscreen"
+            >
+              <i class="fas fa-expand"></i>
+              <span>Toggle Fullscreen</span>
+            </button>
+          </div>
+        </section>
+        <section class="destroy-control">
+          <h2>Destroy Options</h2>
+          <div class="control-group">
+            <button
+              disabled
+              onclick="window.clspPlayerControls.destroy()"
+              title="destroy"
+            >
+              <i class="fas fa-bomb"></i>
+              <span>Destroy gracefully</span>
+            </button>
+            <button
+              disabled
+              onclick="window.clspPlayerControls.hardDestroy1()"
+              title="hard-destroy"
+            >
+              <i class="fas fa-bomb"></i>
+              <i class="fas fa-bomb"></i>
+              <span>Destroy player without waiting, then destroy element</span>
+            </button>
+            <button
+              disabled
+              onclick="window.clspPlayerControls.hardDestroy2()"
+              title="hard-destroy"
+            >
+              <i class="fas fa-bomb"></i>
+              <i class="fas fa-bomb"></i>
+              <span>Destroy element, then destroy player without waiting</span>
+            </button>
+            <button
+              disabled
+              onclick="window.clspPlayerControls.hardDestroy3()"
+              title="hard-destroy"
+            >
+              <i class="fas fa-bomb"></i>
+              <i class="fas fa-bomb"></i>
+              <span>Destroy element only</span>
+            </button>
+          </div>
+        </section>
+      </div>
+      <div class="stream-container">
+        <div class="clsp-player-container clsp-container-fit">
+          <span id="player-error">Error while setting up the demo</span>
+          <!-- <video id="my-video"></video> -->
+        </div>
+      </div>
+    </div>
+
+    <script
+      type="text/javascript"
+      src="../../dist/demos/single-player.js"
+    ></script>
+  </body>
+</html>

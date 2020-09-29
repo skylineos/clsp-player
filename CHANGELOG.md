@@ -4,6 +4,7 @@
 ## Table of Contents <!-- omit in toc -->
 
 - [CLSP Player](#clsp-player)
+    - [v0.22.0 - 2020-09-30 - Critical](#v0220---2020-09-30---critical)
     - [v0.21.0 - 2020-07-07 - Recommended](#v0210---2020-07-07---recommended)
     - [v0.20.1 - 2020-04-30 - Critical](#v0201---2020-04-30---critical)
     - [v0.19.0 - 2020-04-21 - Critical](#v0190---2020-04-21---critical)
@@ -30,6 +31,29 @@
     - [Status Definitions](#status-definitions)
 
 ## CLSP Player
+
+### v0.22.0 - 2020-09-30 - Critical
+
+* fix all destroy logic, including when iframe is destroyed
+* increase and improve event-based logic
+* implement option to pass in a `<video>` tag that is not destroyed
+* make logging to the console globally configurable for all players
+* fix error preventing port 80 from being accepted on stream urls
+* add tests
+* reduce visible logging
+* temporarily remove tour support
+* improve memory usage
+* improve memory management
+* improve performance
+* improve restart logic
+* improve logging
+* improve error handling
+* improve code documentation
+* added timeouts to some async actions
+* create single-player demo, retire simple demos
+* implement iframe destroy testing in single-player demo
+* split Conduit up into multiple Router Manager classes to reduce coupling
+* update all dependencies
 
 ### v0.21.0 - 2020-07-07 - Recommended
 

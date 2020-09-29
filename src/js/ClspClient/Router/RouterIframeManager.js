@@ -91,6 +91,7 @@ export default class RouterIframeManager extends RouterBaseManager {
 
     // State flags
     this.isCreated = false;
+    this.hasIframeDestroyedExternallyEventBeenEmitted = false;
 
     // These can be configured manually after construction
     this.ROUTER_CONNECTION_TIMEOUT = DEFAULT_ROUTER_CONNECTION_TIMEOUT;
@@ -265,6 +266,15 @@ export default class RouterIframeManager extends RouterBaseManager {
     }
 
     if (this.wasIframeDestroyedExternally()) {
+      // @todo - maybe this should warn, but there are multiple commands that
+      // still come through when the iframe is destroyed externally...
+      this.logger.info('Cannot process command because the iframe is destroyed.');
+      if (this.hasIframeDestroyedExternallyEventBeenEmitted) {
+        return;
+      }
+
+      this.hasIframeDestroyedExternallyEventBeenEmitted = true;
+
       // In the normal course of operation, sometimes other libraries or
       // implementations will delete the iframe or a parent component
       // rather than letting the CLSP Player manage it.  In this instance,

@@ -1,3 +1,12 @@
+/**
+ * The Iov is responsible for:
+ * - providing an interface to callers trying to play CLSP streams
+ * - managing the container and video elements used for playing CLSP streams
+ *
+ * The caller should only ever interact with an Iov instance and the Iov
+ * Collection singleton.
+ */
+
 import { sleepSeconds } from 'sleepjs';
 import isNil from 'lodash/isNil';
 
@@ -25,6 +34,7 @@ export default class Iov extends EventEmitter {
     VIDEO_RECEIVED: IovPlayer.events.VIDEO_RECEIVED,
     VIDEO_INFO_RECEIVED: IovPlayer.events.VIDEO_INFO_RECEIVED,
     IFRAME_DESTROYED_EXTERNALLY: IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY,
+    DESTROYING: 'destroying',
   };
 
   static factory (
@@ -220,32 +230,39 @@ export default class Iov extends EventEmitter {
   }
 
   onConnectionChange = async () => {
-    if (!window.navigator.onLine) {
-      this.logger.info('Offline!');
+    if (utils.isOnline()) {
+      this.logger.info('Back online...');
 
       try {
-        await this.stop();
+        await this.restart();
       }
       catch (error) {
-        this.logger.warn('Error encountered while stopping during offline event:');
+        this.logger.error('Error while trying to restart during online event');
         this.logger.error(error);
       }
 
       return;
     }
 
-    this.logger.info('Back online...');
+    this.logger.info('Offline!');
 
     try {
-      await this.restart();
+      await this.stop();
     }
     catch (error) {
-      this.logger.error('Error while trying to restart during online event');
+      this.logger.warn('Error encountered while stopping during offline event:');
       this.logger.error(error);
     }
   };
 
   onVisibilityChange = async () => {
+    // @todo the player doesn't HAVE to restart on visibility change.  If the
+    // MSEWrapper is changed to NOT put moofs on the segment queue when the
+    // document is not in focus, the player can remain and not have to be
+    // destroyed and restarted every time.  Perhaps only after a configurable
+    // timeout should the destroy and restart be used - that way the SFS isn't
+    // serving the stream segments to players that aren't using them.
+
     if (utils.isDocumentHidden()) {
       try {
         await this.stop();
@@ -260,6 +277,12 @@ export default class Iov extends EventEmitter {
 
     this.logger.info('Back in focus...');
 
+    if (!this.streamConfiguration) {
+      // If streamConfiguration doesn't exist, it means that this Iov was
+      // created, but was never played.
+      return;
+    }
+
     try {
       await this.restart();
     }
@@ -268,30 +291,6 @@ export default class Iov extends EventEmitter {
       this.logger.error(error);
     }
   };
-
-  enterFullscreen () {
-    if (!window.document.fullscreenElement) {
-      // Since the iov and player take control of the video element and its
-      // parent, ask the parent for fullscreen since the video elements will be
-      // destroyed and recreated when changing sources
-      this.containerElement.requestFullscreen();
-    }
-  }
-
-  exitFullscreen () {
-    if (window.document.exitFullscreen) {
-      window.document.exitFullscreen();
-    }
-  }
-
-  toggleFullscreen () {
-    if (!window.document.fullscreenElement) {
-      this.enterFullscreen();
-    }
-    else {
-      this.exitFullscreen();
-    }
-  }
 
   /**
    * @param {StreamConfiguration|String} url
@@ -320,7 +319,21 @@ export default class Iov extends EventEmitter {
       return;
     }
 
+    if (!utils.isOnline()) {
+      // @todo - it would be better to do something other than just log info
+      // here...
+      this.logger.info('Tried to changeSrc while not connected to the internet!');
+      return;
+    }
+
     let iovPlayerId;
+
+    // When many requests are made in rapid succession to the same SFS, the
+    // streams can fail to load, and it may take MINUTES for the connection to
+    // properly establish itself.  This is a simple workaround to address that
+    // issue, since many simultaneous streams in a single browser window is one
+    // of the primary use cases of the CLSP Player.
+    await sleepSeconds(Math.random());
 
     try {
       iovPlayerId = await this.iovPlayerCollection.create(
@@ -332,6 +345,7 @@ export default class Iov extends EventEmitter {
     catch (error) {
       this.logger.error(`Error while creating / playing the player for stream ${this.streamConfiguration.streamName}`);
       this.logger.error(error);
+
       throw error;
     }
 
@@ -417,6 +431,30 @@ export default class Iov extends EventEmitter {
     }
   }
 
+  enterFullscreen () {
+    if (!window.document.fullscreenElement) {
+      // Since the iov and player take control of the video element and its
+      // parent, ask the parent for fullscreen since the video elements will be
+      // destroyed and recreated when changing sources
+      this.containerElement.requestFullscreen();
+    }
+  }
+
+  exitFullscreen () {
+    if (window.document.exitFullscreen) {
+      window.document.exitFullscreen();
+    }
+  }
+
+  toggleFullscreen () {
+    if (!window.document.fullscreenElement) {
+      this.enterFullscreen();
+    }
+    else {
+      this.exitFullscreen();
+    }
+  }
+
   // @todo @metrics
   metric (type, value) {
     // if (!this.ENABLE_METRICS) {
@@ -486,5 +524,14 @@ export default class Iov extends EventEmitter {
     const timeToDestroy = (timeFinished - timeStarted) / 1000;
 
     this.logger.info(`Destroy complete in ${timeToDestroy} seconds...`);
+  }
+
+  async destroy () {
+    // Since this Iov instance may be destroyed without the caller's explicit
+    // invocation (e.g. when the iframe is destroyed externally), emit an event
+    // that the caller may listen to to know when this Iov has been destroyed
+    this.emit(Iov.events.DESTROYING, { iov: this });
+
+    await super.destroy();
   }
 }

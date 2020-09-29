@@ -57,6 +57,8 @@ export default class Destroyable {
 
   /**
    * Put your class's destroy logic in this method.
+   *
+   * @todo - should this be private?
    */
   async _destroy () {}
 

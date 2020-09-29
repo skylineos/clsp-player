@@ -1,8 +1,0 @@
-// Using relative path with parent directories here to allow this file to be
-// importable from a parent node project (e.g. @skylineos/videojs-clsp)
-@import '../../dist/clsp-player.css';
-
-// Or, to import SASS:
-// @import '../../src/styles/clsp-player.scss';
-
-@import '../simple-dist/styles.css';
