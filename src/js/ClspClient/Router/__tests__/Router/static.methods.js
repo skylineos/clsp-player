@@ -1,7 +1,5 @@
 'use strict';
 
-const mockConsole = require('jest-mock-console');
-
 module.exports = function ({
   utils,
   Paho,
@@ -19,20 +17,6 @@ module.exports = function ({
         expect(router).not.toBeNil();
         expect(router.constructor).not.toBeNil();
         expect(router.constructor.name).toEqual('Router');
-      });
-      it('should throw with invalid arguments', () => {
-        const restoreConsole = mockConsole();
-
-        const config = utils.generateRouterConfig();
-        const Router = _Router.default(Paho.Paho);
-
-        config.asArray[0] = undefined;
-
-        expect(() => {
-          Router.factory(...config.asArray);
-        }).toThrow();
-
-        restoreConsole();
       });
     });
 

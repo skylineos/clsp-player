@@ -207,9 +207,10 @@ export default class IovCollection extends Destroyable {
       this.logger.error(`Error destroying Iov ${id} while removing`);
       this.logger.error(error);
     }
-    finally {
-      delete this.pendingRemoval[id];
-    }
+
+    delete this.pendingRemoval[id];
+
+    return this;
   }
 
   /**

@@ -24,9 +24,7 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 
 const babelConfig = require('./babel.config')();
 
-const isDevMode = true;
-// @todo - this fails when running `NODE_ENV=production yarn run build`...
-// const isDevMode = process.env.NODE_ENV !== 'production';
+const isDevMode = process.env.NODE_ENV !== 'production';
 
 /**
  * @private
@@ -144,14 +142,7 @@ function generateConfig (name, entry) {
     },
     plugins: [
       generateProgressBarPlugin(name),
-      new MiniCssExtractPlugin({
-        filename: isDevMode
-          ? '[name].css'
-          : '[name].[hash].css',
-        chunkFilename: isDevMode
-          ? '[id].css'
-          : '[id].[hash].css',
-      }),
+      new MiniCssExtractPlugin({}),
       new WriteFilePlugin(),
     ],
   };

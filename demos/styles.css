@@ -34,10 +34,14 @@ body {
   flex-shrink: 0;
 }
 
-.header>* {
+.header > * {
   margin: auto;
   padding: 0 0.5em;
   text-align: center;
+}
+
+.header img {
+  width: 25%;
 }
 
 #page-title {

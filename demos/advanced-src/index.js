@@ -21,6 +21,7 @@ import {
 
 import {
   initializeWall,
+  // createWall,
 } from './shared';
 
 let wallPlayers = [];
@@ -118,4 +119,10 @@ $(() => {
     createPlayer,
     destroyAllPlayers,
   );
+
+  // createWall(
+  //   localStorageName,
+  //   createPlayer,
+  //   destroyAllPlayers,
+  // );
 });

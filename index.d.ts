@@ -37,26 +37,13 @@ declare class StreamConfiguration {
   destroy();
 }
 
-interface IovChangeSrcReturnValue {
-  id: string;
-  firstFrameReceivedPromise: Promise<void>;
-}
-
 /**
  * Internet of Video client. This module uses the MediaSource API to
  * deliver video content streamed through CLSP from distributed sources.
  */
 export class Iov {
   on(eventName: string, handler: Function);
-  onConnectionChange();
-  onVisibilityChange():Promise<void>;
-  generatePlayerLogId(): string;
-  showNextStream();
-  cancelChangeSrc();
-  changeSrc(url: string | StreamConfiguration, showOnFirstFrame?: boolean): Promise<IovChangeSrcReturnValue>;
-  clone(streamConfiguration?: StreamConfiguration): Iov;
-  onPlayerError(error);
-  play():Promise<void>;
+  changeSrc(url: string | StreamConfiguration): Promise<void>;
   stop():Promise<void>;
   restart():Promise<void>;
   enterFullscreen();
@@ -67,6 +54,13 @@ export class Iov {
    * remove any listeners.  Will also destroy the player.
    */
   destroy(): Promise<void>;
+}
+
+interface IovCreateConfig {
+  videoElementId: string,
+  videoElement: HTMLElement,
+  containerElementId: string,
+  containerElement: HTMLElement,
 }
 
 /**
@@ -82,11 +76,7 @@ export class IovCollection {
   /**
    * Create an Iov for a specific stream, and add it to this collection.
    */
-  create(videoElementId: string): Promise<Iov>;
-  /**
-   * Add an Iov instance to this collection.  It can then be accessed by its id.
-   */
-  add(iov: Iov): this;
+  create(config: IovCreateConfig): Iov;
   /**
    * Determine whether or not an iov with the passed id exists in this
    * collection.
@@ -95,7 +85,7 @@ export class IovCollection {
   /**
    * Get an iov with the passed id from this collection.
    */
-  get(id: string): Iov | undefined;
+  get(id: string): Iov | null;
   /**
    * Remove an iov instance from this collection and destroy it.
    */
@@ -103,20 +93,6 @@ export class IovCollection {
   /**
    * Destroy this collection and destroy all iov instances in this collection.
    */
-  destroy();
-}
-
-export class TourController {
-  static factory(IovCollection: IovCollection, videoElementId: string, options?: {onLoad?: Function, onShown?: Function}): TourController;
-  addUrls(urls: Array<string>);
-  next(playImmediately?: boolean, resetTimer?: boolean): Promise<void>;
-  previous(): Promise<void>;
-  resume(force?: boolean, wait?: boolean): Promise<void>;
-  start(): Promise<void>;
-  pause();
-  stop();
-  reset(): Promise<void>;
-  fullscreen();
   destroy();
 }
 
@@ -134,6 +110,11 @@ export class utils {
   static supported(): boolean;
   static isSupportedMimeType(): boolean;
   static windowStateNames: PageVisibilityApiPropertyNames;
+  static isDocumentHidden(): boolean;
+  static isOnline(): boolean;
   static getDefaultStreamPort(): number;
   static setDefaultStreamPort(protocol: string, port: number);
+  static enablePlayerLogging();
+  static disablePlayerLogging();
+  static isPlayerLoggingDisabled(): boolean;
 }

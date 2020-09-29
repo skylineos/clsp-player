@@ -119,7 +119,7 @@ npm i @skylineos/clsp-player
 
 ### via `<script>` tag
 
-NOTE: See `demos/simple-dist/` and `demos/advanced-dist/` for full examples.
+NOTE: See `demos/single-player/` and `demos/advanced-dist/` for full examples.
 
 A `CLSP` object is attached to `window`, which contains the classes and utils you need to create players.
 
@@ -162,20 +162,10 @@ A `CLSP` object is attached to `window`, which contains the classes and utils yo
     videoElementId: videoElementId,
   })
 
-  // do something with the iov instance
-  await iov.changeSrc(urls[0]);
-
-  // Or instantiate a tour
-  var tour = window.CLSP.TourController.factory(
-    iovCollection,
-    videoElementId,
-    {
-      intervalDuration: 10,
-    },
-  );
-
-  tour.addUrls(urls);
-  tour.start();
+  // play a CLSP stream with the iov instance
+  iov.changeSrc(urls[0])
+    .then((/*..*/)
+    .catch((/*..*/);
 </script>
 ```
 
@@ -189,31 +179,21 @@ This tells the browser exactly what codec to use to decode and play the video.  
 
 ```html
 <div class="video-container">
-  <div class="clsp-container-fit">
-    <video
-      id="my-video"
-      muted
-      playsinline
-    >
-      <source
-        src="clsps://bd-demo-sfs1.skyvdn.com/testpattern"
-        type="video/mp4; codecs='avc1.42E01E'"
-      />
-    </video>
+  <div class="clsp-player-container clsp-container-fit">
+    <video id="my-video"></video>
   </div>
 </div>
 ```
 
 ### via `import` or `require`
 
-NOTE: See `demos/simple-src/` and `demos/advanced-src/` for full examples.
+NOTE: See `demos/single-player/` and `demos/advanced-src/` for full examples.
 
 #### JS
 
 ```js
 import {
   IovCollection,
-  TourController,
   utils,
 } from '@skylineos/clsp-player';
 
@@ -235,20 +215,8 @@ try {
   // Instantiate the iov instance for the target video element
   const iov = iovCollection.create({ videoElementId });
 
-  // do something with the iov instance
+  // play a CLSP stream with the iov instance
   await iov.changeSrc(urls[0]);
-
-  // Or instantiate a tour
-  const tour = TourController.factory(
-    iovCollection,
-    videoElementId,
-    {
-      intervalDuration: 10,
-    },
-  );
-
-  tour.addUrls(urls);
-  tour.start();
 }
 catch (error) {
   // do something with the error
@@ -272,7 +240,7 @@ We recommend wrapping the `video` tag in a container element (e.g. `div`) that t
 <!-- The outer container used for your styling -->
 <div class="video-container">
   <!-- The inner container used by CLSP for styling and other operations -->
-  <div class="clsp-container-fit">
+  <div class="clsp-player-container clsp-container-fit">
     <video id="my-video"></video>
   </div>
 </div>

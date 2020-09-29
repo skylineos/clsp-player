@@ -258,6 +258,10 @@ function isDocumentHidden () {
   return document[windowStateNames.hiddenStateName];
 }
 
+function isOnline () {
+  return window.navigator.onLine;
+}
+
 module.exports = {
   name,
   version,
@@ -268,6 +272,7 @@ module.exports = {
   isSupportedMimeType,
   windowStateNames,
   isDocumentHidden,
+  isOnline,
   getDefaultStreamPort,
   setDefaultStreamPort,
   enablePlayerLogging,
