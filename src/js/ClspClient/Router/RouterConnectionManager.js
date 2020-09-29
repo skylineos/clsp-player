@@ -312,7 +312,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
       this.logger.error('Error while trying to reconnect:');
       this.logger.error(error);
 
-      const reconnectionDelay = (Date.now() - reconnectionStartedAt > (this.IMMEDIATE_RECONNECTION_DURATION * 1000))
+      const reconnectionDelay = (Date.now() - reconnectionStartedAt) > (this.IMMEDIATE_RECONNECTION_DURATION * 1000)
         ? this.RECONNECTION_DELAY
         : this.IMMEDIATE_RECONNECTION_DELAY;
 

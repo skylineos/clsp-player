@@ -352,6 +352,13 @@ export default class Iov extends EventEmitter {
 
     let iovPlayerId;
 
+    // When many requests are made in rapid succession to the same SFS, the
+    // streams can fail to load, and it may take MINUTES for the connection to
+    // properly establish itself.  This is a simple workaround to address that
+    // issue, since many simultaneous streams in a single browser window is one
+    // of the primary use cases of the CLSP Player.
+    await sleepSeconds(Math.random());
+
     try {
       iovPlayerId = await this.iovPlayerCollection.create(
         this.containerElement,
