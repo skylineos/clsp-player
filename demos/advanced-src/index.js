@@ -21,7 +21,7 @@ import {
 
 import {
   initializeWall,
-  createWall,
+  // createWall,
 } from './shared';
 
 let wallPlayers = [];
