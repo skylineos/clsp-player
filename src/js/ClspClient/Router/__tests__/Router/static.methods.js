@@ -1,7 +1,5 @@
 'use strict';
 
-const mockConsole = require('jest-mock-console');
-
 module.exports = function ({
   utils,
   Paho,
@@ -15,7 +13,6 @@ module.exports = function ({
         const Router = _Router.default(Paho.Paho);
 
         const router = Router.factory(...config.asArray);
-
 
         expect(router).not.toBeNil();
         expect(router.constructor).not.toBeNil();
