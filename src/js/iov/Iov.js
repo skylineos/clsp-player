@@ -345,7 +345,7 @@ export default class Iov extends EventEmitter {
     catch (error) {
       this.logger.error(`Error while creating / playing the player for stream ${this.streamConfiguration.streamName}`);
       this.logger.error(error);
-      // @todo - should this throw?
+
       throw error;
     }
 
