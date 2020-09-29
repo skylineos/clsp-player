@@ -292,30 +292,6 @@ export default class Iov extends EventEmitter {
     }
   };
 
-  enterFullscreen () {
-    if (!window.document.fullscreenElement) {
-      // Since the iov and player take control of the video element and its
-      // parent, ask the parent for fullscreen since the video elements will be
-      // destroyed and recreated when changing sources
-      this.containerElement.requestFullscreen();
-    }
-  }
-
-  exitFullscreen () {
-    if (window.document.exitFullscreen) {
-      window.document.exitFullscreen();
-    }
-  }
-
-  toggleFullscreen () {
-    if (!window.document.fullscreenElement) {
-      this.enterFullscreen();
-    }
-    else {
-      this.exitFullscreen();
-    }
-  }
-
   /**
    * @param {StreamConfiguration|String} url
    *   The StreamConfiguration or url of the new stream
@@ -369,6 +345,7 @@ export default class Iov extends EventEmitter {
     catch (error) {
       this.logger.error(`Error while creating / playing the player for stream ${this.streamConfiguration.streamName}`);
       this.logger.error(error);
+      // @todo - should this throw?
       throw error;
     }
 
@@ -451,6 +428,30 @@ export default class Iov extends EventEmitter {
       // has its own retry logic in IovPlayerCollection
 
       throw error;
+    }
+  }
+
+  enterFullscreen () {
+    if (!window.document.fullscreenElement) {
+      // Since the iov and player take control of the video element and its
+      // parent, ask the parent for fullscreen since the video elements will be
+      // destroyed and recreated when changing sources
+      this.containerElement.requestFullscreen();
+    }
+  }
+
+  exitFullscreen () {
+    if (window.document.exitFullscreen) {
+      window.document.exitFullscreen();
+    }
+  }
+
+  toggleFullscreen () {
+    if (!window.document.fullscreenElement) {
+      this.enterFullscreen();
+    }
+    else {
+      this.exitFullscreen();
     }
   }
 
