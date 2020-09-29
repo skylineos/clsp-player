@@ -103,6 +103,11 @@ export default class IovPlayerCollection extends EventEmitter {
 
     // Tell the IOV to start tearing it all down...
     iovPlayer.on(IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+      if (this.isDestroyed) {
+        this.logger.info('Iframe was destroyed externally while in process of destroying');
+        return;
+      }
+
       this.emit(IovPlayerCollection.events.IFRAME_DESTROYED_EXTERNALLY, { id });
     });
 

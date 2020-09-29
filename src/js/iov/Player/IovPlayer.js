@@ -254,6 +254,11 @@ export default class IovPlayer extends EventEmitter {
       });
 
       this.clspClient.conduit.on(ClspClient.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+        if (this.isDestroyed) {
+          this.logger.info('Iframe was destroyed externally while in process of destroying');
+          return;
+        }
+
         this.emit(IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY);
       });
 

@@ -119,6 +119,11 @@ export default class Conduit extends EventEmitter {
 
   async initialize () {
     this.routerIframeManager.on(RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY, () => {
+      if (this.isDestroyed) {
+        this.logger.info('Iframe was destroyed externally while in process of destroying');
+        return;
+      }
+
       this.emit(Conduit.events.IFRAME_DESTROYED_EXTERNALLY);
 
       // This doesn't really do anything since the iframe is already
