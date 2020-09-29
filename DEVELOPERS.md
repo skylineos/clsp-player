@@ -91,14 +91,15 @@ yarn version --new-version 1.2.3+4
 
 ## Publishing
 
-NOTE - YOU CANNOT PUBLISH A BUILD VERSION / TAG!  Only publish pre-releases and releases!
+NOTE - Use `npm` to publish, NOT `yarn`
+NOTE - YOU CANNOT PUBLISH A BUILD VERSION / TAG!
+NOTE - Only publish pre-releases and releases!
 
 1. It is best to do this immediately after cutting a release tag
 1. Confirm that any webpack dev servers used for development are shut down
     1. `ps aux | grep yarn`
 1. Checkout the version tag you want to publish
-    1. `git checkout v0.22.1-2`
-    1. `git checkout v0.22.3`
+    1. e.g. `git checkout v0.22.1-2`
 1. You MUST be on an unmodified checkout of the `git` tag you intend to publish.  i.e, `git status` should show:
     1. You have a tag checked out
     1. There are no changes staged for commit
@@ -114,13 +115,11 @@ NOTE - YOU CANNOT PUBLISH A BUILD VERSION / TAG!  Only publish pre-releases and 
 1. You MUST be logged in to the public npm registry
 1. You MUST have access to the `skylineos` organization on npm
 1. You MUST ONLY publish releases (e.g. `0.18.0`) or pre-releases (e.g. `0.18.0-4`)
+    1. REMINDER - Use `npm` to publish, NOT `yarn`
+    1. REMINDER - YOU CANNOT PUBLISH A BUILD VERSION / TAG!
+    1. REMINDER - Only publish pre-releases and releases!
     1. pre-releases should be published with the `beta` tag, e.g. `npm publish --tag beta`
-
-When the above checklist is complete, publish via:
-
-```
-npm publish
-```
+    1. releases should be published via `npm publish`
 
 
 ## References
