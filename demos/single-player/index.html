@@ -65,22 +65,27 @@
             </button>
           </div>
         </section>
-        <section class="stream-control">
-          <h2>Stream Control</h2>
+        <section class="stream-url-control">
+          <h2>Stream URL</h2>
           <div class="control-group">
             <input
               id="stream-src"
               name="stream-src"
-              value="clsps://bd-demo-sfs1.skyvdn.com/CAM014"
+              value="clsps://bd-demo-sfs1.skyvdn.com/testpattern"
             />
             <button
               disabled
               onclick="window.clspPlayerControls.changeSrc()"
-              title="Change Stream"
+              title="Change Stream URL"
             >
               <i class="fas fa-video"></i>
-              <span>Change Stream</span>
+              <span>Change Stream URL</span>
             </button>
+          </div>
+        </section>
+        <section class="player-control">
+          <h2>Player Control</h2>
+          <div class="control-group">
             <button
               disabled
               onclick="window.clspPlayerControls.play()"
@@ -97,11 +102,6 @@
               <i class="fas fa-stop"></i>
               <span>Stop</span>
             </button>
-          </div>
-        </section>
-        <section class="display-control">
-          <h2>Display Control</h2>
-          <div class="control-group">
             <button
               disabled
               onclick="window.clspPlayerControls.toggleFullscreen()"

@@ -179,9 +179,18 @@ function registerHandlers () {
       $(this).html('Supplying video element to CLSP Player. <br /><br /> Open console to see messages.');
     });
 
+    $('.stream-url-control button').each(function () {
+      $(this).prop('disabled', false);
+    });
+
     await changeSrc();
 
-    enableControls();
+    $('.player-control button').each(function () {
+      $(this).prop('disabled', false);
+    });
+    $('.destroy-control button').each(function () {
+      $(this).prop('disabled', false);
+    });
   }
 
   async function doNotSupplyVideoElement () {
@@ -191,16 +200,13 @@ function registerHandlers () {
       $(this).html('Letting CLSP Player create video element...');
     });
 
-    await changeSrc();
-
-    enableControls();
-  }
-
-  function enableControls () {
-    $('.stream-control button').each(function () {
+    $('.stream-url-control button').each(function () {
       $(this).prop('disabled', false);
     });
-    $('.display-control button').each(function () {
+
+    await changeSrc();
+
+    $('.player-control button').each(function () {
       $(this).prop('disabled', false);
     });
     $('.destroy-control button').each(function () {
@@ -219,7 +225,6 @@ function registerHandlers () {
     changeSrc,
     useManagedVideoElement,
     doNotSupplyVideoElement,
-    enableControls,
     useSourceFiles,
     useDistFiles,
   };

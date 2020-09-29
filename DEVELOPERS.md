@@ -94,6 +94,8 @@ yarn version --new-version 1.2.3+4
 NOTE - YOU CANNOT PUBLISH A BUILD VERSION / TAG!  Only publish pre-releases and releases!
 
 1. It is best to do this immediately after cutting a release tag
+1. Confirm that any webpack dev servers used for development are shut down
+    1. `ps aux | grep yarn`
 1. Checkout the version tag you want to publish
     1. `git checkout v0.22.1-2`
     1. `git checkout v0.22.3`
