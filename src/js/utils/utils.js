@@ -77,7 +77,7 @@ const SUPPORTED_MIME_TYPE = "video/mp4; codecs='avc1.42E01E'";
  *
  * @type {Number}
  */
-const DEFAULT_STREAM_TIMEOUT = 20;
+const DEFAULT_STREAM_TIMEOUT = 15;
 
 /**
  * Determine whether or not the CLSP Player is supported in the current browser.
