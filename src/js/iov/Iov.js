@@ -255,7 +255,7 @@ export default class Iov extends EventEmitter {
       await this.stop();
     }
     catch (error) {
-      this.logger.warn('Error encountered while stopping during offline event:');
+      this.logger.error('Error encountered while stopping during offline event:');
       this.logger.error(error);
     }
   };
@@ -273,7 +273,7 @@ export default class Iov extends EventEmitter {
         await this.stop();
       }
       catch (error) {
-        this.logger.warn('Error while trying to stop during visibilityChange event');
+        this.logger.error('Error while trying to stop during visibilityChange event');
         this.logger.error(error);
       }
 

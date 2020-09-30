@@ -234,8 +234,6 @@ async function main () {
   try {
     utils.setDefaultStreamPort('clsp', 9001);
 
-    // utils.disablePlayerLogging();
-
     iov = IovCollection.asSingleton().create({
       videoElement,
       containerElement,
