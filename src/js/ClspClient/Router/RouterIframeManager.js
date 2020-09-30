@@ -216,7 +216,7 @@ export default class RouterIframeManager extends RouterBaseManager {
               CONNECTION_TIMEOUT: ${this.ROUTER_CONNECTION_TIMEOUT},
               KEEP_ALIVE_INTERVAL: ${this.ROUTER_KEEP_ALIVE_INTERVAL},
               PUBLISH_TIMEOUT: ${this.ROUTER_PUBLISH_TIMEOUT},
-              Logger: (${Logger.toString()})(undefined, ${utils.isPlayerLoggingDisabled()}),
+              Logger: (${Logger.toString()})("${utils.version}"),
             };
 
             window.Router = ${Router.toString()}(window.parent.Paho);
