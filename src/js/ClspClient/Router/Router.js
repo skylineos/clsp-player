@@ -101,8 +101,10 @@ export default function (Paho) {
       );
     }
     catch (error) {
-      this.logger.error(error);
-      throw new Error('Error while constructing Paho Client!');
+      const message = new Error('Error while constructing Paho Client!');
+      this.logger.critical(message);
+      this.logger.critical(error);
+      throw message;
     }
 
     this.clspClient.onConnectionLost = this._onConnectionLost.bind(this);

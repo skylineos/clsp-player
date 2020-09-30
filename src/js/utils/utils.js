@@ -138,8 +138,8 @@ function isBrowserCompatable () {
     return chromeVersion >= MINIMUM_CHROME_VERSION;
   }
   catch (error) {
-    logger.error('Unable to detect Chrome version');
-    logger.error(error);
+    logger.critical('Unable to detect Chrome version');
+    logger.critical(error);
 
     return false;
   }
@@ -210,7 +210,7 @@ function getWindowStateNames () {
     };
   }
 
-  logger.error('Unable to use the page visibility api - switching tabs and minimizing the page may result in slow downs and page crashes.');
+  logger.critical('Unable to use the page visibility api - switching tabs and minimizing the page may result in slow downs and page crashes.');
 
   return {
     hiddenStateName: '',

@@ -146,7 +146,7 @@ export function createWall (name, createPlayer, destroyAllPlayers) {
         poster: '../skyline-logo.svg',
         controls: true,
         tour: {
-          enabled: true,
+          enabled: false,
           interval: tourInterval,
         },
         sources,

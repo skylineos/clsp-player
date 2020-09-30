@@ -452,7 +452,7 @@ export default class SourceBuffer extends EventEmitter {
       this.clear();
     }
     catch (error) {
-      this.logger.warn('Error while clearing the buffer while destroying, continuing destroy anyway...');
+      this.logger.error('Error while clearing the buffer while destroying, continuing destroy anyway...');
       this.logger.error(error);
     }
 

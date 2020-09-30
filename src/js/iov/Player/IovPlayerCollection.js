@@ -265,7 +265,7 @@ export default class IovPlayerCollection extends EventEmitter {
 
     // We do not need to await this
     this.remove(oldId).catch((error) => {
-      this.logger.error(`Error while recreating player ${oldPlayerLogMessageId}, continuing anyway...`);
+      this.logger.error(`Error while removing player ${oldPlayerLogMessageId} while recreating, continuing anyway...`);
       this.logger.error(error);
     });
 
@@ -289,7 +289,7 @@ export default class IovPlayerCollection extends EventEmitter {
       iovPlayer.logger.info('Play succeeded!');
     }
     catch (error) {
-      this.logger.warn(`Error while trying to play IovPlayer ${this.playerLogMessageIds[id]}...`);
+      this.logger.error(`Error while trying to play IovPlayer ${this.playerLogMessageIds[id]}...`);
       this.logger.error(error);
 
       if (this.MAX_RETRIES_ON_PLAY_ERROR > 0 && this.retryAttempts[id] <= this.MAX_RETRIES_ON_PLAY_ERROR) {
@@ -408,7 +408,7 @@ export default class IovPlayerCollection extends EventEmitter {
     }, []);
 
     if (errors.length) {
-      this.logger.warn('Error(s) encountered while destroying IovPlayer(s) during removeMany...');
+      this.logger.error('Error(s) encountered while destroying IovPlayer(s) during removeMany...');
 
       errors.forEach((error) => {
         this.logger.error(error.reason);
@@ -430,6 +430,7 @@ export default class IovPlayerCollection extends EventEmitter {
     }
     catch (error) {
       this.logger.error('Error(s) encountered while removing while destroying, continuing anyway...');
+      this.logger.error(error);
     }
 
     this.players = null;
