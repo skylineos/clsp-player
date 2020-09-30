@@ -46,7 +46,7 @@ Open the developer console and run the following:
 window.localStorage.setItem('skylineos.clsp-player.logLevel', [logLevel]);
 ```
 
-where `[logLevel]` is a valid log level, which is currently a number from 0 - 4.  See `src/js/utils/logger.js`.
+where `[logLevel]` is a valid log level, which is currently a number from 0 - 5.  See `src/js/utils/logger.js`.
 
 ### Disable logging
 
