@@ -5,6 +5,7 @@ const LoggerMock = jest.fn().mockImplementation(() => {
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
+    critical: jest.fn(),
   };
 });
 

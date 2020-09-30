@@ -12,11 +12,13 @@
 module.exports = function (logLevel, disableLogging) {
   function Logger (prefix, prefixStyle) {
     if (logLevel === undefined && typeof window !== 'undefined') {
+      var storedLogLevel = Number(window.localStorage.getItem('skylineos.clsp-player.logLevel'));
+
       // The logLevel may be set in localstorage
       // e.g. localStorage.setItem('skylineos.clsp-player.logLevel', 3), then refresh
-      logLevel = isNaN(Number(window.localStorage.getItem('skylineos.clsp-player.logLevel')))
-        ? 1
-        : Number(window.localStorage.getItem('skylineos.clsp-player.logLevel'));
+      logLevel = isNaN(storedLogLevel) || storedLogLevel < 0
+        ? 0
+        : storedLogLevel;
 
       window.localStorage.setItem('skylineos.clsp-player.logLevel', logLevel);
     }
@@ -27,6 +29,7 @@ module.exports = function (logLevel, disableLogging) {
   }
 
   Logger.logLevels = [
+    'critical',
     'error',
     'warn',
     'info',
@@ -62,9 +65,14 @@ module.exports = function (logLevel, disableLogging) {
     ];
   };
 
-  Logger.prototype.silly = function (message) {
-    var sillyIndex = 4;
+  var sillyIndex = 5;
+  var debugIndex = 4;
+  var infoIndex = 3;
+  var warnIndex = 2;
+  var errorIndex = 1;
+  var criticalIndex = 0;
 
+  Logger.prototype.silly = function (message) {
     if (this.logLevel < sillyIndex || disableLogging) {
       return;
     }
@@ -73,8 +81,6 @@ module.exports = function (logLevel, disableLogging) {
   };
 
   Logger.prototype.debug = function (message) {
-    var debugIndex = 3;
-
     if (this.logLevel < debugIndex || disableLogging) {
       return;
     }
@@ -83,8 +89,6 @@ module.exports = function (logLevel, disableLogging) {
   };
 
   Logger.prototype.info = function (message) {
-    var infoIndex = 2;
-
     if (this.logLevel < infoIndex || disableLogging) {
       return;
     }
@@ -93,8 +97,6 @@ module.exports = function (logLevel, disableLogging) {
   };
 
   Logger.prototype.warn = function (message) {
-    var warnIndex = 1;
-
     if (this.logLevel < warnIndex || disableLogging) {
       return;
     }
@@ -103,13 +105,19 @@ module.exports = function (logLevel, disableLogging) {
   };
 
   Logger.prototype.error = function (message) {
-    var errorIndex = 0;
-
-    if (disableLogging) {
+    if (this.logLevel < errorIndex || disableLogging) {
       return;
     }
 
     console.error.apply(console, this._constructMessage(Logger.logLevels[errorIndex], message));
+  };
+
+  Logger.prototype.critical = function (message) {
+    if (disableLogging) {
+      return;
+    }
+
+    console.error.apply(console, this._constructMessage(Logger.logLevels[criticalIndex], message));
   };
 
   return Logger;

@@ -114,7 +114,4 @@ export class utils {
   static isOnline(): boolean;
   static getDefaultStreamPort(): number;
   static setDefaultStreamPort(protocol: string, port: number);
-  static enablePlayerLogging();
-  static disablePlayerLogging();
-  static isPlayerLoggingDisabled(): boolean;
 }

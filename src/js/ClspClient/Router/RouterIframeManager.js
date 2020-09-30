@@ -302,7 +302,8 @@ export default class RouterIframeManager extends RouterBaseManager {
       this.iframe.contentWindow.postMessage(message, '*');
     }
     catch (error) {
-      // @todo - we should probably throw here...
+      // @todo - can we do anything when this error is encountered
+      this.logger.error(`Failed while trying to execute command ${error}`);
       this.logger.error(error);
     }
   }
