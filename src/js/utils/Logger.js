@@ -9,9 +9,17 @@
  * We use this in the router as well, so keep it light and ES5 only!
  */
 
-module.exports = function (logLevel, disableLogging) {
+module.exports = function (version, logLevel, disableLogging) {
   function Logger (prefix, prefixStyle) {
     if (logLevel === undefined && typeof window !== 'undefined') {
+      var storedVersion = window.localStorage.getItem('skylineos.clsp-player.version');
+
+      // Always reset the log level when the version changes
+      if (storedVersion !== version) {
+        window.localStorage.setItem('skylineos.clsp-player.logLevel', 0);
+        window.localStorage.setItem('skylineos.clsp-player.version', version);
+      }
+
       var storedLogLevel = Number(window.localStorage.getItem('skylineos.clsp-player.logLevel'));
 
       // The logLevel may be set in localstorage

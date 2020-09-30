@@ -9,9 +9,6 @@ const packageJson = require('../../../package.json');
 
 const Logger = require('./Logger');
 
-// @todo - remove this side-effect
-const logger = Logger().factory();
-
 let _isPlayerLoggingEnabled = true;
 
 // CLSP default port for SFS >= 5.2.0 is 80
@@ -44,6 +41,9 @@ const name = packageJson.name.split('/').pop();
  * @type {String}
  */
 const version = packageJson.version;
+
+// @todo - remove this side-effect
+const logger = Logger(version).factory();
 
 /**
  * The oldest Chrome browser version supported by CLSP Player.

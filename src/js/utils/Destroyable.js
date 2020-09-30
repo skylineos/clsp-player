@@ -32,7 +32,7 @@ export default class Destroyable {
       this.logColor = 'black';
     }
 
-    this.logger = Logger(undefined, utils.isPlayerLoggingDisabled()).factory(
+    this.logger = Logger(utils.version).factory(
       `${this.constructor.name} ${this.logId}`,
       `color: ${this.logColor};`,
     );
