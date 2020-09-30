@@ -41,6 +41,7 @@ export default class EventEmitter extends Destroyable {
 
     // @todo - should the caller have the ability to respond to this?
     if (this.isDestroyed) {
+      // @todo - this should probably log as critical
       this.logger.error(`Tried to register handler for event "${eventName}" while destroyed!`);
       return this;
     }
@@ -54,6 +55,7 @@ export default class EventEmitter extends Destroyable {
   emit (eventName, data) {
     // @todo - should the caller have the ability to respond to this?
     if (this.isDestroyed) {
+      // @todo - this should probably log as critical
       this.logger.error(`Tried to emit "${eventName}" while destroyed!`);
       return;
     }

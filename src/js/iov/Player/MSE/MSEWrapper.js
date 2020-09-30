@@ -327,7 +327,7 @@ export default class MSEWrapper extends EventEmitter {
 
     // observed this fail during a memry snapshot in chrome
     // otherwise no observed failure, so ignore exception.
-    this.logger.warn('sourceBuffer.remove --> Error while trimming sourceBuffer');
+    this.logger.error('sourceBuffer.remove --> Error while trimming sourceBuffer');
     this.logger.error(error);
   }
 
