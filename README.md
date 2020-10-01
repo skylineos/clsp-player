@@ -164,8 +164,8 @@ A `CLSP` object is attached to `window`, which contains the classes and utils yo
 
   // play a CLSP stream with the iov instance
   iov.changeSrc(urls[0])
-    .then((/*..*/)
-    .catch((/*..*/);
+    .then(/*..*/)
+    .catch(/*..*/);
 </script>
 ```
 
