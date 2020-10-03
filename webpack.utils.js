@@ -124,7 +124,9 @@ function generateConfig (name, entry) {
             {
               loader: MiniCssExtractPlugin.loader,
               options: {
-                hmr: isDevMode,
+                // set this to false to not interrupt ongoing tests until the
+                // developer is ready
+                hmr: false,
               },
             },
             'css-loader',

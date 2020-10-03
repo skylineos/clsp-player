@@ -146,7 +146,7 @@ export function createWall (name, createPlayer, destroyAllPlayers) {
         poster: '../skyline-logo.svg',
         controls: true,
         tour: {
-          enabled: false,
+          enabled: true,
           interval: tourInterval,
         },
         sources,
@@ -237,7 +237,7 @@ export function initializeWall (name, createPlayer, destroyAllPlayers) {
   );
 
   initLocalStorage(
-    name, 'tours-enabled', 'checkbox', true,
+    name, 'tours-enabled', 'checkbox', false,
   );
   initLocalStorage(
     name, 'tour-streams', 'textarea', defaultClspUrls,
