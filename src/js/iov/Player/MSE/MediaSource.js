@@ -209,11 +209,21 @@ export default class MediaSource extends EventEmitter {
       return;
     }
 
-    // This can only be set when the media source is open.
-    // @todo - does this do memory management for us so we don't have
-    // to call remove on the buffer, which is expensive?  It seems
-    // like it...
-    this.mediaSource.duration = this.DURATION;
+    try {
+      // This can only be set when the media source is open.
+      // @todo - does this do memory management for us so we don't have
+      // to call remove on the buffer, which is expensive?  It seems
+      // like it...
+      this.mediaSource.duration = this.DURATION;
+    }
+    catch (error) {
+      this.logger.error(`Error while setting mediaSource duration to "${this.DURATION}"`);
+      this.logger.error(error);
+
+      this.emit(MediaSource.events.SOURCE_OPEN_ERROR, { error });
+
+      return;
+    }
 
     this.emit(MediaSource.events.SOURCE_OPEN, event);
   };
