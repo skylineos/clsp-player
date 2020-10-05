@@ -54,6 +54,8 @@ html, body {
   // flex-direction: column;
   // flex-grow: 1;
   // flex-shrink: 0;
+  height: 100%;
+  width: 100%;
 
   section {
     border: solid 3px black;
@@ -64,6 +66,8 @@ html, body {
     overflow: auto;
     flex-grow: 1;
     flex-shrink: 0;
+    height: 100%;
+    width: 100%;
 
     & > * {
       flex-shrink: 0;
