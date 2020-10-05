@@ -7,10 +7,9 @@
 
 const packageJson = require('../../../package.json');
 
-const Logger = require('./logger');
+const Logger = require('./Logger');
 
-// @todo - remove this side-effect
-const logger = Logger().factory();
+let _isPlayerLoggingEnabled = true;
 
 // CLSP default port for SFS >= 5.2.0 is 80
 // CLSP default port for SFS < 5.2.0 is 9001
@@ -42,6 +41,9 @@ const name = packageJson.name.split('/').pop();
  * @type {String}
  */
 const version = packageJson.version;
+
+// @todo - remove this side-effect
+const logger = Logger(version).factory();
 
 /**
  * The oldest Chrome browser version supported by CLSP Player.
@@ -136,8 +138,8 @@ function isBrowserCompatable () {
     return chromeVersion >= MINIMUM_CHROME_VERSION;
   }
   catch (error) {
-    logger.error('Unable to detect Chrome version');
-    logger.error(error);
+    logger.critical('Unable to detect Chrome version');
+    logger.critical(error);
 
     return false;
   }
@@ -208,7 +210,7 @@ function getWindowStateNames () {
     };
   }
 
-  logger.error('Unable to use the page visibility api - switching tabs and minimizing the page may result in slow downs and page crashes.');
+  logger.critical('Unable to use the page visibility api - switching tabs and minimizing the page may result in slow downs and page crashes.');
 
   return {
     hiddenStateName: '',
@@ -238,6 +240,28 @@ function setDefaultStreamPort (protocol, port) {
   streamPorts[protocol] = port;
 }
 
+function enablePlayerLogging () {
+  _isPlayerLoggingEnabled = true;
+}
+
+function disablePlayerLogging () {
+  _isPlayerLoggingEnabled = false;
+}
+
+function isPlayerLoggingDisabled () {
+  return !_isPlayerLoggingEnabled;
+}
+
+const windowStateNames = getWindowStateNames();
+
+function isDocumentHidden () {
+  return document[windowStateNames.hiddenStateName];
+}
+
+function isOnline () {
+  return window.navigator.onLine;
+}
+
 module.exports = {
   name,
   version,
@@ -246,7 +270,12 @@ module.exports = {
   DEFAULT_STREAM_TIMEOUT,
   supported: isBrowserCompatable,
   isSupportedMimeType,
-  windowStateNames: getWindowStateNames(),
+  windowStateNames,
+  isDocumentHidden,
+  isOnline,
   getDefaultStreamPort,
   setDefaultStreamPort,
+  enablePlayerLogging,
+  disablePlayerLogging,
+  isPlayerLoggingDisabled,
 };

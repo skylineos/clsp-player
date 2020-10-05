@@ -22,9 +22,9 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const WriteFilePlugin = require('write-file-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 
-const babelConfig = require('./babel.config');
+const babelConfig = require('./babel.config')();
 
-const devMode = process.env.NODE_ENV !== 'production';
+const isDevMode = process.env.NODE_ENV !== 'production';
 
 /**
  * @private
@@ -97,17 +97,17 @@ function generateConfig (name, entry) {
           include: [
             path.resolve(
               __dirname,
-              'src'
+              'src',
             ),
             path.resolve(
               __dirname,
-              'demos'
+              'demos',
             ),
             // @see - https://github.com/visionmedia/debug/issues/668
             path.resolve(
               __dirname,
               'node_modules',
-              'debug'
+              'debug',
             ),
           ],
         },
@@ -124,7 +124,9 @@ function generateConfig (name, entry) {
             {
               loader: MiniCssExtractPlugin.loader,
               options: {
-                hmr: devMode,
+                // set this to false to not interrupt ongoing tests until the
+                // developer is ready
+                hmr: false,
               },
             },
             'css-loader',
@@ -142,14 +144,7 @@ function generateConfig (name, entry) {
     },
     plugins: [
       generateProgressBarPlugin(name),
-      new MiniCssExtractPlugin({
-        filename: devMode
-          ? '[name].css'
-          : '[name].[hash].css',
-        chunkFilename: devMode
-          ? '[id].css'
-          : '[id].[hash].css',
-      }),
+      new MiniCssExtractPlugin({}),
       new WriteFilePlugin(),
     ],
   };
@@ -170,7 +165,7 @@ function generateConfig (name, entry) {
  */
 function exportAsDevConfig (webpackConfigs) {
   return webpackConfigs.map((webpackConfig) => {
-    return {
+    const config = {
       ...webpackConfig,
       mode: 'development',
       devtool: 'eval-source-map',
@@ -187,6 +182,8 @@ function exportAsDevConfig (webpackConfigs) {
         }),
       ],
     };
+
+    return config;
   });
 }
 
@@ -239,6 +236,7 @@ function exportAsProdConfig (webpackConfigs) {
 }
 
 module.exports = {
+  isDevMode,
   outputPath,
   generateConfig,
   exportAsDevConfig,

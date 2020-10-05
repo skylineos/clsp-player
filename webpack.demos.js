@@ -37,17 +37,17 @@ const advancedDemoSrcConfig = generateConfig(
 
 advancedDemoSrcConfig.output.path = demoOutputPath;
 
-const simpleDemoSrcConfig = generateConfig(
-  'simple-src',
+const singlePlayerDemoSrcConfig = generateConfig(
+  'single-player',
   path.resolve(
     __dirname,
     'demos',
-    'simple-src',
+    'single-player',
     'index.js',
   ),
 );
 
-simpleDemoSrcConfig.output.path = demoOutputPath;
+singlePlayerDemoSrcConfig.output.path = demoOutputPath;
 
 const tourDemoSrcConfig = generateConfig(
   'tour-src',
@@ -61,12 +61,16 @@ const tourDemoSrcConfig = generateConfig(
 
 tourDemoSrcConfig.output.path = demoOutputPath;
 
+// @todo - we need to stop including the demos in the npm releases because
+// they're huge and unnecessary.  But, for now, we rely on them for testing,
+// so this change will have to wait until the demos are moved to their own
+// projects.
 module.exports = function () {
   return exportAsDevConfig([
     // Note that the demo files depend on `dist/clsp-player.min.js`
     advancedDemoDistConfig,
     advancedDemoSrcConfig,
-    simpleDemoSrcConfig,
+    singlePlayerDemoSrcConfig,
     tourDemoSrcConfig,
   ]);
 };

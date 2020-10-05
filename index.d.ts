@@ -9,58 +9,32 @@ import StreamConfiguration from "./src/js/iov/StreamConfiguration";
 export as namespace CLSP;
 
 interface StreamConfigurationTokenConfig {
-    b64HashAccessUrl: string;
-    hash: string;
+  b64HashAccessUrl: string;
+  hash: string;
 }
 
 interface StreamConfigurationConfig {
-    streamName: string;
-    host: string;
-    port: number;
-    useSSL: boolean;
-    tokenConfig: StreamConfigurationTokenConfig;
+  streamName: string;
+  host: string;
+  port: number;
+  useSSL: boolean;
+  tokenConfig: StreamConfigurationTokenConfig;
 }
 
 /**
  * Defined in /src/js/iov/StreamConfiguration.js
  */
 declare class StreamConfiguration {
-    static factory(streamName: string, host: string, port: number, useSSL: boolean, tokenConfig: StreamConfigurationTokenConfig): StreamConfiguration;
-    static fromObject(config): StreamConfiguration;
-    static isStreamConfiguration(target: any): boolean;
-    static generateConfigFromUrl(url: string): StreamConfigurationConfig;
-    static fromUrl(url): StreamConfiguration;
-    protocol: string;
-    url: string;
-    clone(streamConfiguration: StreamConfiguration): StreamConfiguration;
-    toObject(): StreamConfigurationConfig;
-    destroy();
-}
-
-/**
- * defined in src/iov/IovPlayer.js
- *
- * Responsible for receiving stream input and routing it to the media source
- * buffer for rendering on the video tag. There is some 'light' reworking of
- * the binary data that is required.
-*/
-declare class IovPlayer {
-    static factory(logId: string, videoElement, onConduitMessageError?: Function, onPlayerError?: Function): IovPlayer;
-    on(name: string, action: Function);
-    initialize (streamConfiguration: StreamConfiguration): Promise<void>;
-    reinitializeMseWrapper(mimeCodec): Promise<void>;
-    restart(): Promise<void>;
-    play(): Promise<void>;
-    stop(): Promise<void>;
-    enterFullscreen();
-    exitFullscreen();
-    toggleFullscreen();
-    destroy(): Promise<void>;
-}
-
-interface IovChangeSrcReturnValue {
-    id: string;
-    firstFrameReceivedPromise: Promise<void>;
+  static factory(streamName: string, host: string, port: number, useSSL: boolean, tokenConfig: StreamConfigurationTokenConfig): StreamConfiguration;
+  static fromObject(config): StreamConfiguration;
+  static isStreamConfiguration(target: any): boolean;
+  static generateConfigFromUrl(url: string): StreamConfigurationConfig;
+  static fromUrl(url): StreamConfiguration;
+  protocol: string;
+  url: string;
+  clone(streamConfiguration: StreamConfiguration): StreamConfiguration;
+  toObject(): StreamConfigurationConfig;
+  destroy();
 }
 
 /**
@@ -68,26 +42,25 @@ interface IovChangeSrcReturnValue {
  * deliver video content streamed through CLSP from distributed sources.
  */
 export class Iov {
-    on(eventName: string, action: any);
-    onConnectionChange();
-    onVisibilityChange():Promise<void>;
-    generatePlayerLogId(): string;
-    showNextStream();
-    cancelChangeSrc();
-    changeSrc(url: string | StreamConfiguration, showOnFirstFrame?: boolean): Promise<IovChangeSrcReturnValue>;
-    clone(streamConfiguration?: StreamConfiguration): Iov;
-    onPlayerError(error);
-    play(iovPlayer?: IovPlayer):Promise<void>;
-    stop(iovPlayer?: IovPlayer):Promise<void>;
-    restart(iovPlayer?: IovPlayer):Promise<void>;
-    enterFullscreen(iovPlayer?: IovPlayer);
-    exitFullscreen(iovPlayer?: IovPlayer);
-    toggleFullscreen(iovPlayer?: IovPlayer);
-    /**
-     * Dereference the necessary properties, clear any intervals and timeouts, and
-     * remove any listeners.  Will also destroy the player.
-     */
-    destroy(): Promise<void>;
+  on(eventName: string, handler: Function);
+  changeSrc(url: string | StreamConfiguration): Promise<void>;
+  stop():Promise<void>;
+  restart():Promise<void>;
+  enterFullscreen();
+  exitFullscreen();
+  toggleFullscreen();
+  /**
+   * Dereference the necessary properties, clear any intervals and timeouts, and
+   * remove any listeners.  Will also destroy the player.
+   */
+  destroy(): Promise<void>;
+}
+
+interface IovCreateConfig {
+  videoElementId: string,
+  videoElement: HTMLElement,
+  containerElementId: string,
+  containerElement: HTMLElement,
 }
 
 /**
@@ -99,62 +72,46 @@ export class Iov {
  * instance.
  */
 export class IovCollection {
-    static asSingleton():IovCollection;
-    /**
-     * Create an Iov for a specific stream, and add it to this collection.
-     */
-    create(videoElementId: string): Promise<Iov>;
-    /**
-     * Add an Iov instance to this collection.  It can then be accessed by its id.
-     */
-    add(iov: Iov): this;
-    /**
-     * Determine whether or not an iov with the passed id exists in this
-     * collection.
-     */
-    has(id: string): boolean;
-    /**
-     * Get an iov with the passed id from this collection.
-     */
-    get(id: string): Iov | undefined;
-    /**
-     * Remove an iov instance from this collection and destroy it.
-     */
-    remove(id: string): this;
-    /**
-     * Destroy this collection and destroy all iov instances in this collection.
-     */
-    destroy();
-}
-
-export class TourController {
-    static factory(IovCollection: IovCollection, videoElementId: string, options?: {onLoad?: Function, onShown?: Function}): TourController;
-    addUrls(urls: Array<string>);
-    next(playImmediately?: boolean, resetTimer?: boolean): Promise<void>;
-    previous(): Promise<void>;
-    resume(force?: boolean, wait?: boolean): Promise<void>;
-    start(): Promise<void>;
-    pause();
-    stop();
-    reset(): Promise<void>;
-    fullscreen();
-    destroy();
+  static asSingleton():IovCollection;
+  /**
+   * Create an Iov for a specific stream, and add it to this collection.
+   */
+  create(config: IovCreateConfig): Iov;
+  /**
+   * Determine whether or not an iov with the passed id exists in this
+   * collection.
+   */
+  has(id: string): boolean;
+  /**
+   * Get an iov with the passed id from this collection.
+   */
+  get(id: string): Iov | null;
+  /**
+   * Remove an iov instance from this collection and destroy it.
+   */
+  remove(id: string): this;
+  /**
+   * Destroy this collection and destroy all iov instances in this collection.
+   */
+  destroy();
 }
 
 interface PageVisibilityApiPropertyNames {
-    hiddenStateName: string;
-    visibilityChangeEventName: string;
+  hiddenStateName: string;
+  visibilityChangeEventName: string;
 }
 
 export class utils {
-    static name: string;
-    static version: string;
-    static MINIMUM_CHROME_VERSION: number;
-    static SUPPORTED_MIME_TYPE: string;
-    static DEFAULT_STREAM_TIMEOUT: number;
-    static supported(): boolean;
-    static isSupportedMimeType(): boolean;
-    static windowStateNames: PageVisibilityApiPropertyNames;
-    static getDefaultStreamPort(): number;
-    static setDefaultStreamPort(protocol: string, port: number);
+  static name: string;
+  static version: string;
+  static MINIMUM_CHROME_VERSION: number;
+  static SUPPORTED_MIME_TYPE: string;
+  static DEFAULT_STREAM_TIMEOUT: number;
+  static supported(): boolean;
+  static isSupportedMimeType(): boolean;
+  static windowStateNames: PageVisibilityApiPropertyNames;
+  static isDocumentHidden(): boolean;
+  static isOnline(): boolean;
+  static getDefaultStreamPort(): number;
+  static setDefaultStreamPort(protocol: string, port: number);
 }

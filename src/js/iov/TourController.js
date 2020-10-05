@@ -1,12 +1,12 @@
-'use strict';
-
 import StreamConfiguration from './StreamConfiguration';
-import Logger from '../utils/logger';
+import EventEmitter from '../utils/EventEmitter';
 
 const DEFAULT_TOUR_INTERVAL_DURATION = 10;
 const DEFAULT_TOUR_PRELOAD_DURATION = 9;
 
-export default class TourController {
+let tourCount = 0;
+
+export default class TourController extends EventEmitter {
   static factory (
     iovCollection,
     videoElementId,
@@ -24,11 +24,12 @@ export default class TourController {
     videoElementId,
     options = {},
   ) {
-    this.logger = Logger().factory('Tour Controller');
+    super(tourCount);
+
+    tourCount++;
 
     this.iovCollection = iovCollection;
 
-    this.destroyed = false;
     this.startTime = null;
     this.streamConfigurations = [];
     this.iov = null;
@@ -321,7 +322,9 @@ export default class TourController {
    * once, at the beginning, to start the tour.
    */
   async start () {
-    this.iov = await this.iovCollection.create(this.videoElementId);
+    this.iov = this.iovCollection.create({
+      videoElementId: this.videoElementId,
+    });
 
     await this.resume(true, false);
   }
@@ -358,13 +361,7 @@ export default class TourController {
   /**
    * Destroy this tour and all associated streamConfigurations and iovs
    */
-  destroy () {
-    if (this.destroyed) {
-      return;
-    }
-
-    this.destroyed = true;
-
+  async _destroy () {
     this._cancelAllChangeSrcs();
 
     this.pause();
@@ -376,11 +373,20 @@ export default class TourController {
     this.streamConfigurations = null;
 
     if (this.iov) {
-      this.iovCollection.remove(this.iov.id);
+      try {
+        await this.iovCollection.remove(this.iov.id);
+      }
+      catch (error) {
+        this.logger.error(`Error while removing IOV ${this.iov.id} while destroying`);
+        this.logger.error(error);
+      }
+
       this.iov = null;
     }
 
     this.iovCollection = null;
     this.videoElementId = null;
+
+    await super._destroy();
   }
 }

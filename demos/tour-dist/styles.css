@@ -40,6 +40,10 @@ body {
   text-align: center;
 }
 
+header img {
+  width: 50%;
+}
+
 #page-title {
   font-size: 1.5em;
 }
@@ -51,7 +55,7 @@ body {
   margin: auto;
 }
 
-#browser-not-supported {
+#demo-error {
   display: none;
   color: white;
   margin: auto;

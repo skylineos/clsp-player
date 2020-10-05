@@ -84,6 +84,8 @@ function initialize () {
   displayVersions();
   initializeTimer();
 
+  window.CLSP.utils.setDefaultStreamPort('clsp', 9001);
+
   var urls = getTourList();
 
   var tour = window.CLSP.TourController.factory(
