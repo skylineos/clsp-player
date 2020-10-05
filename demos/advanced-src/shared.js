@@ -191,7 +191,10 @@ export function createWall (name, createPlayer, destroyAllPlayers) {
 
   const now = Date.now();
 
-  document.getElementById('videowall').style.gridTemplateColumns = `repeat(${Math.ceil(Math.sqrt(videoIndex + 1))}, 1fr)`;
+  const squareDimension = Math.ceil(Math.sqrt(videoIndex + 1));
+  const actualDimension = squareDimension + Math.floor(squareDimension / 2);
+
+  document.getElementById('videowall').style.gridTemplateColumns = `repeat(${actualDimension}, 1fr)`;
   $('#wallTotalVideos').text(videoIndex);
   $('#wallStartTime').text(moment(now).format('MMMM Do YYYY, h:mm:ss a'));
 
