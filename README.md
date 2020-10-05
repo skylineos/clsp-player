@@ -25,6 +25,8 @@ An html5 CLSP video player.  CLSP is a proprietary near-real-time video streamin
     - [JS](#js)
     - [Styles (SASS)](#styles-sass)
     - [`<video>` tag](#video-tag-1)
+- [Known Issues](#known-issues)
+  - [Videos appear to have a low framerate](#videos-appear-to-have-a-low-framerate)
 
 ## Supported Browsers
 
@@ -245,3 +247,16 @@ We recommend wrapping the `video` tag in a container element (e.g. `div`) that t
   </div>
 </div>
 ```
+
+
+## Known Issues
+
+### Videos appear to have a low framerate
+
+During testing, we have encountered an issue where a large number of CLSP streams ( > 30 ) played on a single page in Chrome can appear choppy or to have a low framerate.  This same test / demo works without issue on other machines, or in Firefox.
+
+The underlying symptom appears to be a large number ( > 50 ) of `Style recalcs / sec` as reported by the Chrome Performance Monitor.  This high number has only been observed in Chrome with specific video cards and with hardware acceleration enabled (which is the default setting).
+
+This appears to be a bug in the Chrome browser, and there are anecdotal reports of this behavior online starting from early 2019, but no official bug report that we are aware of.
+
+At the moment, the only known workarounds are to disable hardware acceleration in Chrome's settings, try using the Firefox browser, or try using a different video card.
