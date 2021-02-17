@@ -246,6 +246,36 @@ async function main () {
   }
 }
 
+// // @see - https://github.com/skylineos/clsp-player/issues/26
+// async function testIovCollectionDestroy () {
+//   containerElement = $('.clsp-player-container')[0];
+//   videoElement = document.createElement('video');
+
+//   videoElement.id = 'my-video';
+
+//   containerElement.appendChild(videoElement);
+
+//   IovCollection = srcIovCollection;
+//   const streamUrl = document.getElementById('stream-src').value;
+
+//   iov = IovCollection.asSingleton().create({
+//     videoElement,
+//     containerElement,
+//   });
+
+//   await iov.changeSrc(streamUrl);
+
+//   // destroy it after creation
+//   await IovCollection.asSingleton().destroy();
+
+//   iov = IovCollection.asSingleton().create({
+//     videoElement,
+//     containerElement,
+//   });
+
+//   await iov.changeSrc(streamUrl);
+// }
+
 $(() => {
   displayVersions();
   registerHandlers();

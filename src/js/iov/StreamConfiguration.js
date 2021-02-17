@@ -28,7 +28,7 @@ export default class StreamConfiguration {
   }
 
   static isStreamConfiguration (target) {
-    return target && target.constructor && target instanceof StreamConfiguration;
+    return target instanceof StreamConfiguration;
   }
 
   static generateConfigFromUrl (url) {
