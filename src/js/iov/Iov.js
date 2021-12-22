@@ -298,8 +298,7 @@ export default class Iov extends EventEmitter {
   };
 
   createLoadingAnimation = () => {
-
-    const loadingAnimationId = "loading-animation-" + this.videoElement.id;
+    const loadingAnimationId = 'loading-animation-' + this.videoElement.id;
 
     // If loading animation already exists, end function.
     if (document.getElementById(loadingAnimationId)) return;
@@ -307,7 +306,7 @@ export default class Iov extends EventEmitter {
     // Create loading div element.
     const loadingDiv = document.createElement('div');
     loadingDiv.classList.add('loading-video');
-    loadingDiv.setAttribute("id", loadingAnimationId)
+    loadingDiv.setAttribute('id', loadingAnimationId);
 
     // Add loading div to the DOM.
     this.containerElement.insertBefore(loadingDiv, this.videoElement);
@@ -315,8 +314,8 @@ export default class Iov extends EventEmitter {
 
   destroyLoadingAnimation = () => {
     // Get loading div.
-    const loadingAnimationId = "loading-animation-" + this.videoElement.id;
-    const loadingDiv = document.getElementById(loadingAnimationId)
+    const loadingAnimationId = 'loading-animation-' + this.videoElement.id;
+    const loadingDiv = document.getElementById(loadingAnimationId);
 
     // If loading animation doesn't exist, end function.
     if (!loadingDiv) return;
@@ -325,25 +324,24 @@ export default class Iov extends EventEmitter {
     loadingDiv.remove();
   }
 
-
   /**
    * @param {StreamConfiguration|String} url
    *   The StreamConfiguration or url of the new stream
    */
   async changeSrc (url) {
     // adding loading animation to the IOV
-    this.createLoadingAnimation()
+    this.createLoadingAnimation();
 
     if (this.isDestroyed) {
       this.logger.info('Tried to changeSrc while destroyed');
-      this.destroyLoadingAnimation()
+      this.destroyLoadingAnimation();
       return;
     }
 
     this.logger.info('Changing Stream...');
 
     if (!url) {
-      this.destroyLoadingAnimation()
+      this.destroyLoadingAnimation();
       throw new Error('url is required to changeSrc');
     }
 
@@ -355,7 +353,7 @@ export default class Iov extends EventEmitter {
       // @todo - it would be better to do something other than just log info
       // here...
       this.logger.info('Tried to changeSrc while tab was hidden!');
-      this.destroyLoadingAnimation()
+      this.destroyLoadingAnimation();
       return;
     }
 
@@ -363,7 +361,7 @@ export default class Iov extends EventEmitter {
       // @todo - it would be better to do something other than just log info
       // here...
       this.logger.info('Tried to changeSrc while not connected to the internet!');
-      this.destroyLoadingAnimation()
+      this.destroyLoadingAnimation();
       return;
     }
 
@@ -387,12 +385,12 @@ export default class Iov extends EventEmitter {
       this.logger.error(`Error while creating / playing the player for stream ${this.streamConfiguration.streamName}`);
       this.logger.error(error);
 
-      this.destroyLoadingAnimation()
+      this.destroyLoadingAnimation();
       throw error;
     }
 
     if (!iovPlayerId) {
-      this.destroyLoadingAnimation()
+      this.destroyLoadingAnimation();
       throw new Error('IovPlayer was created, but no id was returned');
     }
 
@@ -400,7 +398,7 @@ export default class Iov extends EventEmitter {
     await new Promise((resolve, reject) => {
       this.iovPlayerCollection.on(IovPlayerCollection.events.FIRST_FRAME_SHOWN, async ({ id }) => {
         // destroying loading animation once first frame loads
-        this.destroyLoadingAnimation()
+        this.destroyLoadingAnimation();
 
         // This first frame shown was for a different player
         if (iovPlayerId !== id) {
@@ -440,6 +438,7 @@ export default class Iov extends EventEmitter {
 
     try {
       await this.iovPlayerCollection.removeAll();
+      this.destroyLoadingAnimation();
     }
     finally {
       this.isStopping = false;
@@ -528,7 +527,6 @@ export default class Iov extends EventEmitter {
    */
   async _destroy () {
     const timeStarted = Date.now();
-
     const {
       visibilityChangeEventName,
     } = utils.windowStateNames;
