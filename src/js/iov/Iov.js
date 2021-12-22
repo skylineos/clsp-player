@@ -299,7 +299,7 @@ export default class Iov extends EventEmitter {
 
   createLoadingAnimation = () => {
 
-    const loadingAnimationId = "loading-animation-" + this.videoElementId;
+    const loadingAnimationId = "loading-animation-" + this.videoElement.id;
 
     // If loading animation already exists, end function.
     if (document.getElementById(loadingAnimationId)) return;
@@ -315,7 +315,7 @@ export default class Iov extends EventEmitter {
 
   destroyLoadingAnimation = () => {
     // Get loading div.
-    const loadingAnimationId = "loading-animation-" + this.videoElementId;
+    const loadingAnimationId = "loading-animation-" + this.videoElement.id;
     const loadingDiv = document.getElementById(loadingAnimationId)
 
     // If loading animation doesn't exist, end function.
