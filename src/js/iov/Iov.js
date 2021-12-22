@@ -302,6 +302,11 @@ export default class Iov extends EventEmitter {
    *   The StreamConfiguration or url of the new stream
    */
   async changeSrc (url) {
+    // adding loading animation to the IOV
+    const loadingDiv = document.createElement('div');
+    loadingDiv.classList.add('loading-video');
+    this.containerElement.insertBefore(loadingDiv, this.videoElement);
+    
     if (this.isDestroyed) {
       this.logger.info('Tried to changeSrc while destroyed');
       return;
@@ -361,6 +366,10 @@ export default class Iov extends EventEmitter {
     // changeSrc will only complete when the video is actually playing
     await new Promise((resolve, reject) => {
       this.iovPlayerCollection.on(IovPlayerCollection.events.FIRST_FRAME_SHOWN, async ({ id }) => {
+        // destroying loading animation once first frame loads
+        loadingDiv.remove();
+
+       
         // This first frame shown was for a different player
         if (iovPlayerId !== id) {
           // Note, we are not resolving nor rejecting here
