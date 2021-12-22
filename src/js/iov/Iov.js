@@ -297,24 +297,53 @@ export default class Iov extends EventEmitter {
     }
   };
 
+  createLoadingAnimation = () => {
+
+    const loadingAnimationId = "loading-animation-" + this.videoElementId;
+
+    // If loading animation already exists, end function.
+    if (document.getElementById(loadingAnimationId)) return;
+
+    // Create loading div element.
+    const loadingDiv = document.createElement('div');
+    loadingDiv.classList.add('loading-video');
+    loadingDiv.setAttribute("id", loadingAnimationId)
+
+    // Add loading div to the DOM.
+    this.containerElement.insertBefore(loadingDiv, this.videoElement);
+  }
+
+  destroyLoadingAnimation = () => {
+    // Get loading div.
+    const loadingAnimationId = "loading-animation-" + this.videoElementId;
+    const loadingDiv = document.getElementById(loadingAnimationId)
+
+    // If loading animation doesn't exist, end function.
+    if (!loadingDiv) return;
+
+    // Remove loading div from the DOM.
+    loadingDiv.remove();
+  }
+
+
   /**
    * @param {StreamConfiguration|String} url
    *   The StreamConfiguration or url of the new stream
    */
   async changeSrc (url) {
     // adding loading animation to the IOV
-    const loadingDiv = document.createElement('div');
-    loadingDiv.classList.add('loading-video');
-    this.containerElement.insertBefore(loadingDiv, this.videoElement);
-    
+    this.showLoadingAnimation()
+
     if (this.isDestroyed) {
       this.logger.info('Tried to changeSrc while destroyed');
+      destroyLoadingAnimation()
       return;
     }
 
     this.logger.info('Changing Stream...');
 
     if (!url) {
+      destroyLoadingAnimation()
       throw new Error('url is required to changeSrc');
     }
 
@@ -326,6 +355,7 @@ export default class Iov extends EventEmitter {
       // @todo - it would be better to do something other than just log info
       // here...
       this.logger.info('Tried to changeSrc while tab was hidden!');
+      destroyLoadingAnimation()
       return;
     }
 
@@ -333,6 +363,7 @@ export default class Iov extends EventEmitter {
       // @todo - it would be better to do something other than just log info
       // here...
       this.logger.info('Tried to changeSrc while not connected to the internet!');
+      destroyLoadingAnimation()
       return;
     }
 
@@ -356,10 +387,12 @@ export default class Iov extends EventEmitter {
       this.logger.error(`Error while creating / playing the player for stream ${this.streamConfiguration.streamName}`);
       this.logger.error(error);
 
+      destroyLoadingAnimation()
       throw error;
     }
 
     if (!iovPlayerId) {
+      destroyLoadingAnimation()
       throw new Error('IovPlayer was created, but no id was returned');
     }
 
@@ -367,9 +400,8 @@ export default class Iov extends EventEmitter {
     await new Promise((resolve, reject) => {
       this.iovPlayerCollection.on(IovPlayerCollection.events.FIRST_FRAME_SHOWN, async ({ id }) => {
         // destroying loading animation once first frame loads
-        loadingDiv.remove();
+        destroyLoadingAnimation()
 
-       
         // This first frame shown was for a different player
         if (iovPlayerId !== id) {
           // Note, we are not resolving nor rejecting here
