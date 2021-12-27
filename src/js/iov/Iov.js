@@ -22,6 +22,7 @@ const DEFAULT_CONNECTION_CHANGE_PLAY_DELAY = 5;
 
 const CONTAINER_CLASS = 'clsp-player-container';
 const VIDEO_CLASS = 'clsp-player';
+const LOADING_ANIMATION_CLASS = 'clsp-player-loading-animation';
 
 /**
  * Internet of Video client. This module uses the MediaSource API to
@@ -300,10 +301,15 @@ export default class Iov extends EventEmitter {
     }
   };
 
+  getLoadingAnimation = () => {
+    // Returns an HTMLCollection [] with all the loading animations
+    // that exist in the container.
+    return this.containerElement.getElementsByClassName(LOADING_ANIMATION_CLASS);
+  }
+
   destroyAllLoadingAnimations = () => {
-    // This will return an HTMLCollection [] with all the loading animations
-    // that exist in the container that is being used.
-    const loadingElements = this.containerElement.getElementsByClassName('loading-video');
+    // Remove all loading animations within the container. 
+    const loadingElements = this.getLoadingAnimation();
 
     for (let i = 0; i < loadingElements.length; i++) {
       loadingElements[i].remove();
@@ -311,20 +317,17 @@ export default class Iov extends EventEmitter {
   }
 
   createLoadingAnimation = () => {
-    // Setting up a clean environment before creating a new animation.
-    this.destroyAllLoadingAnimations();
-
-    const loadingAnimationId = 'loading-animation-' + this.videoElement.id;
-
     // If loading animation already exists, end function.
-    if (document.getElementById(loadingAnimationId)) return;
+    const loadingElements = this.getLoadingAnimation()
+    if (loadingElements.length > 0) {
+      return;
+    }
 
     // Create loading div element.
     const loadingDiv = document.createElement('div');
-    loadingDiv.classList.add('loading-video');
-    loadingDiv.setAttribute('id', loadingAnimationId);
+    loadingDiv.classList.add(LOADING_ANIMATION_CLASS);
 
-    // Add loading div to the DOM.
+    // Add loading div to the container.
     this.containerElement.insertBefore(loadingDiv, this.videoElement);
   }
 
