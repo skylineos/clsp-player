@@ -210,6 +210,9 @@ export default class Iov extends EventEmitter {
   #uninitializeElements () {
     this.logger.info('Unnitializing elements...');
 
+    // Ensures all loading animations are cleaned up.
+    this.destroyAllLoadingAnimations();
+
     this.containerElement.classList.remove(CONTAINER_CLASS);
 
     this.videoElement.classList.remove(VIDEO_CLASS);
@@ -297,7 +300,20 @@ export default class Iov extends EventEmitter {
     }
   };
 
+  destroyAllLoadingAnimations = () => {
+    // This will return an HTMLCollection [] with all the loading animations
+    // that exist in the container that is being used.
+    const loadingElements = this.containerElement.getElementsByClassName('loading-video');
+
+    for (let i = 0; i < loadingElements.length; i++) {
+      loadingElements[i].remove();
+    }
+  }
+
   createLoadingAnimation = () => {
+    // Setting up a clean environment before creating a new animation.
+    this.destroyAllLoadingAnimations();
+
     const loadingAnimationId = 'loading-animation-' + this.videoElement.id;
 
     // If loading animation already exists, end function.
@@ -312,18 +328,6 @@ export default class Iov extends EventEmitter {
     this.containerElement.insertBefore(loadingDiv, this.videoElement);
   }
 
-  destroyLoadingAnimation = () => {
-    // Get loading div.
-    const loadingAnimationId = 'loading-animation-' + this.videoElement.id;
-    const loadingDiv = document.getElementById(loadingAnimationId);
-
-    // If loading animation doesn't exist, end function.
-    if (!loadingDiv) return;
-
-    // Remove loading div from the DOM.
-    loadingDiv.remove();
-  }
-
   /**
    * @param {StreamConfiguration|String} url
    *   The StreamConfiguration or url of the new stream
@@ -334,14 +338,15 @@ export default class Iov extends EventEmitter {
 
     if (this.isDestroyed) {
       this.logger.info('Tried to changeSrc while destroyed');
-      this.destroyLoadingAnimation();
+      this.destroyAllLoadingAnimations();
       return;
     }
 
     this.logger.info('Changing Stream...');
 
     if (!url) {
-      this.destroyLoadingAnimation();
+      this.destroyAllLoadingAnimations();
+
       throw new Error('url is required to changeSrc');
     }
 
@@ -353,7 +358,8 @@ export default class Iov extends EventEmitter {
       // @todo - it would be better to do something other than just log info
       // here...
       this.logger.info('Tried to changeSrc while tab was hidden!');
-      this.destroyLoadingAnimation();
+      this.destroyAllLoadingAnimations();
+
       return;
     }
 
@@ -361,7 +367,8 @@ export default class Iov extends EventEmitter {
       // @todo - it would be better to do something other than just log info
       // here...
       this.logger.info('Tried to changeSrc while not connected to the internet!');
-      this.destroyLoadingAnimation();
+      this.destroyAllLoadingAnimations();
+
       return;
     }
 
@@ -385,20 +392,22 @@ export default class Iov extends EventEmitter {
       this.logger.error(`Error while creating / playing the player for stream ${this.streamConfiguration.streamName}`);
       this.logger.error(error);
 
-      this.destroyLoadingAnimation();
+      this.destroyAllLoadingAnimations();
+
       throw error;
     }
 
     if (!iovPlayerId) {
-      this.destroyLoadingAnimation();
+      this.destroyAllLoadingAnimations();
+
       throw new Error('IovPlayer was created, but no id was returned');
     }
 
     // changeSrc will only complete when the video is actually playing
     await new Promise((resolve, reject) => {
       this.iovPlayerCollection.on(IovPlayerCollection.events.FIRST_FRAME_SHOWN, async ({ id }) => {
-        // destroying loading animation once first frame loads
-        this.destroyLoadingAnimation();
+        // Ensuring that n number of loading animations are removed.
+        this.destroyAllLoadingAnimations();
 
         // This first frame shown was for a different player
         if (iovPlayerId !== id) {
@@ -438,7 +447,6 @@ export default class Iov extends EventEmitter {
 
     try {
       await this.iovPlayerCollection.removeAll();
-      this.destroyLoadingAnimation();
     }
     finally {
       this.isStopping = false;
