@@ -63,16 +63,6 @@ exports.config = {
         // excludeDriverLogs: ['*'], // pass '*' to exclude all driver session logs
         // excludeDriverLogs: ['bugreport', 'server'],
 
-        'goog:chromeOptions': {
-            args: [
-              '--disable-dev-shm-usage',
-              '--window-size=1440, 900',
-              '--ignore-certificate-errors',
-              '--no-sandbox',
-              '--headless',
-            ],
-        }
-
     }],
     //
     // ===================
