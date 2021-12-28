@@ -65,8 +65,8 @@ exports.config = {
 
         'goog:chromeOptions': {
             args: [
-              '--disable-dev-shm-usage',
               '--no-sandbox',
+              '--disable-dev-shm-usage',
             ],
         }
 
