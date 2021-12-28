@@ -66,10 +66,6 @@ exports.config = {
         'goog:chromeOptions': {
             args: [
               '--disable-dev-shm-usage',
-              '--window-size=1440, 900',
-              '--ignore-certificate-errors',
-              '--no-sandbox',
-              '--headless',
             ],
         }
 
