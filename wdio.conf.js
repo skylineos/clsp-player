@@ -62,7 +62,7 @@ exports.config = {
         // it is possible to configure which logTypes to include/exclude.
         // excludeDriverLogs: ['*'], // pass '*' to exclude all driver session logs
         // excludeDriverLogs: ['bugreport', 'server'],
-        
+
         'goog:chromeOptions': {
             args: [
               '--disable-dev-shm-usage',
@@ -71,6 +71,7 @@ exports.config = {
               '--no-sandbox',
               '--headless',
             ],
+        }
 
     }],
     //
