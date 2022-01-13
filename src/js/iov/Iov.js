@@ -308,7 +308,7 @@ export default class Iov extends EventEmitter {
   }
 
   destroyAllLoadingAnimations = () => {
-    // Remove all loading animations within the container. 
+    // Remove all loading animations within the container.
     const loadingElements = this.getLoadingAnimation();
 
     for (let i = 0; i < loadingElements.length; i++) {
@@ -337,34 +337,32 @@ export default class Iov extends EventEmitter {
    */
   async changeSrc (url) {
     // adding loading animation to the IOV
-    this.createLoadingAnimation();
 
     if (this.isDestroyed) {
       this.logger.info('Tried to changeSrc while destroyed');
-      this.destroyAllLoadingAnimations();
       return;
     }
 
     this.logger.info('Changing Stream...');
 
     if (!url) {
-      this.destroyAllLoadingAnimations();
 
       throw new Error('url is required to changeSrc');
     }
 
     this.streamConfiguration = StreamConfiguration.isStreamConfiguration(url)
-      ? url
-      : StreamConfiguration.fromUrl(url);
+    ? url
+    : StreamConfiguration.fromUrl(url);
 
     if (utils.isDocumentHidden()) {
       // @todo - it would be better to do something other than just log info
       // here...
       this.logger.info('Tried to changeSrc while tab was hidden!');
-      this.destroyAllLoadingAnimations();
 
       return;
     }
+
+    this.createLoadingAnimation();
 
     if (!utils.isOnline()) {
       // @todo - it would be better to do something other than just log info
