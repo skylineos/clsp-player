@@ -362,16 +362,14 @@ export default class Iov extends EventEmitter {
       return;
     }
 
-    this.createLoadingAnimation();
-
     if (!utils.isOnline()) {
-      // @todo - it would be better to do something other than just log info
-      // here...
+      // @todo - display 'no internet connection' indicator
       this.logger.info('Tried to changeSrc while not connected to the internet!');
-      this.destroyAllLoadingAnimations();
 
       return;
     }
+
+    this.createLoadingAnimation();
 
     let iovPlayerId;
 
@@ -388,6 +386,8 @@ export default class Iov extends EventEmitter {
         this.videoElement,
         this.streamConfiguration,
       );
+
+
     }
     catch (error) {
       this.logger.error(`Error while creating / playing the player for stream ${this.streamConfiguration.streamName}`);
