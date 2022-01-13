@@ -49,6 +49,9 @@ export class Iov {
   enterFullscreen();
   exitFullscreen();
   toggleFullscreen();
+  getLoadingAnimation();
+  destroyAllLoadingAnimations();
+  createLoadingAnimation();
   /**
    * Dereference the necessary properties, clear any intervals and timeouts, and
    * remove any listeners.  Will also destroy the player.
