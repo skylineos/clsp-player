@@ -4,6 +4,7 @@
 ## Table of Contents <!-- omit in toc -->
 
 - [CLSP Player](#clsp-player)
+    - [v0.23.0 - 2022-01-17 - Optional](#v0230---2022-01-17---optional)
     - [v0.22.0 - 2020-09-30 - Critical](#v0220---2020-09-30---critical)
     - [v0.21.0 - 2020-07-07 - Recommended](#v0210---2020-07-07---recommended)
     - [v0.20.1 - 2020-04-30 - Critical](#v0201---2020-04-30---critical)
@@ -31,6 +32,10 @@
     - [Status Definitions](#status-definitions)
 
 ## CLSP Player
+
+### v0.23.0 - 2022-01-17 - Optional
+
+* add loading spinner
 
 ### v0.22.0 - 2020-09-30 - Critical
 
