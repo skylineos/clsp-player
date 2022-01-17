@@ -22,6 +22,7 @@ const DEFAULT_CONNECTION_CHANGE_PLAY_DELAY = 5;
 
 const CONTAINER_CLASS = 'clsp-player-container';
 const VIDEO_CLASS = 'clsp-player';
+const LOADING_ANIMATION_CLASS = 'clsp-player-loading-animation';
 
 /**
  * Internet of Video client. This module uses the MediaSource API to
@@ -210,6 +211,9 @@ export default class Iov extends EventEmitter {
   #uninitializeElements () {
     this.logger.info('Unnitializing elements...');
 
+    // Ensures all loading animations are cleaned up.
+    this.destroyAllLoadingAnimations();
+
     this.containerElement.classList.remove(CONTAINER_CLASS);
 
     this.videoElement.classList.remove(VIDEO_CLASS);
@@ -297,11 +301,43 @@ export default class Iov extends EventEmitter {
     }
   };
 
+  getLoadingAnimation = () => {
+    // Returns an HTMLCollection [] with all the loading animations
+    // that exist in the container.
+    return this.containerElement.getElementsByClassName(LOADING_ANIMATION_CLASS);
+  }
+
+  destroyAllLoadingAnimations = () => {
+    // Remove all loading animations within the container.
+    const loadingElements = this.getLoadingAnimation();
+
+    for (let i = 0; i < loadingElements.length; i++) {
+      loadingElements[i].remove();
+    }
+  }
+
+  createLoadingAnimation = () => {
+    // If loading animation already exists, end function.
+    const loadingElements = this.getLoadingAnimation()
+    if (loadingElements.length > 0) {
+      return;
+    }
+
+    // Create loading div element.
+    const loadingDiv = document.createElement('div');
+    loadingDiv.classList.add(LOADING_ANIMATION_CLASS);
+
+    // Add loading div to the container.
+    this.containerElement.insertBefore(loadingDiv, this.videoElement);
+  }
+
   /**
    * @param {StreamConfiguration|String} url
    *   The StreamConfiguration or url of the new stream
    */
   async changeSrc (url) {
+    // adding loading animation to the IOV
+
     if (this.isDestroyed) {
       this.logger.info('Tried to changeSrc while destroyed');
       return;
@@ -310,26 +346,30 @@ export default class Iov extends EventEmitter {
     this.logger.info('Changing Stream...');
 
     if (!url) {
+
       throw new Error('url is required to changeSrc');
     }
 
     this.streamConfiguration = StreamConfiguration.isStreamConfiguration(url)
-      ? url
-      : StreamConfiguration.fromUrl(url);
+    ? url
+    : StreamConfiguration.fromUrl(url);
 
     if (utils.isDocumentHidden()) {
       // @todo - it would be better to do something other than just log info
       // here...
       this.logger.info('Tried to changeSrc while tab was hidden!');
+
       return;
     }
 
     if (!utils.isOnline()) {
-      // @todo - it would be better to do something other than just log info
-      // here...
+      // @todo - display 'no internet connection' indicator
       this.logger.info('Tried to changeSrc while not connected to the internet!');
+
       return;
     }
+
+    this.createLoadingAnimation();
 
     let iovPlayerId;
 
@@ -346,21 +386,30 @@ export default class Iov extends EventEmitter {
         this.videoElement,
         this.streamConfiguration,
       );
+
+
     }
     catch (error) {
       this.logger.error(`Error while creating / playing the player for stream ${this.streamConfiguration.streamName}`);
       this.logger.error(error);
 
+      this.destroyAllLoadingAnimations();
+
       throw error;
     }
 
     if (!iovPlayerId) {
+      this.destroyAllLoadingAnimations();
+
       throw new Error('IovPlayer was created, but no id was returned');
     }
 
     // changeSrc will only complete when the video is actually playing
     await new Promise((resolve, reject) => {
       this.iovPlayerCollection.on(IovPlayerCollection.events.FIRST_FRAME_SHOWN, async ({ id }) => {
+        // Ensuring that n number of loading animations are removed.
+        this.destroyAllLoadingAnimations();
+
         // This first frame shown was for a different player
         if (iovPlayerId !== id) {
           // Note, we are not resolving nor rejecting here
@@ -487,7 +536,6 @@ export default class Iov extends EventEmitter {
    */
   async _destroy () {
     const timeStarted = Date.now();
-
     const {
       visibilityChangeEventName,
     } = utils.windowStateNames;
