@@ -318,7 +318,7 @@ export default class Iov extends EventEmitter {
 
   createLoadingAnimation = () => {
     // If loading animation already exists, end function.
-    const loadingElements = this.getLoadingAnimation()
+    const loadingElements = this.getLoadingAnimation();
     if (loadingElements.length > 0) {
       return;
     }
@@ -346,13 +346,12 @@ export default class Iov extends EventEmitter {
     this.logger.info('Changing Stream...');
 
     if (!url) {
-
       throw new Error('url is required to changeSrc');
     }
 
     this.streamConfiguration = StreamConfiguration.isStreamConfiguration(url)
-    ? url
-    : StreamConfiguration.fromUrl(url);
+      ? url
+      : StreamConfiguration.fromUrl(url);
 
     if (utils.isDocumentHidden()) {
       // @todo - it would be better to do something other than just log info
@@ -386,8 +385,6 @@ export default class Iov extends EventEmitter {
         this.videoElement,
         this.streamConfiguration,
       );
-
-
     }
     catch (error) {
       this.logger.error(`Error while creating / playing the player for stream ${this.streamConfiguration.streamName}`);

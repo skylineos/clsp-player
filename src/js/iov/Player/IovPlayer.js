@@ -720,7 +720,7 @@ export default class IovPlayer extends EventEmitter {
       // no need to await this since it's only ever called in an event handler
       this.#reinitializeMseWrapper();
     }
-  };
+  }
 
   /**
    * @private
