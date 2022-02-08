@@ -18,6 +18,7 @@
   @extend .clsp-container-fit;
   position: relative;
   background-color: black;
+  overflow: hidden;
 
   // All other video elements are beneath the first, in arbitrary order.
   // NOTE - DO NOT add any styles to the actual video element - additional
@@ -41,7 +42,7 @@
 
   .clsp-player-loading-animation {
     border: 6px solid #f3f3f3; /* Light grey */
-    border-top: 6px solid #3498db; /* Blue */
+    border-top: 6px solid red; /* Blue */
     border-radius: 50%;
     width: 30px;
     height: 30px;
@@ -52,7 +53,6 @@
     left: 0;
     right: 0;
     bottom: 0;
-    overflow: hidden;
   }
 }
 
