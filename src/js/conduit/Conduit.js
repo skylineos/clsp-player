@@ -1087,6 +1087,7 @@ export default class Conduit {
     iframe.width = 0;
     iframe.height = 0;
     iframe.setAttribute('style', 'display:none;');
+    iframe.setAttribute('aria-hidden', 'true');
 
     iframe.srcdoc = `
       <html>

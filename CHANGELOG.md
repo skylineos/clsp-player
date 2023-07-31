@@ -4,6 +4,7 @@
 ## Table of Contents <!-- omit in toc -->
 
 - [CLSP Player](#clsp-player)
+    - [v0.20.2 - 2020-04-30 - Recommended](#v0202---2023-07-31---recommended)
     - [v0.20.1 - 2020-04-30 - Critical](#v0201---2020-04-30---critical)
     - [v0.19.0 - 2020-04-21 - Critical](#v0190---2020-04-21---critical)
     - [v0.18.0-1 - 2020-04-04 - Critical](#v0180-1---2020-04-04---critical)
@@ -29,6 +30,10 @@
     - [Status Definitions](#status-definitions)
 
 ## CLSP Player
+
+### v0.20.2 - 2023-07-31 - Recommended
+
+* improve accessibility: add `aria-hidden` attribute to generated iframes
 
 ### v0.20.1 - 2020-04-30 - Critical
 
