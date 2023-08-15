@@ -248,7 +248,7 @@ export default class RouterStreamManager extends RouterBaseManager {
     // response ->  {"status": 200, "target_url": "clsp://sfs1/fakestream", "error": null}
     const {
       payloadString: response,
-    } = await this.routerTransactionManager.transaction('iov/hashValidate', {
+    } = await this.routerTransactionManager.transaction('iov/jwtValidate', {
       b64HashURL: this.streamConfiguration.tokenConfig.b64HashAccessUrl,
       token: this.streamConfiguration.tokenConfig.hash,
     });
@@ -262,10 +262,10 @@ export default class RouterStreamManager extends RouterBaseManager {
     }
 
     // TODO, figure out how to handle a change in the sfs url from the
-    // clsp-hash from the target url returned from decrypting the hash
+    // clsp-jwt from the target url returned from decrypting the hash
     // token.
     // Example:
-    //    user enters 'clsp-hash://sfs1/hash?start=0&end=...&token=...' for source
+    //    user enters 'clsp-jwt://sfs1?token=...' for source
     //    clspUrl = 'clsp://SFS2/streamOnDifferentSfs
     // --- due to the videojs architecture i don't see a clean way of doing this.
     // ==============================================================================

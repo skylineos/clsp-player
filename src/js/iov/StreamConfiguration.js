@@ -50,12 +50,12 @@ export default class StreamConfiguration {
     // Chrome is the only browser that allows non-http protocols in
     // the anchor tag's href, so change them all to http here so we
     // get the benefits of the anchor tag's parsing
-    if (parsed.protocol === 'clsps-hash:') {
+    if (parsed.protocol === 'clsps-jwt:') {
       useSSL = true;
       defaultPort = utils.getDefaultStreamPort('clsps');
       hashUrl = true;
     }
-    else if (parsed.protocol === 'clsp-hash:') {
+    else if (parsed.protocol === 'clsp-jwt:') {
       useSSL = false;
       defaultPort = utils.getDefaultStreamPort('clsp');
       hashUrl = true;
@@ -104,23 +104,15 @@ export default class StreamConfiguration {
         query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
       }
 
-      if (typeof query.start === 'undefined') {
-        throw new Error("Required 'start' query parameter not defined for a clsp[s]-hash");
-      }
-
-      if (typeof query.end === 'undefined') {
-        throw new Error("Required 'end' query parameter not defined for a clsp[s]-hash");
-      }
-
       if (typeof query.token === 'undefined') {
         throw new Error("Required 'token' query parameter not defined for a clsp[s]-hash");
       }
 
       const protocol = useSSL
-        ? 'clsps-hash'
-        : 'clsp-hash';
+        ? 'clsps-jwt'
+        : 'clsp-jwt';
 
-      const hashUrl = `${protocol}://${host}:${port}/${streamName}?start=${query.start}&end=${query.end}&token=${query.token}`;
+      const hashUrl = `${protocol}://${host}:${port}/${streamName}?token=${query.token}`;
 
       b64HashAccessUrl = window.btoa(hashUrl);
       hash = query.token;
