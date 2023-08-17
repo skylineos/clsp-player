@@ -41,7 +41,6 @@ export default class StreamConfiguration {
 
     let useSSL;
     let defaultPort;
-    let hashUrl;
     let b64HashAccessUrl = '';
     let jwt = '';
 
@@ -50,25 +49,14 @@ export default class StreamConfiguration {
     // Chrome is the only browser that allows non-http protocols in
     // the anchor tag's href, so change them all to http here so we
     // get the benefits of the anchor tag's parsing
-    if (parsed.protocol === 'clsps-jwt:') {
+
+    if (parsed.protocol === 'clsps:') {
       useSSL = true;
       defaultPort = utils.getDefaultStreamPort('clsps');
-      hashUrl = true;
-    }
-    else if (parsed.protocol === 'clsp-jwt:') {
-      useSSL = false;
-      defaultPort = utils.getDefaultStreamPort('clsp');
-      hashUrl = true;
-    }
-    else if (parsed.protocol === 'clsps:') {
-      useSSL = true;
-      defaultPort = utils.getDefaultStreamPort('clsps');
-      hashUrl = false;
     }
     else if (parsed.protocol === 'clsp:') {
       useSSL = false;
       defaultPort = utils.getDefaultStreamPort('clsp');
-      hashUrl = false;
     }
     else {
       throw new Error('The given source is not a clsp url, and therefore cannot be parsed.');
@@ -91,30 +79,23 @@ export default class StreamConfiguration {
       host = window.location.hostname;
     }
 
-    if (hashUrl === true) {
-      // URL: clsp[s]-jwt://<sfs-addr>[:<port>]/<stream>?token=...
-      const qpOffset = url.indexOf(parsed.pathname) + parsed.pathname.length;
+    // URL: clsp[s]://<sfs-addr>[:<port>]/<stream>?token=...
+    const qpOffset = url.indexOf(parsed.pathname) + parsed.pathname.length;
 
-      const qrArgs = url.substr(qpOffset).split('?')[1] || '';
-      const query = {};
+    const qrArgs = url.substr(qpOffset).split('?')[1] || '';
+    const query = {};
 
-      const pairs = qrArgs.split('&');
-      for (let i = 0; i < pairs.length; i++) {
-        const pair = pairs[i].split('=');
-        query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
-      }
+    const pairs = qrArgs.split('&');
+    for (let i = 0; i < pairs.length; i++) {
+      const pair = pairs[i].split('=');
+      query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+    }
 
-      if (typeof query.token === 'undefined') {
-        throw new Error("Required 'token' query parameter not defined for a clsp[s]-jwt");
-      }
+    // set the jwt token if it's present in the query path
+    if (typeof query.token !== 'undefined' && query.token.length > 0) {
+      const jwtUrl = `${parsed.protocol}://${host}:${port}/${streamName}?token=${query.token}`;
 
-      const protocol = useSSL
-        ? 'clsps-jwt'
-        : 'clsp-jwt';
-
-      const hashUrl = `${protocol}://${host}:${port}/${streamName}?token=${query.token}`;
-
-      b64HashAccessUrl = window.btoa(hashUrl);
+      b64HashAccessUrl = window.btoa(jwtUrl);
       jwt = query.token;
     }
 

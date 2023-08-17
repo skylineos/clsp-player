@@ -73,11 +73,10 @@ Control stream access via jwt tokens.
 The JWT authorization method provides authorization as well as stream access time.
 
 ```
-[clsp-jwt protocol]://[sfs-host]:[port-number-of-web-socket]/[stream-name]
+clsps://[sfs-host]:[port-number-of-web-socket]/[stream-name]
   ?token=[jwt-token]
 ```
 
-* `clsp-jwt protocol`: `clsp-jwt` or `clsps-jwt`
 * `sfs-host`: the host (or ip address) of the Skyline SFS
 * `port-number-of-web-socket`: required, @see [Default Port](#default-port)
 * `stream-name`: the stream name as defined on the Skyline SFS
