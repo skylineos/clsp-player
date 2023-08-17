@@ -43,7 +43,7 @@ export default class StreamConfiguration {
     let defaultPort;
     let hashUrl;
     let b64HashAccessUrl = '';
-    let hash = '';
+    let jwt = '';
 
     parsed.protocol = parsed.protocol.toLowerCase();
 
@@ -92,7 +92,7 @@ export default class StreamConfiguration {
     }
 
     if (hashUrl === true) {
-      // URL: clsp[s]-hash://<sfs-addr>[:<port>]/<stream>?start=...&end=...&token=...
+      // URL: clsp[s]-jwt://<sfs-addr>[:<port>]/<stream>?token=...
       const qpOffset = url.indexOf(parsed.pathname) + parsed.pathname.length;
 
       const qrArgs = url.substr(qpOffset).split('?')[1] || '';
@@ -105,7 +105,7 @@ export default class StreamConfiguration {
       }
 
       if (typeof query.token === 'undefined') {
-        throw new Error("Required 'token' query parameter not defined for a clsp[s]-hash");
+        throw new Error("Required 'token' query parameter not defined for a clsp[s]-jwt");
       }
 
       const protocol = useSSL
@@ -115,7 +115,7 @@ export default class StreamConfiguration {
       const hashUrl = `${protocol}://${host}:${port}/${streamName}?token=${query.token}`;
 
       b64HashAccessUrl = window.btoa(hashUrl);
-      hash = query.token;
+      jwt = query.token;
     }
 
     return {
@@ -125,7 +125,7 @@ export default class StreamConfiguration {
       useSSL,
       tokenConfig: {
         b64HashAccessUrl,
-        hash,
+        jwt,
       },
     };
   }

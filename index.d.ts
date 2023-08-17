@@ -10,7 +10,7 @@ export as namespace CLSP;
 
 interface StreamConfigurationTokenConfig {
   b64HashAccessUrl: string;
-  hash: string;
+  jwt: string;
 }
 
 interface StreamConfigurationConfig {

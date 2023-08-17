@@ -11,7 +11,7 @@ An html5 CLSP video player.  CLSP is a proprietary near-real-time video streamin
 - [CLSP Streams](#clsp-streams)
   - [URL Structure](#url-structure)
   - [Tokenization](#tokenization)
-    - [Hash](#hash)
+    - [JWT](#jwt)
   - [Default Port](#default-port)
 - [Installation](#installation)
   - [Via Yarn](#via-yarn)
@@ -66,28 +66,24 @@ Example stream url:
 
 ### Tokenization
 
-Control stream access via hash tokens.
+Control stream access via jwt tokens.
 
-#### Hash
+#### JWT
 
-The MD5 hash authentication method provides authentication as well as stream access time.
+The JWT authorization method provides authorization as well as stream access time.
 
 ```
-[clsp-hash protocol]://[sfs-host]:[port-number-of-web-socket]/[stream-name]
-  ?start=[time-epoch-seconds]
-  &end=[time-epoch-seconds]
-  &token=[hash-token]
+[clsp-jwt protocol]://[sfs-host]:[port-number-of-web-socket]/[stream-name]
+  ?token=[jwt-token]
 ```
 
-* `clsp-hash protocol`: `clsp-hash` or `clsps-hash`
+* `clsp-jwt protocol`: `clsp-jwt` or `clsps-jwt`
 * `sfs-host`: the host (or ip address) of the Skyline SFS
 * `port-number-of-web-socket`: required, @see [Default Port](#default-port)
 * `stream-name`: the stream name as defined on the Skyline SFS
-* `start`: contains the earliest time you want the stream to become available.
-* `end`: contains the latest time you want the stream to become available.
-* `token`: contains the entire url sans token, md5 + secret
+* `token`: contains a jwt token with the expiration claim, signed by the shared secret
 
-The token is created by appending a shared secret to the url. That new string is used to create an MD5 hash. The shared secret must first be set up on the Skyline SFS and the stream-requesting application.  You will need to work with Skyline to configure and use hash token support.
+The token is created by the stream manager. A shared secret exists between the stream manager and Skyline SFS(s)   You will need to work with Skyline to configure and use jwt token support.
 
 
 ### Default Port

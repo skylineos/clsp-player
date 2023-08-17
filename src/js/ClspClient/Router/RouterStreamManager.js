@@ -81,7 +81,7 @@ export default class RouterStreamManager extends RouterBaseManager {
   /**
    * @async
    *
-   * If the hash is valid or if we are not using a hash, perform the necessary
+   * If the jwt is valid or if we are not using jwt, perform the necessary
    * operations to retrieve stream segments (moofs).  The actual "playing"
    * occurs in the player, since it involves taking those received stream
    * segments and using MSE to display them.
@@ -97,10 +97,10 @@ export default class RouterStreamManager extends RouterBaseManager {
     }
 
     if (this.streamConfiguration.tokenConfig &&
-        this.streamConfiguration.tokenConfig.hash &&
-        this.streamConfiguration.tokenConfig.hash.length > 0
+        this.streamConfiguration.tokenConfig.jwt &&
+        this.streamConfiguration.tokenConfig.jwt.length > 0
     ) {
-      this.streamName = await this._validateHash();
+      this.streamName = await this._validateJWT();
     }
 
     this.logger.info('Play is requesting stream...');
@@ -237,28 +237,28 @@ export default class RouterStreamManager extends RouterBaseManager {
    *
    * @async
    *
-   * Validate the hash that this instance was constructed with.
+   * Validate the jwt that this instance was constructed with.
    *
    * @returns {String}
    *   the stream name
    */
-  async _validateHash () {
-    this.logger.debug('Validating Hash...');
+  async _validateJWT () {
+    this.logger.debug('Validating JWT...');
 
     // response ->  {"status": 200, "target_url": "clsp://sfs1/fakestream", "error": null}
     const {
       payloadString: response,
     } = await this.routerTransactionManager.transaction('iov/jwtValidate', {
       b64HashURL: this.streamConfiguration.tokenConfig.b64HashAccessUrl,
-      token: this.streamConfiguration.tokenConfig.hash,
+      token: this.streamConfiguration.tokenConfig.jwt,
     });
 
     if (response.status === 401) {
-      throw new Error('HashUnAuthorized');
+      throw new Error('JWTUnAuthorized: ' + response.error);
     }
 
     if (response.status !== 200) {
-      throw new Error('HashInvalid');
+      throw new Error('JWTInvalid: ' + response.error);
     }
 
     // TODO, figure out how to handle a change in the sfs url from the
