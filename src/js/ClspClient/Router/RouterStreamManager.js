@@ -300,15 +300,29 @@ export default class RouterStreamManager extends RouterBaseManager {
   async _requestStreamData () {
     this.logger.debug('Requesting Stream...');
 
+    let payload;
+
+    if (this.streamConfiguration.tokenConfig &&
+      this.streamConfiguration.tokenConfig.jwt &&
+      this.streamConfiguration.tokenConfig.jwt.length > 0
+    ) {
+      payload = {
+        clientId: this.clientId,
+        token: this.streamConfiguration.tokenConfig.jwt,
+      }
+    } else {
+      payload = {
+        clientId: this.clientId,
+      }
+    }
+
     // NOTE - when the "/request" request times out, it means there is a
     // significant problem with this stream on the SFS (perhaps it doesn't
     // exist?).  As opposed to the "/play" request timing out...
     // @todo - add a condition for this
     const { payloadString: videoMetaData } = await this.routerTransactionManager.transaction(
       `iov/video/${window.btoa(this.streamName)}/request`,
-      {
-        clientId: this.clientId,
-      },
+      payload,
       this.STREAM_DATA_TIMEOUT_DURATION,
     );
 
@@ -359,16 +373,31 @@ export default class RouterStreamManager extends RouterBaseManager {
       throw new Error('The guid must be set before requesting the moov');
     }
 
+    let payload;
+
+    if (this.streamConfiguration.tokenConfig &&
+      this.streamConfiguration.tokenConfig.jwt &&
+      this.streamConfiguration.tokenConfig.jwt.length > 0
+    ) {
+      payload = {
+        initSegmentTopic: this.moovRequestTopic,
+        clientId: this.clientId,
+        token: this.streamConfiguration.tokenConfig.jwt,
+      }
+    } else {
+      payload = {
+        initSegmentTopic: this.moovRequestTopic,
+        clientId: this.clientId,
+      }
+    }
+
     // NOTE - when the "/play" request times out, it means the SFS can correctly
     // handle your request for this stream, but something is wrong with the
     // stream on the SFS.
     // @todo - add a condition for this
     const { payloadBytes: moov } = await this.routerTransactionManager.transaction(
       `iov/video/${this.guid}/play`,
-      {
-        initSegmentTopic: this.moovRequestTopic,
-        clientId: this.clientId,
-      },
+      payload,
       this.MOOV_TIMEOUT_DURATION,
       // We must override the subscribe topic to get the moov
       this.moovRequestTopic,
