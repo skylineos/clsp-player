@@ -17,6 +17,7 @@ export default class RouterStreamManager extends RouterBaseManager {
     RESYNC_STREAM_COMPLETE: 'resync-stream-complete',
     VIDEO_SEGMENT_RECEIVED: 'video-segment-received',
     VIDEO_SEGMENT_TIMEOUT: 'video-segment-timeout',
+    JWT_AUTHORIZATION_FAILURE: 'jwt-authorization-failure',
   }
 
   /**
@@ -96,16 +97,16 @@ export default class RouterStreamManager extends RouterBaseManager {
       return;
     }
 
-    if (this.streamConfiguration.tokenConfig &&
+    try {
+      if (this.streamConfiguration.tokenConfig &&
         this.streamConfiguration.tokenConfig.jwt &&
         this.streamConfiguration.tokenConfig.jwt.length > 0
-    ) {
-      this.streamName = await this._validateJWT();
-    }
+      ) {
+        this.streamName = await this._validateJWT();
+      }
 
-    this.logger.info('Play is requesting stream...');
+      this.logger.info('Play is requesting stream...');
 
-    try {
       const {
         guid,
         mimeCodec,
@@ -252,6 +253,12 @@ export default class RouterStreamManager extends RouterBaseManager {
       b64HashURL: this.streamConfiguration.tokenConfig.b64HashAccessUrl,
       token: this.streamConfiguration.tokenConfig.jwt,
     });
+
+    if (response.error !== '') {
+      this.emit(RouterStreamManager.events.JWT_AUTHORIZATION_FAILURE, {
+        error: response.error,
+      });
+    }
 
     if (response.status === 401) {
       throw new Error('JWTUnAuthorized: ' + response.error);
