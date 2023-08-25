@@ -176,6 +176,12 @@ export default class IovPlayerCollection extends EventEmitter {
       }
     });
 
+    iovPlayer.on(IovPlayer.events.JWT_AUTHORIZATION_FAILURE, async (data) => {
+      this.logger.error(`Critical JWT authorization error: ${data.error}`);
+      // prevent any retries
+      this.retryAttempts[id] = this.MAX_RETRIES_ON_PLAY_ERROR + 1;
+    });
+
     return iovPlayer;
   }
 
