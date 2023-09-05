@@ -358,7 +358,7 @@ export default class Iov extends EventEmitter {
     if (this.getErrorMsgContainer() == undefined) {
       const errorDiv = document.createElement('div');
       errorDiv.classList.add(ERROR_MSG_CLASS);
-      this.containerElement.insertBefore(loadingDiv, this.videoElement);
+      this.containerElement.insertBefore(videoDiv, this.videoElement);
     } else {
       this.clearErrorMsg();
     }
