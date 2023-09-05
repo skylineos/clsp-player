@@ -23,6 +23,7 @@ const DEFAULT_CONNECTION_CHANGE_PLAY_DELAY = 5;
 const CONTAINER_CLASS = 'clsp-player-container';
 const VIDEO_CLASS = 'clsp-player';
 const LOADING_ANIMATION_CLASS = 'clsp-player-loading-animation';
+const ERROR_MSG_CLASS = 'clsp-player-error-msg';
 
 /**
  * Internet of Video client. This module uses the MediaSource API to
@@ -138,6 +139,11 @@ export default class Iov extends EventEmitter {
       }
 
       this.emit(Iov.events.IFRAME_DESTROYED_EXTERNALLY);
+    });
+
+    this.iovPlayerCollection.on(IovPlayerCollection.events.DISPLAY_ERROR_MSG, (error) => {
+      this.logger.info('Displaying error msg to user');
+      this.displayErrorMsg(error.error.message);
     });
   }
 
@@ -301,6 +307,10 @@ export default class Iov extends EventEmitter {
     }
   };
 
+  getErrorMsgContainer = () => {
+    return this.containerElement.getElementsByClassName(ERROR_MSG_CLASS)[0];
+  }
+
   getLoadingAnimation = () => {
     // Returns an HTMLCollection [] with all the loading animations
     // that exist in the container.
@@ -329,6 +339,29 @@ export default class Iov extends EventEmitter {
 
     // Add loading div to the container.
     this.containerElement.insertBefore(loadingDiv, this.videoElement);
+  }
+
+  clearErrorMsg = () => {
+    this.getErrorMsgContainer().innerHTML= "";
+  }
+
+  displayErrorMsg = (errorMsg) => {
+    const errorMsgContainer =  this.getErrorMsgContainer()
+    errorMsgContainer.innerHTML = errorMsg;
+  }
+
+  /**
+   * If an existing container exists for holding an error msg, clear it.
+   * Otherwise, create a new container element for holding an error msg.
+   */
+  initializeErrorMsgContainer = () => {
+    if (this.getErrorMsgContainer() == undefined) {
+      const errorDiv = document.createElement('div');
+      errorDiv.classList.add(ERROR_MSG_CLASS);
+      this.containerElement.insertBefore(loadingDiv, this.videoElement);
+    } else {
+      this.clearErrorMsg();
+    }
   }
 
   /**
@@ -369,6 +402,8 @@ export default class Iov extends EventEmitter {
     }
 
     this.createLoadingAnimation();
+    this.initializeErrorMsgContainer();
+   
 
     let iovPlayerId;
 
