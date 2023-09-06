@@ -18,6 +18,7 @@
   @extend .clsp-container-fit;
   position: relative;
   background-color: black;
+  overflow: hidden;
 
   // All other video elements are beneath the first, in arbitrary order.
   // NOTE - DO NOT add any styles to the actual video element - additional
@@ -40,11 +41,11 @@
   }
 
   .clsp-player-loading-animation {
-    border: 16px solid #f3f3f3; /* Light grey */
-    border-top: 16px solid #3498db; /* Blue */
+    border: 6px solid #f3f3f3; /* Light grey */
+    border-top: 6px solid #3498db; /* Blue */
     border-radius: 50%;
-    width: 120px;
-    height: 120px;
+    width: 30px;
+    height: 30px;
     animation: spin 2s linear infinite;
     margin: auto;
   }
