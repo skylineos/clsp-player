@@ -98,10 +98,7 @@ export default class RouterStreamManager extends RouterBaseManager {
     }
 
     try {
-      if (this.streamConfiguration.tokenConfig &&
-        this.streamConfiguration.tokenConfig.jwt &&
-        this.streamConfiguration.tokenConfig.jwt.length > 0
-      ) {
+      if (this._hasJWTTokenConfig()) {
         this.streamName = await this._validateJWT();
       }
 
@@ -234,6 +231,25 @@ export default class RouterStreamManager extends RouterBaseManager {
   }
 
   /**
+   * @returns @private
+   * 
+   * Validate that the stream configuration has a valid jwt token configuration
+   * 
+   * @returns {boolean}
+   *   true if token config present and has a jwt token with a length > 0
+   */
+  _hasJWTTokenConfig() {
+
+    if (this.streamConfiguration.tokenConfig &&
+      this.streamConfiguration.tokenConfig.jwt &&
+      this.streamConfiguration.tokenConfig.jwt.length > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
    * @private
    *
    * @async
@@ -309,10 +325,7 @@ export default class RouterStreamManager extends RouterBaseManager {
 
     let payload;
 
-    if (this.streamConfiguration.tokenConfig &&
-      this.streamConfiguration.tokenConfig.jwt &&
-      this.streamConfiguration.tokenConfig.jwt.length > 0
-    ) {
+    if (this._hasJWTTokenConfig()) {
       payload = {
         clientId: this.clientId,
         token: this.streamConfiguration.tokenConfig.jwt,
@@ -382,10 +395,7 @@ export default class RouterStreamManager extends RouterBaseManager {
 
     let payload;
 
-    if (this.streamConfiguration.tokenConfig &&
-      this.streamConfiguration.tokenConfig.jwt &&
-      this.streamConfiguration.tokenConfig.jwt.length > 0
-    ) {
+    if (this._hasJWTTokenConfig()) {
       payload = {
         initSegmentTopic: this.moovRequestTopic,
         clientId: this.clientId,
