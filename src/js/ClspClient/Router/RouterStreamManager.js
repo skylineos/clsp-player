@@ -17,6 +17,7 @@ export default class RouterStreamManager extends RouterBaseManager {
     RESYNC_STREAM_COMPLETE: 'resync-stream-complete',
     VIDEO_SEGMENT_RECEIVED: 'video-segment-received',
     VIDEO_SEGMENT_TIMEOUT: 'video-segment-timeout',
+    JWT_AUTHORIZATION_FAILURE: 'jwt-authorization-failure',
   }
 
   /**
@@ -81,7 +82,7 @@ export default class RouterStreamManager extends RouterBaseManager {
   /**
    * @async
    *
-   * If the hash is valid or if we are not using a hash, perform the necessary
+   * If the jwt is valid or if we are not using jwt, perform the necessary
    * operations to retrieve stream segments (moofs).  The actual "playing"
    * occurs in the player, since it involves taking those received stream
    * segments and using MSE to display them.
@@ -96,16 +97,13 @@ export default class RouterStreamManager extends RouterBaseManager {
       return;
     }
 
-    if (this.streamConfiguration.tokenConfig &&
-        this.streamConfiguration.tokenConfig.hash &&
-        this.streamConfiguration.tokenConfig.hash.length > 0
-    ) {
-      this.streamName = await this._validateHash();
-    }
-
-    this.logger.info('Play is requesting stream...');
-
     try {
+      if (this._hasJWTTokenConfig()) {
+        this.streamName = await this._validateJWT();
+      }
+
+      this.logger.info('Play is requesting stream...');
+
       const {
         guid,
         mimeCodec,
@@ -233,39 +231,64 @@ export default class RouterStreamManager extends RouterBaseManager {
   }
 
   /**
+   * @returns @private
+   * 
+   * Validate that the stream configuration has a valid jwt token configuration
+   * 
+   * @returns {boolean}
+   *   true if token config present and has a jwt token with a length > 0
+   */
+  _hasJWTTokenConfig() {
+
+    if (this.streamConfiguration.tokenConfig &&
+      this.streamConfiguration.tokenConfig.jwt &&
+      this.streamConfiguration.tokenConfig.jwt.length > 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  /**
    * @private
    *
    * @async
    *
-   * Validate the hash that this instance was constructed with.
+   * Validate the jwt that this instance was constructed with.
    *
    * @returns {String}
    *   the stream name
    */
-  async _validateHash () {
-    this.logger.debug('Validating Hash...');
+  async _validateJWT () {
+    this.logger.debug('Validating JWT...');
 
     // response ->  {"status": 200, "target_url": "clsp://sfs1/fakestream", "error": null}
     const {
       payloadString: response,
-    } = await this.routerTransactionManager.transaction('iov/hashValidate', {
+    } = await this.routerTransactionManager.transaction('iov/jwtValidate', {
       b64HashURL: this.streamConfiguration.tokenConfig.b64HashAccessUrl,
-      token: this.streamConfiguration.tokenConfig.hash,
+      token: this.streamConfiguration.tokenConfig.jwt,
     });
 
+    if (response.error !== '') {
+      this.emit(RouterStreamManager.events.JWT_AUTHORIZATION_FAILURE, {
+        error: response.error,
+      });
+    }
+
     if (response.status === 401) {
-      throw new Error('HashUnAuthorized');
+      throw new Error('JWTUnAuthorized: ' + response.error);
     }
 
     if (response.status !== 200) {
-      throw new Error('HashInvalid');
+      throw new Error('JWTInvalid: ' + response.error);
     }
 
     // TODO, figure out how to handle a change in the sfs url from the
-    // clsp-hash from the target url returned from decrypting the hash
+    // clsp-jwt from the target url returned from decrypting the hash
     // token.
     // Example:
-    //    user enters 'clsp-hash://sfs1/hash?start=0&end=...&token=...' for source
+    //    user enters 'clsp-jwt://sfs1?token=...' for source
     //    clspUrl = 'clsp://SFS2/streamOnDifferentSfs
     // --- due to the videojs architecture i don't see a clean way of doing this.
     // ==============================================================================
@@ -300,15 +323,26 @@ export default class RouterStreamManager extends RouterBaseManager {
   async _requestStreamData () {
     this.logger.debug('Requesting Stream...');
 
+    let payload;
+
+    if (this._hasJWTTokenConfig()) {
+      payload = {
+        clientId: this.clientId,
+        token: this.streamConfiguration.tokenConfig.jwt,
+      }
+    } else {
+      payload = {
+        clientId: this.clientId,
+      }
+    }
+
     // NOTE - when the "/request" request times out, it means there is a
     // significant problem with this stream on the SFS (perhaps it doesn't
     // exist?).  As opposed to the "/play" request timing out...
     // @todo - add a condition for this
     const { payloadString: videoMetaData } = await this.routerTransactionManager.transaction(
       `iov/video/${window.btoa(this.streamName)}/request`,
-      {
-        clientId: this.clientId,
-      },
+      payload,
       this.STREAM_DATA_TIMEOUT_DURATION,
     );
 
@@ -359,16 +393,28 @@ export default class RouterStreamManager extends RouterBaseManager {
       throw new Error('The guid must be set before requesting the moov');
     }
 
+    let payload;
+
+    if (this._hasJWTTokenConfig()) {
+      payload = {
+        initSegmentTopic: this.moovRequestTopic,
+        clientId: this.clientId,
+        token: this.streamConfiguration.tokenConfig.jwt,
+      }
+    } else {
+      payload = {
+        initSegmentTopic: this.moovRequestTopic,
+        clientId: this.clientId,
+      }
+    }
+
     // NOTE - when the "/play" request times out, it means the SFS can correctly
     // handle your request for this stream, but something is wrong with the
     // stream on the SFS.
     // @todo - add a condition for this
     const { payloadBytes: moov } = await this.routerTransactionManager.transaction(
       `iov/video/${this.guid}/play`,
-      {
-        initSegmentTopic: this.moovRequestTopic,
-        clientId: this.clientId,
-      },
+      payload,
       this.MOOV_TIMEOUT_DURATION,
       // We must override the subscribe topic to get the moov
       this.moovRequestTopic,

@@ -28,6 +28,7 @@ export default class Conduit extends EventEmitter {
     RESYNC_STREAM_COMPLETE: RouterStreamManager.events.RESYNC_STREAM_COMPLETE,
     VIDEO_SEGMENT_RECEIVED: RouterStreamManager.events.VIDEO_SEGMENT_RECEIVED,
     IFRAME_DESTROYED_EXTERNALLY: RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY,
+    JWT_AUTHORIZATION_FAILURE: RouterStreamManager.events.JWT_AUTHORIZATION_FAILURE,
   }
 
   /**
@@ -166,6 +167,12 @@ export default class Conduit extends EventEmitter {
 
       // No need to await here since we're in an event listener
       this.routerConnectionManager.reconnect();
+    });
+
+    // Need to make our way up to the IovPlayerCollection to tell it to stop trying to reconnect.  Never gonna work
+    // with this jwt token
+    this.routerStreamManager.on(RouterStreamManager.events.JWT_AUTHORIZATION_FAILURE, (data) => {
+      this.emit(Conduit.events.JWT_AUTHORIZATION_FAILURE, data);
     });
 
     await this.routerIframeManager.create();

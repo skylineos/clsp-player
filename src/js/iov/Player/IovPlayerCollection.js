@@ -14,6 +14,7 @@ export default class IovPlayerCollection extends EventEmitter {
     VIDEO_INFO_RECEIVED: IovPlayer.events.VIDEO_INFO_RECEIVED,
     FIRST_FRAME_SHOWN: IovPlayer.events.FIRST_FRAME_SHOWN,
     IFRAME_DESTROYED_EXTERNALLY: IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY,
+    DISPLAY_ERROR_MSG: IovPlayer.events.DISPLAY_ERROR_MSG,
   };
 
   static factory (logId) {
@@ -176,6 +177,12 @@ export default class IovPlayerCollection extends EventEmitter {
       }
     });
 
+    iovPlayer.on(IovPlayer.events.JWT_AUTHORIZATION_FAILURE, (data) => {
+      this.logger.error(`Critical JWT authorization error: ${data.error}`);
+      // prevent any retries
+      this.retryAttempts[id] = this.MAX_RETRIES_ON_PLAY_ERROR + 1;
+    });
+
     return iovPlayer;
   }
 
@@ -298,10 +305,9 @@ export default class IovPlayerCollection extends EventEmitter {
         await this.#play(id);
       }
       else {
-        this.logger.error('Destroying IovPlayer after exhausting play and retry attempts');
-
-        // @todo - display a message in the page (aka to the user) saying that
-        // the stream couldn't be played?
+        this.logger.error('Destroying IovPlayer after exhausting play and retry attempts');      
+        // emit an error event to the iov
+        this.emit(IovPlayerCollection.events.DISPLAY_ERROR_MSG, { error });
         await this.remove(id);
 
         throw error;

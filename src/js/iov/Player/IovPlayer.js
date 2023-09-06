@@ -40,6 +40,7 @@ export default class IovPlayer extends EventEmitter {
     IFRAME_DESTROYED_EXTERNALLY: Conduit.events.IFRAME_DESTROYED_EXTERNALLY,
     RECONNECT_FAILURE: Conduit.events.RECONNECT_FAILURE,
     ROUTER_EVENT_ERROR: Conduit.events.ROUTER_EVENT_ERROR,
+    JWT_AUTHORIZATION_FAILURE: Conduit.events.JWT_AUTHORIZATION_FAILURE,
   };
 
   // @todo @metrics
@@ -260,6 +261,10 @@ export default class IovPlayer extends EventEmitter {
         }
 
         this.emit(IovPlayer.events.IFRAME_DESTROYED_EXTERNALLY);
+      });
+
+      this.clspClient.conduit.on(ClspClient.events.JWT_AUTHORIZATION_FAILURE, (data) => {
+        this.emit(IovPlayer.events.JWT_AUTHORIZATION_FAILURE, { error: data.error, playerId: this.id });
       });
 
       await this.clspClient.initialize();
