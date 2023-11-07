@@ -342,11 +342,11 @@ export default class Iov extends EventEmitter {
   }
 
   clearErrorMsg = () => {
-    this.getErrorMsgContainer().innerHTML= "";
+    this.getErrorMsgContainer().innerHTML = '';
   }
 
   displayErrorMsg = (errorMsg) => {
-    const errorMsgContainer =  this.getErrorMsgContainer()
+    const errorMsgContainer = this.getErrorMsgContainer();
     errorMsgContainer.innerHTML = errorMsg;
   }
 
@@ -355,11 +355,12 @@ export default class Iov extends EventEmitter {
    * Otherwise, create a new container element for holding an error msg.
    */
   initializeErrorMsgContainer = () => {
-    if (this.getErrorMsgContainer() == undefined) {
+    if (this.getErrorMsgContainer() === undefined) {
       const errorDiv = document.createElement('div');
       errorDiv.classList.add(ERROR_MSG_CLASS);
       this.containerElement.insertBefore(errorDiv, this.videoElement);
-    } else {
+    }
+    else {
       this.clearErrorMsg();
     }
   }
@@ -403,7 +404,6 @@ export default class Iov extends EventEmitter {
 
     this.createLoadingAnimation();
     this.initializeErrorMsgContainer();
-   
 
     let iovPlayerId;
 

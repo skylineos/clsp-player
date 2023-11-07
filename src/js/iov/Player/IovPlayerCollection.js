@@ -305,7 +305,7 @@ export default class IovPlayerCollection extends EventEmitter {
         await this.#play(id);
       }
       else {
-        this.logger.error('Destroying IovPlayer after exhausting play and retry attempts');      
+        this.logger.error('Destroying IovPlayer after exhausting play and retry attempts');
         // emit an error event to the iov
         this.emit(IovPlayerCollection.events.DISPLAY_ERROR_MSG, { error });
         await this.remove(id);

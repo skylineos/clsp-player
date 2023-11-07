@@ -232,19 +232,19 @@ export default class RouterStreamManager extends RouterBaseManager {
 
   /**
    * @returns @private
-   * 
+   *
    * Validate that the stream configuration has a valid jwt token configuration
-   * 
+   *
    * @returns {boolean}
    *   true if token config present and has a jwt token with a length > 0
    */
-  _hasJWTTokenConfig() {
-
+  _hasJWTTokenConfig () {
     if (this.streamConfiguration.tokenConfig &&
       this.streamConfiguration.tokenConfig.jwt &&
       this.streamConfiguration.tokenConfig.jwt.length > 0) {
       return true;
-    } else {
+    }
+    else {
       return false;
     }
   }
@@ -329,11 +329,12 @@ export default class RouterStreamManager extends RouterBaseManager {
       payload = {
         clientId: this.clientId,
         token: this.streamConfiguration.tokenConfig.jwt,
-      }
-    } else {
+      };
+    }
+    else {
       payload = {
         clientId: this.clientId,
-      }
+      };
     }
 
     // NOTE - when the "/request" request times out, it means there is a
@@ -400,12 +401,13 @@ export default class RouterStreamManager extends RouterBaseManager {
         initSegmentTopic: this.moovRequestTopic,
         clientId: this.clientId,
         token: this.streamConfiguration.tokenConfig.jwt,
-      }
-    } else {
+      };
+    }
+    else {
       payload = {
         initSegmentTopic: this.moovRequestTopic,
         clientId: this.clientId,
-      }
+      };
     }
 
     // NOTE - when the "/play" request times out, it means the SFS can correctly
