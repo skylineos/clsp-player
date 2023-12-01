@@ -143,6 +143,7 @@ export default class Iov extends EventEmitter {
 
     this.iovPlayerCollection.on(IovPlayerCollection.events.DISPLAY_ERROR_MSG, (error) => {
       this.logger.info('Displaying error msg to user');
+      this.videoElement.src = '';
       this.displayErrorMsg(error.error.message);
     });
   }
@@ -237,7 +238,6 @@ export default class Iov extends EventEmitter {
     if (!this.shouldRetainVideoElement) {
       this.containerElement.removeChild(this.videoElement);
       this.videoElement.remove();
-      this.videoElement = null;
     }
 
     this.videoElement = null;
@@ -342,11 +342,13 @@ export default class Iov extends EventEmitter {
   }
 
   clearErrorMsg = () => {
+    this.getErrorMsgContainer().style.display = 'none';
     this.getErrorMsgContainer().innerHTML = '';
   }
 
   displayErrorMsg = (errorMsg) => {
     const errorMsgContainer = this.getErrorMsgContainer();
+    errorMsgContainer.style.display = 'block';
     errorMsgContainer.innerHTML = errorMsg;
   }
 
