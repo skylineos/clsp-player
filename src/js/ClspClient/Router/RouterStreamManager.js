@@ -276,12 +276,8 @@ export default class RouterStreamManager extends RouterBaseManager {
       });
     }
 
-    if (response.status === 401) {
-      throw new Error('JWTUnAuthorized: ' + response.error);
-    }
-
     if (response.status !== 200) {
-      throw new Error('JWTInvalid: ' + response.error);
+      throw new Error(response.error);
     }
 
     // TODO, figure out how to handle a change in the sfs url from the
