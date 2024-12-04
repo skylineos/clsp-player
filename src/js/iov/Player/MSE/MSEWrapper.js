@@ -306,12 +306,12 @@ export default class MSEWrapper extends EventEmitter {
     this.logger.silly('showVideoSegment');
 
     if (!videoSegment) {
-      throw new Error('Must provide a moov to append!');
+      throw new Error('Must provide a moof to append!');
     }
 
     this.metric('sourceBuffer.lastMoofSize', videoSegment.length);
 
-    // console.log(mp4toJSON(videoSegment));
+   // console.log(mp4toJSON(videoSegment));
 
     this.metric('queue.append', 1);
 
@@ -345,16 +345,22 @@ export default class MSEWrapper extends EventEmitter {
     // allowed for consecutive appends, but only a configurable number of times.  The default
     // is 1
     this.logger.debug('Appends with same time end: ' + this.appendsSinceTimeEndUpdated);
-    if (this.previousTimeEnd && info.bufferTimeEnd <= this.previousTimeEnd) {
+
+    // have seen video moofs with a previousTimeEnd in the sub 1 range 0.034, new segments getting processed,
+    // but bufferTimeEnd not incrementing. Might be able to remove this.previousTimeEnd check 
+    // however we can be less intrusive for now as a check for < 1 to catch the current case that's causing black streams.
+    // if (this.previousTimeEnd < 1 && info.bufferTimeEnd <= this.previousTimeEnd) {
+    if (info.bufferTimeEnd <= this.previousTimeEnd) {
+      this.logger.error('BUF previoustimeend: ' + this.previousTimeEnd + ', buffertimeend: ' + info.bufferTimeEnd);
       this.appendsSinceTimeEndUpdated += 1;
       this.metric('sourceBuffer.updateEnd.bufferFrozen', 1);
 
       // append threshold with same time end has been crossed.  Reinitialize frozen stream.
       if (this.appendsSinceTimeEndUpdated > this.APPENDS_WITH_SAME_TIME_END_THRESHOLD) {
-        this.logger.info('stream frozen!');
+        this.logger.info('Stream frozen. Reinitializing');
         this.emit(MSEWrapper.events.STREAM_FROZEN);
-        return;
       }
+      return;
     }
 
     this.appendsSinceTimeEndUpdated = 0;
