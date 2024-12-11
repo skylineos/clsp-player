@@ -8,7 +8,7 @@
 import EventEmitter from '../../../utils/EventEmitter';
 import utils from '../../../utils/utils';
 
-import MediaSource from './MediaSource';
+import MediaSourceWrapper from './MediaSourceWrapper';
 import SourceBuffer from './SourceBuffer';
 // import { mp4toJSON } from './mp4-inspect';
 
@@ -105,9 +105,9 @@ export default class MSEWrapper extends EventEmitter {
     // Kill the existing media source
     await this.destroyMediaSource();
 
-    this.mediaSource = MediaSource.factory(this.logId);
+    this.mediaSource = MediaSourceWrapper.factory(this.logId);
 
-    this.mediaSource.on(MediaSource.events.ERROR, (event) => {
+    this.mediaSource.on(MediaSourceWrapper.events.ERROR, (event) => {
       this.emit(MSEWrapper.events.MEDIA_SOURCE_ERROR, event);
     });
 
@@ -308,7 +308,7 @@ export default class MSEWrapper extends EventEmitter {
 
     this.metric('sourceBuffer.lastMoofSize', videoSegment.length);
 
-   // console.log(mp4toJSON(videoSegment));
+    // console.log(mp4toJSON(videoSegment));
 
     this.metric('queue.append', 1);
 
@@ -340,14 +340,14 @@ export default class MSEWrapper extends EventEmitter {
     // The current buffer size should always be bigger.If it isn't, there is a problem,
     // and we need to reinitialize or something.  Sometimes the buffer is the same.  This is
     // allowed for consecutive appends, but only a configurable number of times.  The default
-    // is 1.  It's possible we don't properly handle time gaps in fragments.  
+    // is 1.  It's possible we don't properly handle time gaps in fragments.
     // This is why the bosch camera has issues when in IBP or IBBP.
     this.logger.debug('Appends with same time end: ' + this.appendsSinceTimeEndUpdated);
 
     // have seen video moofs with a previousTimeEnd in the sub 1 range 0.034, new segments getting processed,
     // but bufferTimeEnd not incrementing. Might be able to remove this.previousTimeEnd check
-    // however we can be less intrusive for now as a check for < 1 to catch the current case that's causing black streams.
-    // bufferTimeEnd not incrementing due to improper handling of multiple TimeRanges
+    // however we can be less intrusive for now as a check for < 1 to catch the current case that's causing
+    // black streams. bufferTimeEnd was not incrementing due to improper handling of multiple TimeRanges
     // if (this.previousTimeEnd == 0 && info.bufferTimeEnd <= this.previousTimeEnd) {
     if (this.previousTimeEnd < 1 && info.bufferTimeEnd <= this.previousTimeEnd) {
       this.logger.info('previoustimeend: ' + this.previousTimeEnd + ', buffertimeend: ' + info.bufferTimeEnd);
@@ -385,7 +385,6 @@ export default class MSEWrapper extends EventEmitter {
     const infoAry = this.sourceBuffer.getTimes();
     const latestInfo = infoAry[infoAry.length - 1];
     this.#onVideoSegmentShown(latestInfo);
-
 
     try {
       this.#processNextInQueue();

@@ -246,7 +246,7 @@ export default class SourceBuffer extends EventEmitter {
     const bufferedRanges = this.sourceBuffer.buffered;
 
     // only a single range present
-    if (bufferedRanges.length <= rangeIndex + 1) {
+    if (bufferedRanges.length <= 1) {
       return false;
     }
 
@@ -279,10 +279,10 @@ export default class SourceBuffer extends EventEmitter {
       const previousBufferSize = this.timeBuffered;
       const bufferedRanges = this.sourceBuffer.buffered;
 
-      this.logger.warn('this.sourceBuffer.buffered length: ' + bufferedRanges.length);
+      this.logger.debug('this.sourceBuffer.buffered length: ' + bufferedRanges.length);
 
-      for (let i = 0; i < bufferedRanges.length; i++) {        
-        this.logger.warn(`Range ${i}: ${bufferedRanges.start(i)} to ${bufferedRanges.end(i)} seconds`);
+      for (let i = 0; i < bufferedRanges.length; i++) {
+        this.logger.info(`Range ${i}: ${bufferedRanges.start(i)} to ${bufferedRanges.end(i)} seconds`);
         const bufferTimeStart = bufferedRanges.start(i);
         const bufferTimeEnd = bufferedRanges.end(i);
         const currentBufferSize = bufferTimeEnd - bufferTimeStart;
