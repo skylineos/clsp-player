@@ -245,8 +245,9 @@ export default class SourceBuffer extends EventEmitter {
   gapInBufferedRanges (rangeIndex) {
     const bufferedRanges = this.sourceBuffer.buffered;
 
-    // only a single range present
-    if (bufferedRanges.length <= 1) {
+    // only a single range present or last range
+    if (bufferedRanges.length <= 1 ||
+        rangeIndex + 1 === bufferedRanges.length) {
       return false;
     }
 
@@ -321,68 +322,69 @@ export default class SourceBuffer extends EventEmitter {
    *   if true, will clear the entire SourceBuffer's internal buffer
    */
   trim (
-    infoAry = this.getTimes(),
+    timeRanges = this.getTimes(),
     shouldClear = false,
   ) {
     if (this.isDestroyComplete) {
       return;
     }
 
-    for (let infoIdx = 0; infoIdx < infoAry.length; infoIdx++) {
-      const info = infoAry[infoIdx];
-      if (!info) {
-        this.logger.debug('Tried to trim buffer, failed to get buffer times...');
+    this.logger.debug('time buffered: ' + this.timeBuffered);
+
+    if (!timeRanges || timeRanges.length === 0) {
+      this.logger.debug('Tried to trim buffer, failed to get buffer times...');
+      return;
+    }
+
+    const firstTimeRange = timeRanges.shift();
+
+    this.logger.silly('trimBuffer...');
+
+    this.metric('sourceBuffer.lastKnownBufferSize', this.timeBuffered);
+
+    const shouldTrim = shouldClear || (this.timeBuffered > this.BUFFER_SIZE_LIMIT);
+
+    if (!shouldTrim) {
+      this.logger.debug('No need to trim');
+      return;
+    }
+
+    // @todo - should we wait for isReady here?
+    if (!this.isReady()) {
+      this.logger.info('Need to trim, but not ready...');
+      return;
+    }
+
+    try {
+      // @todo - Trimming is the biggest performance problem we have with this
+      // player. Can you figure out how to manage the memory usage without
+      // causing the streams to stutter?
+      this.metric('sourceBuffer.trim', this.BUFFER_TRUNCATE_VALUE);
+
+      if (shouldClear) {
+        this.logger.debug('Clearing buffer...');
+        this.sourceBuffer.remove(firstTimeRange.bufferTimeStart, Infinity);
+        this.logger.debug('Successfully cleared buffer...');
+      }
+      else {
+        const trimEndTime = firstTimeRange.bufferTimeStart + this.BUFFER_TRUNCATE_VALUE;
+
+        this.logger.debug('Trimming buffer...');
+        this.sourceBuffer.remove(firstTimeRange.bufferTimeStart, trimEndTime);
+        this.logger.debug('Successfully trimmed buffer...');
+      }
+    }
+    catch (error) {
+      if (error.constructor.name === 'DOMException') {
+        this.logger.info('Encountered DOMException while trying to trim buffer');
+        // @todo - every time the mseWrapper is destroyed, there is a
+        // sourceBuffer error.  No need to log that, but you should fix it
         return;
       }
-      this.logger.silly('trimBuffer...');
 
-      this.metric('sourceBuffer.lastKnownBufferSize', this.timeBuffered);
+      this.logger.debug('trimBuffer failure!');
 
-      const shouldTrim = shouldClear || (this.timeBuffered > this.BUFFER_SIZE_LIMIT) ||
-       this.gapInBufferedRanges(infoIdx);
-
-      if (!shouldTrim) {
-        this.logger.debug('No need to trim');
-        return;
-      }
-
-      // @todo - should we wait for isReady here?
-      if (!this.isReady()) {
-        this.logger.info('Need to trim, but not ready...');
-        return;
-      }
-
-      try {
-        // @todo - Trimming is the biggest performance problem we have with this
-        // player. Can you figure out how to manage the memory usage without
-        // causing the streams to stutter?
-        this.metric('sourceBuffer.trim', this.BUFFER_TRUNCATE_VALUE);
-
-        if (shouldClear) {
-          this.logger.debug('Clearing buffer...');
-          this.sourceBuffer.remove(info.bufferTimeStart, Infinity);
-          this.logger.debug('Successfully cleared buffer...');
-        }
-        else {
-          const trimEndTime = info.bufferTimeStart + this.BUFFER_TRUNCATE_VALUE;
-
-          this.logger.debug('Trimming buffer...');
-          this.sourceBuffer.remove(info.bufferTimeStart, trimEndTime);
-          this.logger.debug('Successfully trimmed buffer...');
-        }
-      }
-      catch (error) {
-        if (error.constructor.name === 'DOMException') {
-          this.logger.info('Encountered DOMException while trying to trim buffer');
-          // @todo - every time the mseWrapper is destroyed, there is a
-          // sourceBuffer error.  No need to log that, but you should fix it
-          return;
-        }
-
-        this.logger.debug('trimBuffer failure!');
-
-        throw error;
-      }
+      throw error;
     }
   }
 

@@ -77,3 +77,13 @@ describe('SourceBuffer.getTimes()', () => {
     expect(_.isEqual(times, knownTimes)).toBe(true);
   });
 });
+
+describe('SourceBuffer.trim()', () => {
+  it('trim if buffer exceeds size', () => {
+    jest.spyOn(SourceBuffer, 'getDefaultBufferSizeLimit').mockReturnValue(4);
+    const sourceBuffer = SourceBuffer.factory('test', 'video/mp4', new MediaSourceWrapper('test'));
+    sourceBuffer.trim();
+    jest.spyOn(sourceBuffer.sourceBuffer, 'remove');
+    expect(sourceBuffer.sourceBuffer.remove).toHaveBeenCalledWith(0, 2);
+  });
+});
