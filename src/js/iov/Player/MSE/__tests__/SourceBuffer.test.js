@@ -19,14 +19,17 @@ describe('SourceBuffer.gapInBufferedRanges()', () => {
 
   it('no gap with single time range', () => {
     const sourceBuffer = SourceBuffer.factory('test', 'video/mp4', new MediaSourceWrapper('test'));
-    const buffered = sourceBuffer.sourceBuffer.buffered.ranges.pop();
+    sourceBuffer.sourceBuffer.buffered.ranges.pop();
     expect(sourceBuffer.gapInBufferedRanges(0)).toBe(false);
   });
 
   it('no gap with multiple contiguous ranges', () => {
     const sourceBuffer = SourceBuffer.factory('test', 'video/mp4', new MediaSourceWrapper('test'));
     sourceBuffer.sourceBuffer.buffered.ranges.shift();
-    sourceBuffer.sourceBuffer.buffered.ranges.push([15,20]);
+    sourceBuffer.sourceBuffer.buffered.ranges.push([
+      15,
+      20,
+    ]);
     expect(sourceBuffer.gapInBufferedRanges(0)).toBe(false);
   });
 
@@ -37,26 +40,25 @@ describe('SourceBuffer.gapInBufferedRanges()', () => {
   });
 });
 
-
 describe('SourceBuffer.getTimes()', () => {
   it('multiple time ranges with gap', () => {
     const sourceBuffer = SourceBuffer.factory('test', 'video/mp4', new MediaSourceWrapper('test'));
-    let times = sourceBuffer.getTimes();
+    const times = sourceBuffer.getTimes();
 
     const knownTimes = [
       {
         previousBufferSize: null,
         currentBufferSize: 0.034,
         bufferTimeStart: 0,
-        bufferTimeEnd: 0.034
+        bufferTimeEnd: 0.034,
       },
       {
         previousBufferSize: null,
         currentBufferSize: 5,
         bufferTimeStart: 10,
-        bufferTimeEnd: 15
-      }
-    ]
+        bufferTimeEnd: 15,
+      },
+    ];
     expect(_.isEqual(times, knownTimes)).toBe(true);
   });
 
@@ -69,10 +71,9 @@ describe('SourceBuffer.getTimes()', () => {
         previousBufferSize: null,
         currentBufferSize: 5,
         bufferTimeStart: 10,
-        bufferTimeEnd: 15
-      }
-    ]
+        bufferTimeEnd: 15,
+      },
+    ];
     expect(_.isEqual(times, knownTimes)).toBe(true);
   });
-
 });
