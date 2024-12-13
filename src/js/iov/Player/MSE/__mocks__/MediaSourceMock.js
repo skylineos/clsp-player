@@ -47,11 +47,14 @@ class MockSourceBuffer {
 }
 
 const MediaSource = jest.fn(() => ({
+  readyState: 'open',
+  duration: 5,
   // Mock the addSourceBuffer method to return an instance of your mocked SourceBuffer
   addSourceBuffer: jest.fn(() => new MockSourceBuffer()),
-
+  endOfStream: jest.fn(),
   // Mock any other methods or properties of MediaSource if necessary
   isTypeSupported: jest.fn(() => true),
+  isReady: jest.fn(() => true),
   addEventListener: jest.fn((event, listener) => {}),
 }));
 

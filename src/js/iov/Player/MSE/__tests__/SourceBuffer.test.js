@@ -4,46 +4,45 @@ import MediaSourceWrapper from '../MediaSourceWrapper';
 
 const _ = require('lodash');
 
+let instance;
+
 beforeEach(() => {
   global.window.MediaSource = MediaSource;
+  instance = SourceBuffer.factory('test', 'video/mp4', new MediaSourceWrapper('test'));
+  jest.spyOn(instance.logger, 'debug');
+  jest.spyOn(instance.logger, 'info');
+  jest.spyOn(instance.sourceBuffer, 'remove');
 });
 
 describe('SourceBuffer.gapInBufferedRanges()', () => {
   it('should detect a gap between time ranges', () => {
-    // Add a SourceBuffer to the MediaSource
-    const sourceBuffer = SourceBuffer.factory('test', 'video/mp4', new MediaSourceWrapper('test'));
-
     // Check that there is indeed a gap
-    expect(sourceBuffer.gapInBufferedRanges(0)).toBe(true);
+    expect(instance.gapInBufferedRanges(0)).toBe(true);
   });
 
   it('no gap with single time range', () => {
-    const sourceBuffer = SourceBuffer.factory('test', 'video/mp4', new MediaSourceWrapper('test'));
-    sourceBuffer.sourceBuffer.buffered.ranges.pop();
-    expect(sourceBuffer.gapInBufferedRanges(0)).toBe(false);
+    instance.sourceBuffer.buffered.ranges.pop();
+    expect(instance.gapInBufferedRanges(0)).toBe(false);
   });
 
   it('no gap with multiple contiguous ranges', () => {
-    const sourceBuffer = SourceBuffer.factory('test', 'video/mp4', new MediaSourceWrapper('test'));
-    sourceBuffer.sourceBuffer.buffered.ranges.shift();
-    sourceBuffer.sourceBuffer.buffered.ranges.push([
+    instance.sourceBuffer.buffered.ranges.shift();
+    instance.sourceBuffer.buffered.ranges.push([
       15,
       20,
     ]);
-    expect(sourceBuffer.gapInBufferedRanges(0)).toBe(false);
+    expect(instance.gapInBufferedRanges(0)).toBe(false);
   });
 
   it('no time ranges present', () => {
-    const sourceBuffer = SourceBuffer.factory('test', 'video/mp4', new MediaSourceWrapper('test'));
-    sourceBuffer.sourceBuffer.buffered.ranges.length = 0;
-    expect(sourceBuffer.gapInBufferedRanges(0)).toBe(false);
+    instance.sourceBuffer.buffered.ranges.length = 0;
+    expect(instance.gapInBufferedRanges(0)).toBe(false);
   });
 });
 
 describe('SourceBuffer.getTimes()', () => {
   it('multiple time ranges with gap', () => {
-    const sourceBuffer = SourceBuffer.factory('test', 'video/mp4', new MediaSourceWrapper('test'));
-    const times = sourceBuffer.getTimes();
+    const times = instance.getTimes();
 
     const knownTimes = [
       {
@@ -63,9 +62,8 @@ describe('SourceBuffer.getTimes()', () => {
   });
 
   it('single time range', () => {
-    const sourceBuffer = SourceBuffer.factory('test', 'video/mp4', new MediaSourceWrapper('test'));
-    sourceBuffer.sourceBuffer.buffered.ranges.shift();
-    const times = sourceBuffer.getTimes();
+    instance.sourceBuffer.buffered.ranges.shift();
+    const times = instance.getTimes();
     const knownTimes = [
       {
         previousBufferSize: null,
@@ -85,5 +83,33 @@ describe('SourceBuffer.trim()', () => {
     sourceBuffer.trim();
     jest.spyOn(sourceBuffer.sourceBuffer, 'remove');
     expect(sourceBuffer.sourceBuffer.remove).toHaveBeenCalledWith(0, 2);
+  });
+
+  it('should clear the buffer when shouldClear is true', () => {
+    instance.trim(undefined, true);
+
+    expect(instance.sourceBuffer.remove).toHaveBeenCalledWith(0, Infinity);
+    expect(instance.logger.debug).toHaveBeenCalledWith('Clearing buffer...');
+    expect(instance.logger.debug).toHaveBeenCalledWith('Successfully cleared buffer...');
+  });
+
+  it('should handle DOMException gracefully', () => {
+    instance.sourceBuffer.remove.mockImplementation(() => {
+      throw new DOMException();
+    });
+
+    instance.trim();
+
+    expect(instance.logger.info).toHaveBeenCalledWith(
+      'Encountered DOMException while trying to trim buffer',
+    );
+  });
+
+  it('should throw non-DOMException errors', () => {
+    instance.sourceBuffer.remove.mockImplementation(() => {
+      throw new Error('Test error');
+    });
+
+    expect(() => instance.trim()).toThrow('Test error');
   });
 });

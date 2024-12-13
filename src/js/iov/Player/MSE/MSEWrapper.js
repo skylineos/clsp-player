@@ -349,7 +349,7 @@ export default class MSEWrapper extends EventEmitter {
     // however we can be less intrusive for now as a check for < 1 to catch the current case that's causing
     // black streams. bufferTimeEnd was not incrementing due to improper handling of multiple TimeRanges
     // if (this.previousTimeEnd == 0 && info.bufferTimeEnd <= this.previousTimeEnd) {
-    if (this.previousTimeEnd < 1 && info.bufferTimeEnd <= this.previousTimeEnd) {
+    if (info.bufferTimeEnd <= this.previousTimeEnd) {
       this.logger.info('previoustimeend: ' + this.previousTimeEnd + ', buffertimeend: ' + info.bufferTimeEnd);
       this.appendsSinceTimeEndUpdated += 1;
       this.metric('sourceBuffer.updateEnd.bufferFrozen', 1);
