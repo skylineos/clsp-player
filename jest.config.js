@@ -90,6 +90,7 @@ module.exports = {
     // @see - https://jestjs.io/docs/en/webpack#handling-static-assets
     "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/test/jest/__mocks__/fileMock.js",
     "\\.(css|less|sass|scss)$": "<rootDir>/test/jest/__mocks__/styleMock.js",
+    "^MediaSource$": "<rootDir>/src/js/iov/Player/MSE/__mocks__/MediaSourceMock.js",
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader

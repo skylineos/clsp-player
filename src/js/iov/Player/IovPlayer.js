@@ -6,7 +6,7 @@ import utils from '../../utils/utils';
 
 import ClspClient from '../../ClspClient/ClspClient';
 import MSEWrapper from './MSE/MSEWrapper';
-import MediaSource from './MSE/MediaSource';
+import MediaSourceWrapper from './MSE/MediaSourceWrapper';
 import StreamConfiguration from '../StreamConfiguration';
 import Conduit from '../../ClspClient/Conduit/Conduit';
 
@@ -359,7 +359,7 @@ export default class IovPlayer extends EventEmitter {
         moov,
       } = await this.clspClient.conduit.play();
 
-      if (!MediaSource.isMimeCodecSupported(mimeCodec)) {
+      if (!MediaSourceWrapper.isMimeCodecSupported(mimeCodec)) {
         this.emit(IovPlayer.events.UNSUPPORTED_MIME_CODEC, {
           mimeCodec,
         });
@@ -596,7 +596,7 @@ export default class IovPlayer extends EventEmitter {
 
       // Error events
 
-      this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_OPEN_ERROR, ({ error }) => {
+      this.mseWrapper.mediaSource.on(MediaSourceWrapper.events.SOURCE_OPEN_ERROR, ({ error }) => {
         this.logger.error('Failed to initialize mediaSource - Error on "sourceopen" event:');
         this.logger.error(error);
 
@@ -608,7 +608,7 @@ export default class IovPlayer extends EventEmitter {
 
       // When the MediaSource first becomes ready, send it the moov
       // @todo - all of this logic should be handled by the MSEWrapper!!
-      this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_OPEN, async (event) => {
+      this.mseWrapper.mediaSource.on(MediaSourceWrapper.events.SOURCE_OPEN, async (event) => {
         this.logger.info('on mediaSource sourceopen');
 
         try {
@@ -650,7 +650,7 @@ export default class IovPlayer extends EventEmitter {
         }
       });
 
-      this.mseWrapper.mediaSource.on(MediaSource.events.SOURCE_ENDED, async (event) => {
+      this.mseWrapper.mediaSource.on(MediaSourceWrapper.events.SOURCE_ENDED, async (event) => {
         this.logger.info('on mediaSource sourceended');
 
         try {
