@@ -109,7 +109,6 @@ export default class SourceBuffer extends EventEmitter {
     this.mediaSource = mediaSource;
     // @todo - should the MediaSource be responsible for this?
     this.sourceBuffer = this.mediaSource.mediaSource.addSourceBuffer(this.mimeCodec);
-
     this.sourceBuffer.mode = 'sequence';
 
     this.sourceBuffer.addEventListener('updateend', this.#onUpdateEnd);
@@ -204,6 +203,11 @@ export default class SourceBuffer extends EventEmitter {
     // this.metric('sourceBuffer.append', 1);
 
     try {
+      // never encountered this block but docs say you shouldn't append when the sourcebuffer is  updating
+      if (this.sourceBuffer.updating) {
+        this.logger.warn('Source buffer is still updating! Cannot append!');
+        return;
+      }
       this.sourceBuffer.appendBuffer(byteArray);
     }
     catch (error) {
@@ -237,6 +241,28 @@ export default class SourceBuffer extends EventEmitter {
     this.shouldAbortOnNextUpdateEnd = true;
   }
 
+  /** Detect a gap in the buffered time ranges */
+  gapInBufferedRanges (rangeIndex) {
+    const bufferedRanges = this.sourceBuffer.buffered;
+
+    // only a single range present or last range
+    if (bufferedRanges.length <= 1 ||
+        rangeIndex + 1 === bufferedRanges.length) {
+      return false;
+    }
+
+    const currentEnd = bufferedRanges.end(rangeIndex);
+    const nextStart = bufferedRanges.start(rangeIndex + 1);
+
+    // compare against the next range and see if there's a hole
+    const gap = nextStart - currentEnd;
+    if (gap > 0) {
+      return true;
+    }
+
+    return false;
+  }
+
   /**
    * Calculate size and time information about the current state of the buffer.
    *
@@ -248,23 +274,31 @@ export default class SourceBuffer extends EventEmitter {
     }
 
     this.logger.silly('getBufferTimes...');
+    const bufferTimesAry = [];
 
     try {
       const previousBufferSize = this.timeBuffered;
-      const bufferTimeStart = this.sourceBuffer.buffered.start(0);
-      const bufferTimeEnd = this.sourceBuffer.buffered.end(0);
-      const currentBufferSize = bufferTimeEnd - bufferTimeStart;
+      const bufferedRanges = this.sourceBuffer.buffered;
 
-      this.timeBuffered = currentBufferSize;
+      this.logger.debug('this.sourceBuffer.buffered length: ' + bufferedRanges.length);
 
+      for (let i = 0; i < bufferedRanges.length; i++) {
+        this.logger.info(`Range ${i}: ${bufferedRanges.start(i)} to ${bufferedRanges.end(i)} seconds`);
+        const bufferTimeStart = bufferedRanges.start(i);
+        const bufferTimeEnd = bufferedRanges.end(i);
+        const currentBufferSize = bufferTimeEnd - bufferTimeStart;
+        bufferTimesAry.push({
+          previousBufferSize,
+          currentBufferSize,
+          bufferTimeStart,
+          bufferTimeEnd,
+        });
+      }
+      const lastRange = bufferedRanges.length - 1;
+      this.timeBuffered = (bufferedRanges.end(lastRange) - bufferedRanges.start(lastRange));
       this.logger.silly('getBufferTimes finished successfully...');
 
-      return {
-        previousBufferSize,
-        currentBufferSize,
-        bufferTimeStart,
-        bufferTimeEnd,
-      };
+      return bufferTimesAry;
     }
     catch (error) {
       this.logger.info('Failed to getBufferTimes...');
@@ -281,24 +315,28 @@ export default class SourceBuffer extends EventEmitter {
    * called after EVERY UPDATE_END event!  Is that correct / necessary? Maybe
    * it should only be called every other time, or every 5th time...
    *
-   * @param {object|null} info
+   * @param {object[]|null} info
    *   optional, SourceBuffer time info
    * @param {boolean} shouldClear
    *   optional, defaults to false
    *   if true, will clear the entire SourceBuffer's internal buffer
    */
   trim (
-    info = this.getTimes(),
+    timeRanges = this.getTimes(),
     shouldClear = false,
   ) {
     if (this.isDestroyComplete) {
       return;
     }
 
-    if (!info) {
+    this.logger.debug('time buffered: ' + this.timeBuffered);
+
+    if (!timeRanges || timeRanges.length === 0) {
       this.logger.debug('Tried to trim buffer, failed to get buffer times...');
       return;
     }
+
+    const firstTimeRange = timeRanges.shift();
 
     this.logger.silly('trimBuffer...');
 
@@ -325,14 +363,14 @@ export default class SourceBuffer extends EventEmitter {
 
       if (shouldClear) {
         this.logger.debug('Clearing buffer...');
-        this.sourceBuffer.remove(info.bufferTimeStart, Infinity);
+        this.sourceBuffer.remove(firstTimeRange.bufferTimeStart, Infinity);
         this.logger.debug('Successfully cleared buffer...');
       }
       else {
-        const trimEndTime = info.bufferTimeStart + this.BUFFER_TRUNCATE_VALUE;
+        const trimEndTime = firstTimeRange.bufferTimeStart + this.BUFFER_TRUNCATE_VALUE;
 
         this.logger.debug('Trimming buffer...');
-        this.sourceBuffer.remove(info.bufferTimeStart, trimEndTime);
+        this.sourceBuffer.remove(firstTimeRange.bufferTimeStart, trimEndTime);
         this.logger.debug('Successfully trimmed buffer...');
       }
     }

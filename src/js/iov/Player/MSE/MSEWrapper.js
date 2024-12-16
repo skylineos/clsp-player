@@ -8,7 +8,7 @@
 import EventEmitter from '../../../utils/EventEmitter';
 import utils from '../../../utils/utils';
 
-import MediaSource from './MediaSource';
+import MediaSourceWrapper from './MediaSourceWrapper';
 import SourceBuffer from './SourceBuffer';
 // import { mp4toJSON } from './mp4-inspect';
 
@@ -105,9 +105,9 @@ export default class MSEWrapper extends EventEmitter {
     // Kill the existing media source
     await this.destroyMediaSource();
 
-    this.mediaSource = MediaSource.factory(this.logId);
+    this.mediaSource = MediaSourceWrapper.factory(this.logId);
 
-    this.mediaSource.on(MediaSource.events.ERROR, (event) => {
+    this.mediaSource.on(MediaSourceWrapper.events.ERROR, (event) => {
       this.emit(MSEWrapper.events.MEDIA_SOURCE_ERROR, event);
     });
 
@@ -211,8 +211,7 @@ export default class MSEWrapper extends EventEmitter {
       this.logger.debug('Tab not in focus - dropping frame...');
       this.metric('frameDrop.hiddenTab', 1);
       this.metric('queue.cannotProcessNext', 1);
-      // @todo - we can safely drop frames here, right?
-      // this.segmentQueue.shift();
+      this.segmentQueue.shift();
       return;
     }
 
@@ -221,8 +220,7 @@ export default class MSEWrapper extends EventEmitter {
       this.logger.info('The mediaSource is not ready');
       this.metric('queue.mediaSourceNotReady', 1);
       this.metric('queue.cannotProcessNext', 1);
-      // @todo - we can safely drop frames here, right?
-      // this.segmentQueue.shift();
+      this.segmentQueue.shift();
       return;
     }
 
@@ -238,8 +236,7 @@ export default class MSEWrapper extends EventEmitter {
       this.logger.debug('The sourceBuffer is not ready');
       this.metric('queue.sourceBufferNotReady', 1);
       this.metric('queue.cannotProcessNext', 1);
-      // @todo - we can safely drop frames here, right?
-      // this.segmentQueue.shift();
+      this.segmentQueue.shift();
       return;
     }
 
@@ -306,7 +303,7 @@ export default class MSEWrapper extends EventEmitter {
     this.logger.silly('showVideoSegment');
 
     if (!videoSegment) {
-      throw new Error('Must provide a moov to append!');
+      throw new Error('Must provide a moof to append!');
     }
 
     this.metric('sourceBuffer.lastMoofSize', videoSegment.length);
@@ -343,18 +340,26 @@ export default class MSEWrapper extends EventEmitter {
     // The current buffer size should always be bigger.If it isn't, there is a problem,
     // and we need to reinitialize or something.  Sometimes the buffer is the same.  This is
     // allowed for consecutive appends, but only a configurable number of times.  The default
-    // is 1
+    // is 1.  It's possible we don't properly handle time gaps in fragments.
+    // This is why the bosch camera has issues when in IBP or IBBP.
     this.logger.debug('Appends with same time end: ' + this.appendsSinceTimeEndUpdated);
-    if (this.previousTimeEnd && info.bufferTimeEnd <= this.previousTimeEnd) {
+
+    // have seen video moofs with a previousTimeEnd in the sub 1 range 0.034, new segments getting processed,
+    // but bufferTimeEnd not incrementing. Might be able to remove this.previousTimeEnd check
+    // however we can be less intrusive for now as a check for < 1 to catch the current case that's causing
+    // black streams. bufferTimeEnd was not incrementing due to improper handling of multiple TimeRanges
+    // if (this.previousTimeEnd == 0 && info.bufferTimeEnd <= this.previousTimeEnd) {
+    if (info.bufferTimeEnd <= this.previousTimeEnd) {
+      this.logger.info('previoustimeend: ' + this.previousTimeEnd + ', buffertimeend: ' + info.bufferTimeEnd);
       this.appendsSinceTimeEndUpdated += 1;
       this.metric('sourceBuffer.updateEnd.bufferFrozen', 1);
 
       // append threshold with same time end has been crossed.  Reinitialize frozen stream.
       if (this.appendsSinceTimeEndUpdated > this.APPENDS_WITH_SAME_TIME_END_THRESHOLD) {
-        this.logger.info('stream frozen!');
+        this.logger.warn('Stream frozen. Reinitializing');
         this.emit(MSEWrapper.events.STREAM_FROZEN);
-        return;
       }
+      return;
     }
 
     this.appendsSinceTimeEndUpdated = 0;
@@ -363,7 +368,7 @@ export default class MSEWrapper extends EventEmitter {
     this.emit(MSEWrapper.events.VIDEO_SEGMENT_SHOWN, { info });
 
     try {
-      this.sourceBuffer.trim(info);
+      this.sourceBuffer.trim();
     }
     catch (error) {
       this.#onSourceBufferTrimError(error);
@@ -377,18 +382,9 @@ export default class MSEWrapper extends EventEmitter {
 
     // @todo - it is likely possible to move the use of info here into the
     // SourceBuffer implementation to reduce coupling
-    const info = this.sourceBuffer.getTimes();
-
-    if (info.previousBufferSize !== null && info.previousBufferSize > this.sourceBuffer.timeBuffered) {
-      // @todo - it appears that at one time, this was used for something,
-      // maybe it was only ever for metrics.  What does this condition mean
-      // in layman's terms, other than "a video segment was not shown as the
-      // result of this sourceBuffer update"?
-      this.metric('sourceBuffer.updateEnd.removeEvent', 1);
-    }
-    else {
-      this.#onVideoSegmentShown(info);
-    }
+    const infoAry = this.sourceBuffer.getTimes();
+    const latestInfo = infoAry[infoAry.length - 1];
+    this.#onVideoSegmentShown(latestInfo);
 
     try {
       this.#processNextInQueue();

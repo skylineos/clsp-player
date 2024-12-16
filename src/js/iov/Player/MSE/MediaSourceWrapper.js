@@ -4,7 +4,6 @@
  * @see - https://developers.google.com/web/fundamentals/media/mse/basics
  * @see - https://github.com/nickdesaulniers/netfix/blob/gh-pages/demo/bufferAll.html
  */
-
 import interval from 'interval-promise';
 
 import EventEmitter from '../../../utils/EventEmitter';
@@ -15,9 +14,9 @@ const DEFAULT_IS_READY_INTERVAL = 0.25;
 // Give the MediaSource this many seconds to become ready
 const DEFAULT_IS_READY_TIMEOUT = 1;
 
-export default class MediaSource extends EventEmitter {
+export default class MediaSourceWrapper extends EventEmitter {
   /**
-   * Events that are emitted by this MediaSource
+   * Events that are emitted by this MediaSourceWrapper
    */
   static events = {
     // --- Custom events
@@ -53,23 +52,23 @@ export default class MediaSource extends EventEmitter {
   }
 
   /**
-   * Create a new MediaSource, which is a wrapper around `window.MediaSource`
+   * Create a new MediaSourceWrapper, which is a wrapper around `window.MediaSource`
    *
    * @param {string|object} logId
    *   a string that identifies this MediaSource in log messages
    *   @see - src/js/utils/Destroyable
    */
   static factory (logId) {
-    return new MediaSource(logId);
+    return new MediaSourceWrapper(logId);
   }
 
   /**
    * @private
    *
-   * Create a new MediaSource, which is a wrapper around `window.MediaSource`
+   * Create a new MediaSourceWrapper, which is a wrapper around `window.MediaSource`
    *
    * @param {string|object} logId
-   *   a string that identifies this MediaSource in log messages
+   *   a string that identifies this MediaSourceWrapper in log messages
    *   @see - src/js/utils/Destroyable
    */
   constructor (logId) {
@@ -205,7 +204,7 @@ export default class MediaSource extends EventEmitter {
       await this.waitUntilReady();
     }
     catch (error) {
-      this.emit(MediaSource.events.SOURCE_OPEN_ERROR, { error });
+      this.emit(MediaSourceWrapper.events.SOURCE_OPEN_ERROR, { error });
       return;
     }
 
@@ -220,12 +219,12 @@ export default class MediaSource extends EventEmitter {
       this.logger.error(`Error while setting mediaSource duration to "${this.DURATION}"`);
       this.logger.error(error);
 
-      this.emit(MediaSource.events.SOURCE_OPEN_ERROR, { error });
+      this.emit(MediaSourceWrapper.events.SOURCE_OPEN_ERROR, { error });
 
       return;
     }
 
-    this.emit(MediaSource.events.SOURCE_OPEN, event);
+    this.emit(MediaSourceWrapper.events.SOURCE_OPEN, event);
   };
 
   /**
@@ -245,7 +244,7 @@ export default class MediaSource extends EventEmitter {
    * @returns {void}
    */
   #onSourceEnded = (event) => {
-    this.emit(MediaSource.events.SOURCE_ENDED, event);
+    this.emit(MediaSourceWrapper.events.SOURCE_ENDED, event);
   };
 
   /**
@@ -259,7 +258,7 @@ export default class MediaSource extends EventEmitter {
    * @returns {void}
    */
   #onError = (event) => {
-    this.emit(MediaSource.events.ERROR, event);
+    this.emit(MediaSourceWrapper.events.ERROR, event);
   };
 
   /**
