@@ -1,7 +1,7 @@
 {
   "name": "@skylineos/clsp-player",
   "title": "Skyline CLSP Player",
-  "version": "0.23.6",
+  "version": "0.23.7",
   "description": "Skyline Technology Solutions' CLSP Video Player.  Stream video in near-real-time in modern browsers.",
   "keywords": [
     "html5",
