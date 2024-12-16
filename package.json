@@ -13,6 +13,9 @@
   "license": "MIT",
   "repository": "https://github.com/skylineos/clsp-player.git",
   "main": "dist/clsp-player.min.js",
+  "engines": {
+    "node": ">=14.0.0 <16"
+  },
   "scripts": {
     "build": "./scripts/build/build.sh",
     "serve": "./scripts/serve/serve.sh",
@@ -76,7 +79,7 @@
     "jquery": "3.5.1",
     "mini-css-extract-plugin": "0.11.2",
     "moment": "2.29.0",
-    "node-sass": "9.0.0",
+    "node-sass": "4.14.1",
     "progress-bar-webpack-plugin": "2.1.0",
     "sass-loader": "10.0.2",
     "standard": "14.3.4",
