@@ -13,9 +13,6 @@
   "license": "MIT",
   "repository": "https://github.com/skylineos/clsp-player.git",
   "main": "dist/clsp-player.min.js",
-  "engines": {
-    "node": ">=14.0.0 <16"
-  },
   "scripts": {
     "build": "./scripts/build/build.sh",
     "serve": "./scripts/serve/serve.sh",
