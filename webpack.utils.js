@@ -122,11 +122,7 @@ function generateConfig (name, entry) {
           use: [
             {
               loader: MiniCssExtractPlugin.loader,
-              options: {
-                // set this to false to not interrupt ongoing tests until the
-                // developer is ready
-                hmr: false,
-              },
+              options: {}
             },
             'css-loader',
           ],
