@@ -1,6 +1,5 @@
 .container-fit {
   display: flex;
-  // flex-direction: column;
   align-content: center;
   justify-content: center;
   width: 100%;
@@ -40,9 +39,6 @@ body {
     img {
       width: 50%;
     }
-  }
-
-  #page-title {
   }
 }
 

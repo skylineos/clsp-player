@@ -1,4 +1,4 @@
-// A utility class for filling the parent element.
+/* A utility class for filling the parent element. */
 .clsp-container-fit {
   display: flex;
   flex-direction: column;
@@ -8,22 +8,30 @@
   height: 100%;
   padding: 0;
   margin: 0;
-  // if you see scroll bars, you probably styled something incorrectly
+  /* if you see scroll bars, you probably styled something incorrectly */
   overflow: auto;
 }
 
-// This class is automatically added to the element that contains the clsp
-// video element.  It is meant to take up the entirety of its parent.
+/* This class is automatically added to the element that contains the clsp
+   video element.  It is meant to take up the entirety of its parent. */
 .clsp-player-container {
-  @extend .clsp-container-fit;
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+
   position: relative;
   background-color: black;
   overflow: hidden;
 
-  // All other video elements are beneath the first, in arbitrary order.
-  // NOTE - DO NOT add any styles to the actual video element - additional
-  // styles applied to the video tag have the potential to cause significant
-  // performance issues
+  /* All other video elements are beneath the first, in arbitrary order.
+     NOTE - DO NOT add any styles to the actual video element - additional
+     styles applied to the video tag have the potential to cause significant
+     performance issues */
   .clsp-player {
     z-index: 1;
     position: absolute;
@@ -34,8 +42,7 @@
     object-fit: fill;
   }
 
-  // When dealing with tours, we must ensure that the first video element is on
-  // top.
+  /* When dealing with tours, we must ensure that the first video element is on top. */
   video:first-of-type {
     z-index: 2 !important;
   }
@@ -61,4 +68,3 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-

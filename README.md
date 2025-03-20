@@ -23,7 +23,7 @@ An html5 CLSP video player.  CLSP is a proprietary near-real-time video streamin
     - [`<video>` tag](#video-tag)
   - [via `import` or `require`](#via-import-or-require)
     - [JS](#js)
-    - [Styles (SASS)](#styles-sass)
+    - [Styles](#styles)
     - [`<video>` tag](#video-tag-1)
 - [Known Issues](#known-issues)
   - [Videos appear to have a low framerate](#videos-appear-to-have-a-low-framerate)
@@ -221,12 +221,12 @@ catch (error) {
 }
 ```
 
-#### Styles (SASS)
+#### Styles
 
-```scss
+```css
 @import '/path/to/node_modules/@skylineos/clsp-player/dist/clsp-player.css';
 // or import it from src
-@import '/path/to/node_modules/@skylineos/clsp-player/src/styles/clsp-player.scss';
+@import '/path/to/node_modules/@skylineos/clsp-player/src/styles/clsp-player.css';
 ```
 
 #### `<video>` tag
