@@ -1,0 +1,16 @@
+include:
+  - project: skyline-platform/devops/vp-pipeline
+    ref: master
+    file: stages/analysis.yml
+  - project: skyline-platform/devops/vp-pipeline
+    ref: master
+    file: stages/badges.yml
+
+stages:
+  - analysis
+  - badges
+
+# DISABLE UNUSED JOBS
+code_quality:
+  rules:
+    - when: never
