@@ -47,7 +47,7 @@ export default defineConfig([
         },
 
         babelOptions: {
-          configFile: '/Users/bray/WS/clsp-player/babel.config.js',
+          configFile: path.join(__dirname, 'babel.config.js'),
         },
       },
     },
