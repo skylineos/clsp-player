@@ -122,7 +122,7 @@ function generateConfig (name, entry) {
           use: [
             {
               loader: MiniCssExtractPlugin.loader,
-              options: {}
+              options: {},
             },
             'css-loader',
           ],

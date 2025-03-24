@@ -70,7 +70,7 @@ module.exports = class WebpackDevServer {
       static: APPLICATION_DIR,
       // @todo - do we need this?  why or why not?
       // publicPath: webpackConfigDev[0].output.publicPath,
-      //watchOptions: this.watchCompiler.watchOptions,
+      // watchOptions: this.watchCompiler.watchOptions,
 
       // Allow the caller to override or add devServerConfig properties
       ...(config.devServerConfig || {}),

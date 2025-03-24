@@ -140,8 +140,8 @@ A `CLSP` object is attached to `window`, which contains the classes and utils yo
 
 <!-- use CLSP Player at end of `body` -->
 <script>
-  var videoElementId = 'my-video';
-  var urls = [
+  let videoElementId = 'my-video';
+  let urls = [
     'clsps://bd-demo-sfs1.skyvdn.com/testpattern',
     'clsps://bd-demo-sfs1.skyvdn.com/testpattern',
   ];
@@ -152,10 +152,10 @@ A `CLSP` object is attached to `window`, which contains the classes and utils yo
   window.CLSP.utils.setDefaultStreamPort('clsp', 9001);
 
   // Construct the player collection
-  var iovCollection = window.CLSP.IovCollection.asSingleton();
+  let iovCollection = window.CLSP.IovCollection.asSingleton();
 
   // Instantiate the iov instance for the target video element
-  var iov = iovCollection.create({
+  let iov = iovCollection.create({
     videoElementId: videoElementId,
   })
 

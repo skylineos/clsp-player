@@ -12,7 +12,7 @@ export default class StreamConfiguration {
   }
 
   static fromObject (config) {
-    if (!config || !typeof config === 'object') {
+    if (!config || !(typeof config === 'object')) {
       throw new Error('config must be an object to create a streamConfiguration');
     }
 
@@ -36,7 +36,7 @@ export default class StreamConfiguration {
       throw new Error('No source was given to be parsed!');
     }
 
-    /* eslint-disable-next-line node/no-deprecated-api */
+    /* eslint-disable-next-line n/no-deprecated-api */
     const parsed = URL.parse(url);
 
     let useSSL;

@@ -16,8 +16,8 @@ module.exports = function ({
           'NOT_CONNECTED',
           'ALREADY_CONNECTED',
         ]);
-        expect(Router.pahoErrorCodes.NOT_CONNECTED).toEqual('AMQJS0011E');
-        expect(Router.pahoErrorCodes.ALREADY_CONNECTED).toEqual('AMQJS0011E');
+        expect(Router.pahoErrorCodes.NOT_CONNECTED).toBe('AMQJS0011E');
+        expect(Router.pahoErrorCodes.ALREADY_CONNECTED).toBe('AMQJS0011E');
       });
     });
 
@@ -42,20 +42,20 @@ module.exports = function ({
           'UNSUBSCRIBE_FAILURE',
           'WINDOW_MESSAGE_FAIL',
         ]);
-        expect(Router.events.CREATE_SUCCESS).toEqual('clsp_router_create_success');
-        expect(Router.events.CREATE_FAILURE).toEqual('clsp_router_create_failure');
-        expect(Router.events.MESSAGE_ARRIVED).toEqual('clsp_router_message_arrived');
-        expect(Router.events.PUBLISH_SUCCESS).toEqual('clsp_router_publish_success');
-        expect(Router.events.PUBLISH_FAILURE).toEqual('clsp_router_publish_failure');
-        expect(Router.events.CONNECT_SUCCESS).toEqual('clsp_router_connect_success');
-        expect(Router.events.CONNECT_FAILURE).toEqual('clsp_router_connect_failure');
-        expect(Router.events.CONNECTION_LOST).toEqual('clsp_router_connection_lost');
-        expect(Router.events.DISCONNECT_SUCCESS).toEqual('clsp_router_disconnect_success');
-        expect(Router.events.DISCONNECT_FAILURE).toEqual('clsp_router_disconnect_failure');
-        expect(Router.events.SUBSCRIBE_FAILURE).toEqual('clsp_router_subscribe_failure');
-        expect(Router.events.UNSUBSCRIBE_SUCCESS).toEqual('clsp_router_unsubscribe_success');
-        expect(Router.events.UNSUBSCRIBE_FAILURE).toEqual('clsp_router_unsubscribe_failure');
-        expect(Router.events.WINDOW_MESSAGE_FAIL).toEqual('clsp_router_window_message_fail');
+        expect(Router.events.CREATE_SUCCESS).toBe('clsp_router_create_success');
+        expect(Router.events.CREATE_FAILURE).toBe('clsp_router_create_failure');
+        expect(Router.events.MESSAGE_ARRIVED).toBe('clsp_router_message_arrived');
+        expect(Router.events.PUBLISH_SUCCESS).toBe('clsp_router_publish_success');
+        expect(Router.events.PUBLISH_FAILURE).toBe('clsp_router_publish_failure');
+        expect(Router.events.CONNECT_SUCCESS).toBe('clsp_router_connect_success');
+        expect(Router.events.CONNECT_FAILURE).toBe('clsp_router_connect_failure');
+        expect(Router.events.CONNECTION_LOST).toBe('clsp_router_connection_lost');
+        expect(Router.events.DISCONNECT_SUCCESS).toBe('clsp_router_disconnect_success');
+        expect(Router.events.DISCONNECT_FAILURE).toBe('clsp_router_disconnect_failure');
+        expect(Router.events.SUBSCRIBE_FAILURE).toBe('clsp_router_subscribe_failure');
+        expect(Router.events.UNSUBSCRIBE_SUCCESS).toBe('clsp_router_unsubscribe_success');
+        expect(Router.events.UNSUBSCRIBE_FAILURE).toBe('clsp_router_unsubscribe_failure');
+        expect(Router.events.WINDOW_MESSAGE_FAIL).toBe('clsp_router_window_message_fail');
       });
     });
 
@@ -72,12 +72,12 @@ module.exports = function ({
           'UNSUBSCRIBE',
           'SEND',
         ]);
-        expect(Router.commands.CONNECT).toEqual('connect');
-        expect(Router.commands.DISCONNECT).toEqual('disconnect');
-        expect(Router.commands.PUBLISH).toEqual('publish');
-        expect(Router.commands.SUBSCRIBE).toEqual('subscribe');
-        expect(Router.commands.UNSUBSCRIBE).toEqual('unsubscribe');
-        expect(Router.commands.SEND).toEqual('send');
+        expect(Router.commands.CONNECT).toBe('connect');
+        expect(Router.commands.DISCONNECT).toBe('disconnect');
+        expect(Router.commands.PUBLISH).toBe('publish');
+        expect(Router.commands.SUBSCRIBE).toBe('subscribe');
+        expect(Router.commands.UNSUBSCRIBE).toBe('unsubscribe');
+        expect(Router.commands.SEND).toBe('send');
       });
     });
   });

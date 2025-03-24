@@ -10,7 +10,7 @@ export default class RouterStatsManager extends RouterBaseManager {
    */
   static events = {
     PUBLISH_FAILURE: 'publish-failed',
-  }
+  };
 
   /**
    * @static

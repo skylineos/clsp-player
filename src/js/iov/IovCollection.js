@@ -82,38 +82,6 @@ export default class IovCollection extends Destroyable {
     return iov;
   }
 
-  async #retry (id) {
-    const iov = this.get(id);
-
-    // Don't retry a stream that has already been removed
-    if (iov === null) {
-      this.logger.info(`Attempted to retry Iov ${id} which has already been removed`);
-      return;
-    }
-
-    const config = iov._config;
-
-    const streamConfiguration = iov.streamConfiguration;
-
-    try {
-      await this.remove(id);
-    }
-    catch (error) {
-      iov.logger.error('IovCollection: error while removing iov from collection, continuing anyway...');
-      iov.logger.error(error);
-    }
-
-    const newIov = this.create(config);
-
-    try {
-      await newIov.changeSrc(streamConfiguration);
-    }
-    catch (error) {
-      newIov.logger.error('IovCollection: Error on changeSrc while retrying');
-      newIov.logger.error(error);
-    }
-  }
-
   /**
    * Add an Iov instance to this collection.  It can then be accessed by its id.
    *
