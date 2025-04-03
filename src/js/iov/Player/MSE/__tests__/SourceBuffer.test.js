@@ -58,6 +58,7 @@ describe('SourceBuffer.getTimes()', () => {
         bufferTimeEnd: 15,
       },
     ];
+    expect(_.isEqual(instance.timeBuffered, 15)).toBe(true);
     expect(_.isEqual(times, knownTimes)).toBe(true);
   });
 
@@ -72,6 +73,7 @@ describe('SourceBuffer.getTimes()', () => {
         bufferTimeEnd: 15,
       },
     ];
+    expect(_.isEqual(instance.timeBuffered, 5)).toBe(true);
     expect(_.isEqual(times, knownTimes)).toBe(true);
   });
 });

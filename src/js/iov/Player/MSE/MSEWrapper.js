@@ -231,12 +231,14 @@ export default class MSEWrapper extends EventEmitter {
       return;
     }
 
-    // Do not wait until ready since we're dealing with a live stream
+    // Source buffer is busy but we shouldn't skip video cause it will get choppy,
+    // adding noticeable gaps in playback, and force us to track multiple time ranges.
+    // Maybe we slowly drift. There's code that handles drift by flushing the queue.
+    // See: sourceBuffer.on(SourceBuffer.events.DRIFT_THRESHOLD_EXCEEDED)
     if (!this.sourceBuffer.isReady()) {
       this.logger.debug('The sourceBuffer is not ready');
       this.metric('queue.sourceBufferNotReady', 1);
       this.metric('queue.cannotProcessNext', 1);
-      this.segmentQueue.shift();
       return;
     }
 
