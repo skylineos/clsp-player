@@ -295,7 +295,7 @@ export default class SourceBuffer extends EventEmitter {
         });
       }
       const lastRange = bufferedRanges.length - 1;
-      this.timeBuffered = (bufferedRanges.end(lastRange) - bufferedRanges.start(lastRange));
+      this.timeBuffered = (bufferedRanges.end(lastRange) - bufferedRanges.start(0));
       this.logger.silly('getBufferTimes finished successfully...');
 
       return bufferTimesAry;
