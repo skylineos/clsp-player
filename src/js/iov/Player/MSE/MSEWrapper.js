@@ -223,7 +223,6 @@ export default class MSEWrapper extends EventEmitter {
 
     // Do not wait until ready since we're dealing with a live stream
     if (!this.mediaSource.isReady()) {
-      this.logger.info('The mediaSource is not ready');
       this.metric('queue.mediaSourceNotReady', 1);
       this.metric('queue.cannotProcessNext', 1);
       this.logger.warn('Media source not ready');
@@ -252,7 +251,7 @@ export default class MSEWrapper extends EventEmitter {
     this.logger.silly('appending to source buffer');
     this.metric('queue.shift', 1);
     this.metric('queue.canProcessNext', 1);
-    if (this.segmentQueue.length >= 1) {
+    if (this.segmentQueue.length >= 2) {
       this.logger.debug('segment queue has ' + this.segmentQueue.length + ' segments');
     }
 

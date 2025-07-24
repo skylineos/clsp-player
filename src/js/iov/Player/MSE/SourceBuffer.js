@@ -415,7 +415,7 @@ export default class SourceBuffer extends EventEmitter {
     if (this.isDestroyComplete) {
       throw new Error('Received `updateend` event while destroyed!');
     }
-    // when the buffer is trimmed, we don't want to process the updateend event
+    // when the buffer is trimmed, we don't want to process the updateend event if
     // no video was added to the buffer.  this should prevent unnecessary processing
     // and reporting of a buffer which hasn't incremented.
     if (this.lastSourceBufferOp === 'remove') {
