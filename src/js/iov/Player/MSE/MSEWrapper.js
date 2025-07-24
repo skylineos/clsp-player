@@ -207,6 +207,12 @@ export default class MSEWrapper extends EventEmitter {
 
     this.logger.silly('#processNextInQueue');
 
+    // Only append a videoSegment if there is a videoSegment to append
+    if (this.segmentQueue.length === 0) {
+      this.logger.info('No segments in queue to process');
+      return;
+    }
+
     if (utils.isDocumentHidden()) {
       this.logger.debug('Tab not in focus - dropping frame...');
       this.metric('frameDrop.hiddenTab', 1);
@@ -220,6 +226,7 @@ export default class MSEWrapper extends EventEmitter {
       this.logger.info('The mediaSource is not ready');
       this.metric('queue.mediaSourceNotReady', 1);
       this.metric('queue.cannotProcessNext', 1);
+      this.logger.warn('Media source not ready');
       this.segmentQueue.shift();
       return;
     }
@@ -236,22 +243,20 @@ export default class MSEWrapper extends EventEmitter {
     // Maybe we slowly drift. There's code that handles drift by flushing the queue.
     // See: sourceBuffer.on(SourceBuffer.events.DRIFT_THRESHOLD_EXCEEDED)
     if (!this.sourceBuffer.isReady()) {
-      this.logger.debug('The sourceBuffer is not ready');
+      this.logger.warn('The sourceBuffer is not ready');
       this.metric('queue.sourceBufferNotReady', 1);
       this.metric('queue.cannotProcessNext', 1);
       return;
     }
 
-    // Only append a videoSegment if there is a videoSegment to append
-    if (this.segmentQueue.length > 0) {
-      this.logger.silly('appending to source buffer');
-      this.metric('queue.shift', 1);
-      this.metric('queue.canProcessNext', 1);
-      this.sourceBuffer.append(this.segmentQueue.shift());
-      return;
+    this.logger.silly('appending to source buffer');
+    this.metric('queue.shift', 1);
+    this.metric('queue.canProcessNext', 1);
+    if (this.segmentQueue.length >= 1) {
+      this.logger.debug('segment queue has ' + this.segmentQueue.length + ' segments');
     }
 
-    this.logger.debug('No videoSegments in queue');
+    this.sourceBuffer.append(this.segmentQueue.shift());
   }
 
   #formatMoof (moof) {
