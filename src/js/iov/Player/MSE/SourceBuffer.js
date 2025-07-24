@@ -419,7 +419,7 @@ export default class SourceBuffer extends EventEmitter {
     // no video was added to the buffer.  this should prevent unnecessary processing
     // and reporting of a buffer which hasn't incremented.
     if (this.lastSourceBufferOp === 'remove') {
-      this.logger.warn('onUpdateEnd ocurred as the result of a remove operation');
+      this.logger.debug('onUpdateEnd ocurred as the result of a remove operation');
       return;
     }
 
