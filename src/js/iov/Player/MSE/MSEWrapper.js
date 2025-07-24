@@ -251,7 +251,7 @@ export default class MSEWrapper extends EventEmitter {
     this.logger.silly('appending to source buffer');
     this.metric('queue.shift', 1);
     this.metric('queue.canProcessNext', 1);
-    if (this.segmentQueue.length >= 1) {
+    if (this.segmentQueue.length >= 2) {
       this.logger.debug('segment queue has ' + this.segmentQueue.length + ' segments');
     }
 
