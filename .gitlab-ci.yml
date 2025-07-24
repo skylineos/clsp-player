@@ -4,11 +4,11 @@ include:
     file: stages/analysis.yml
   - project: skyline-platform/devops/vp-pipeline
     ref: master
-    file: stages/badges.yml
+    file: stages/post.yml
 
 stages:
   - analysis
-  - badges
+  - post
 
 # DISABLE UNUSED JOBS
 code_quality:
