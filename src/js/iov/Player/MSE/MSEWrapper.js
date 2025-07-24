@@ -12,7 +12,7 @@ import MediaSourceWrapper from './MediaSourceWrapper';
 import SourceBuffer from './SourceBuffer';
 // import { mp4toJSON } from './mp4-inspect';
 
-const DEFAULT_APPENDS_WITH_SAME_TIME_END_THRESHOLD = 1;
+const DEFAULT_APPENDS_WITH_SAME_TIME_END_THRESHOLD = 5;
 
 export default class MSEWrapper extends EventEmitter {
   /**
