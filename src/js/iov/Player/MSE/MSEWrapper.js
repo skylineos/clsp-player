@@ -223,7 +223,6 @@ export default class MSEWrapper extends EventEmitter {
 
     // Do not wait until ready since we're dealing with a live stream
     if (!this.mediaSource.isReady()) {
-      this.logger.info('The mediaSource is not ready');
       this.metric('queue.mediaSourceNotReady', 1);
       this.metric('queue.cannotProcessNext', 1);
       this.logger.warn('Media source not ready');
