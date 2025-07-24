@@ -8,7 +8,7 @@ include:
 
 stages:
   - analysis
-  - create_badges
+  - post
 
 # DISABLE UNUSED JOBS
 code_quality:
