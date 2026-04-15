@@ -19,6 +19,7 @@ const APPLICATION_DIR = path.join(__dirname, '..', '..');
 
 const DEFAULT_HOST = '0.0.0.0';
 const DEFAULT_PORT = 8080;
+const DEFAULT_SERVER = 'http';
 
 module.exports = class WebpackDevServer {
   /**
@@ -46,6 +47,8 @@ module.exports = class WebpackDevServer {
    *   The WebpackDevServer host
    * @param {Number} config.port
    *   The port on which this WebpackDevServer will host the project
+   * @param {String} config.server
+   *   The server scheme (http or https), which this WebpackDevServer with serve the projecft
    * @param {Object} config.devServerConfig
    *   @see - https://webpack.js.org/configuration/dev-server/#devserver
    *
@@ -61,6 +64,8 @@ module.exports = class WebpackDevServer {
       ? parseInt(process.env.DEV_SERVER_PORT, 10)
       : DEFAULT_PORT;
 
+    this.server = config.server || process.env.DEV_SERVER_SCHEME || DEFAULT_SERVER;
+
     this.devServerConfig = {
       // when compression is enabled, things are served VERY slowly
       compress: false,
@@ -74,6 +79,8 @@ module.exports = class WebpackDevServer {
       // publicPath: webpackConfigDev[0].output.publicPath,
       // watchOptions: this.watchCompiler.watchOptions,
       port: this.port,
+
+      server: this.server,
 
       // Allow the caller to override or add devServerConfig properties
       ...(config.devServerConfig || {}),

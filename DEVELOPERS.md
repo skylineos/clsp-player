@@ -33,6 +33,7 @@
 1. `yarn run serve`
     * set `DEV_SERVER_HOST` to change the default host of `0.0.0.0`
     * set `DEV_SERVER_PORT` to change the port of `8080`
+    * set `DEV_SERVER_SCHEME` to `https` to change the default scheme of `http`
 1. navigate to [http://localhost:8080](http://localhost:8080) in a supported browser
 1. add a `clsp` url to any of the inputs, then click submit
 1. click play on the video element (if not using an autoplay player)

@@ -160,10 +160,18 @@ function exportAsDevConfig (webpackConfigs) {
     const config = {
       ...webpackConfig,
       mode: 'development',
+      devServer: {
+        server: 'https',
+      },
       devtool: 'eval-source-map',
       output: {
         ...webpackConfig.output,
         pathinfo: true,
+      },
+      watchOptions: {
+        ignored: /node_modules/,
+        aggregateTimeout: 300,
+        poll: 1000,
       },
       plugins: [
         ...webpackConfig.plugins,
@@ -190,13 +198,15 @@ function exportAsDevConfig (webpackConfigs) {
  *
  * @returns {Array}
  *   An Array of webpack configuration objects with added production
- *   configuration
- */
+ *   configuration */
 function exportAsProdConfig (webpackConfigs) {
   return webpackConfigs.map((webpackConfig) => {
     const config = {
       ...webpackConfig,
       mode: 'production',
+      devServer: {
+        server: 'https',
+      },
       cache: true,
       // @todo - minimization breaks the plugin and player!
       optimization: {
