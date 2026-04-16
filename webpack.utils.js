@@ -160,9 +160,6 @@ function exportAsDevConfig (webpackConfigs) {
     const config = {
       ...webpackConfig,
       mode: 'development',
-      devServer: {
-        server: 'https',
-      },
       devtool: 'eval-source-map',
       output: {
         ...webpackConfig.output,
@@ -204,9 +201,6 @@ function exportAsProdConfig (webpackConfigs) {
     const config = {
       ...webpackConfig,
       mode: 'production',
-      devServer: {
-        server: 'https',
-      },
       cache: true,
       // @todo - minimization breaks the plugin and player!
       optimization: {
