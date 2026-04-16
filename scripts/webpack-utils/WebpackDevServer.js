@@ -48,7 +48,7 @@ module.exports = class WebpackDevServer {
    * @param {Number} config.port
    *   The port on which this WebpackDevServer will host the project
    * @param {String} config.server
-   *   The server scheme (http or https), which this WebpackDevServer with serve the projecft
+   *   The server scheme (http or https), which this WebpackDevServer will host the project
    * @param {Object} config.devServerConfig
    *   @see - https://webpack.js.org/configuration/dev-server/#devserver
    *
