@@ -1,6 +1,6 @@
 include:
   - project: skyline-platform/devops/vp-pipeline
-    ref: master
+    ref: develop
     file: stages/analysis.yml
   - project: skyline-platform/devops/vp-pipeline
     ref: master
