@@ -44,6 +44,9 @@ async function main () {
   clspPlayerSrcWatcher = WatchCompiler.factory('clsp-player', webpackConfigClspPlayer());
   await clspPlayerSrcWatcher.watch();
 
+  const demoWatcher = WatchCompiler.factory('clsp-player-demos', webpackConfigDemos());
+  await demoWatcher.watch();
+
   demoServer = WebpackDevServer.factory('clsp-player-demos', webpackConfigDemos());
   await demoServer.serve();
 }

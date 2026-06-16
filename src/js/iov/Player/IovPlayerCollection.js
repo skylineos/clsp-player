@@ -141,8 +141,7 @@ export default class IovPlayerCollection extends EventEmitter {
       }
     });
 
-    /* eslint-disable-next-line handle-callback-err */
-    iovPlayer.on(IovPlayer.events.RECONNECT_FAILURE, async ({ error }) => {
+    iovPlayer.on(IovPlayer.events.RECONNECT_FAILURE, async () => {
       try {
         this.logger.info(`Critical player error RECONNECT_FAILURE for player ${this.playerLogMessageIds[id]}`);
         await this.#handleCriticalIovPlayerError(id, IovPlayer.events.RECONNECT_FAILURE);
@@ -153,8 +152,7 @@ export default class IovPlayerCollection extends EventEmitter {
       }
     });
 
-    /* eslint-disable-next-line handle-callback-err */
-    iovPlayer.on(IovPlayer.events.ROUTER_EVENT_ERROR, async ({ error }) => {
+    iovPlayer.on(IovPlayer.events.ROUTER_EVENT_ERROR, async () => {
       try {
         this.logger.info(`Critical player error ROUTER_EVENT_ERROR for player ${this.playerLogMessageIds[id]}`);
         await this.#handleCriticalIovPlayerError(id, IovPlayer.events.ROUTER_EVENT_ERROR);
@@ -165,8 +163,7 @@ export default class IovPlayerCollection extends EventEmitter {
       }
     });
 
-    /* eslint-disable-next-line handle-callback-err */
-    iovPlayer.on(IovPlayer.events.REINITIALZE_ERROR, async ({ error }) => {
+    iovPlayer.on(IovPlayer.events.REINITIALZE_ERROR, async () => {
       try {
         this.logger.info(`Critical player error REINITIALZE_ERROR for player ${this.playerLogMessageIds[id]}`);
         await this.#handleCriticalIovPlayerError(id, IovPlayer.events.REINITIALZE_ERROR);

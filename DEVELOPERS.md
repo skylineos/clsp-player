@@ -22,6 +22,8 @@
 1. Install latest NodeJS LTS version using `tj/n`:
     * [https://github.com/tj/n](https://github.com/tj/n)
     * Note if you're on Windows, you'll have to use a different node installation method
+    * Note: the highest version of Node to use currently (as of 12/17/2024) is 16.
+    * Note: the recommended version of Node to use is 14.
 1. Install latest Yarn v1:
     * [https://classic.yarnpkg.com/en/docs/install#debian-stable](https://classic.yarnpkg.com/en/docs/install#debian-stable)
 1. `yarn install`

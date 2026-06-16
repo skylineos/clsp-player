@@ -309,13 +309,13 @@ export default class Iov extends EventEmitter {
 
   getErrorMsgContainer = () => {
     return this.containerElement.getElementsByClassName(ERROR_MSG_CLASS)[0];
-  }
+  };
 
   getLoadingAnimation = () => {
     // Returns an HTMLCollection [] with all the loading animations
     // that exist in the container.
     return this.containerElement.getElementsByClassName(LOADING_ANIMATION_CLASS);
-  }
+  };
 
   destroyAllLoadingAnimations = () => {
     // Remove all loading animations within the container.
@@ -324,7 +324,7 @@ export default class Iov extends EventEmitter {
     for (let i = 0; i < loadingElements.length; i++) {
       loadingElements[i].remove();
     }
-  }
+  };
 
   createLoadingAnimation = () => {
     // If loading animation already exists, end function.
@@ -339,18 +339,18 @@ export default class Iov extends EventEmitter {
 
     // Add loading div to the container.
     this.containerElement.insertBefore(loadingDiv, this.videoElement);
-  }
+  };
 
   clearErrorMsg = () => {
     this.getErrorMsgContainer().style.display = 'none';
     this.getErrorMsgContainer().innerHTML = '';
-  }
+  };
 
   displayErrorMsg = (errorMsg) => {
     const errorMsgContainer = this.getErrorMsgContainer();
     errorMsgContainer.style.display = 'block';
     errorMsgContainer.innerHTML = errorMsg;
-  }
+  };
 
   /**
    * If an existing container exists for holding an error msg, clear it.
@@ -365,7 +365,7 @@ export default class Iov extends EventEmitter {
     else {
       this.clearErrorMsg();
     }
-  }
+  };
 
   /**
    * @param {StreamConfiguration|String} url

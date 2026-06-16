@@ -18,7 +18,7 @@ export default class RouterStreamManager extends RouterBaseManager {
     VIDEO_SEGMENT_RECEIVED: 'video-segment-received',
     VIDEO_SEGMENT_TIMEOUT: 'video-segment-timeout',
     JWT_AUTHORIZATION_FAILURE: 'jwt-authorization-failure',
-  }
+  };
 
   /**
    * @static
