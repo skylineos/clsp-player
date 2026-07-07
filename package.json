@@ -38,7 +38,7 @@
     "lodash": "4.17.21",
     "paho-mqtt": "1.1.0",
     "promise-timeout": "1.3.0",
-    "sleepjs": "4.0.2",
+    "sleepjs": "4.0.3",
     "srcdoc-polyfill": "1.0.0",
     "url": "0.11.0",
     "uuid": "8.3.0"

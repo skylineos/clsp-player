@@ -8950,10 +8950,10 @@ slash@^3.0.0:
   resolved "https://registry.yarnpkg.com/slash/-/slash-3.0.0.tgz#6539be870c165adbd5240220dbe361f1bc4d4634"
   integrity sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==
 
-sleepjs@4.0.2:
-  version "4.0.2"
-  resolved "https://registry.yarnpkg.com/sleepjs/-/sleepjs-4.0.2.tgz#50f81bdb649c4448f35c804d6247f425daa4a500"
-  integrity sha512-wjw2GC2emdnukz6hc87A4cHlU+gjuc121pFU11UgbJXh3+3sgJqmvilfdGAmBwsvVYPxj7SZVdS0hL9YBPbrZQ==
+sleepjs@4.0.3:
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/sleepjs/-/sleepjs-4.0.3.tgz#3896b989828b0f50e721732dbc2a52a4dc93fc8d"
+  integrity sha512-MwiJ89kr2ockmcrJQR+/8cRlzkCUTPiDjwfMMTE0hwdrEYql1HOnnEt8Qmqa49BjLPt1kAjlrN8W/0dAx0PpvQ==
 
 slice-ansi@^2.1.0:
   version "2.1.0"
