@@ -1,13 +1,13 @@
 'use strict';
 
-var textAreaId = 'stream-src';
-var videoElementId = 'my-video';
+const textAreaId = 'stream-src';
+const videoElementId = 'my-video';
 
-var durationDisplayInterval = null;
+let durationDisplayInterval = null;
 
 // @todo - how can we make this easier for clients to be able to set up their
 // own demos with functional urls without changing the source code?
-var initialStreams = [
+const initialStreams = [
   'clsps://hera.qa.skyline.local/FairfaxVideo0520',
   'clsps://hera.qa.skyline.local/FairfaxVideo0420',
   'clsps://hera.qa.skyline.local/FairfaxVideo0440',
@@ -35,7 +35,7 @@ var initialStreams = [
 function displayVersions () {
   document.title = `v${window.CLSP.utils.version} ${document.title}`;
 
-  var pageTitle = document.getElementById('page-title').innerHTML;
+  const pageTitle = document.getElementById('page-title').innerHTML;
   document.getElementById('page-title').innerHTML = `${pageTitle} <br /> v${window.CLSP.utils.version}`;
 }
 
@@ -44,7 +44,7 @@ function getTourList () {
     document.getElementById(textAreaId).value = initialStreams.join('\n');
   }
 
-  var urls = document.getElementById(textAreaId).value
+  const urls = document.getElementById(textAreaId).value
     .split('\n')
     .map((url) => url.trim())
     .filter((url) => Boolean(url));
@@ -53,22 +53,22 @@ function getTourList () {
 }
 
 function initializeTimer () {
-  var date = new Date();
+  const date = new Date();
 
   document.getElementById('tourStartTime').innerText = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + ' ' + date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds();
 
-  var pageLoadStartTime = Date.now();
+  const pageLoadStartTime = Date.now();
 
   if (durationDisplayInterval) {
     clearInterval(durationDisplayInterval);
   }
 
   durationDisplayInterval = setInterval(() => {
-    var secondsElapsedSinceStart = (Date.now() - pageLoadStartTime) / 1000;
+    const secondsElapsedSinceStart = (Date.now() - pageLoadStartTime) / 1000;
 
-    var displayHours = Math.floor(secondsElapsedSinceStart / 60 / 60);
-    var displayMinutes = Math.floor(secondsElapsedSinceStart / 60) - (displayHours * 60);
-    var displaySeconds = Math.floor(secondsElapsedSinceStart) - (displayHours * 60 * 60) - (displayMinutes * 60);
+    const displayHours = Math.floor(secondsElapsedSinceStart / 60 / 60);
+    const displayMinutes = Math.floor(secondsElapsedSinceStart / 60) - (displayHours * 60);
+    const displaySeconds = Math.floor(secondsElapsedSinceStart) - (displayHours * 60 * 60) - (displayMinutes * 60);
 
     document.getElementById('tourDuration').innerText = displayHours + ' hours ' + displayMinutes + ' minutes ' + displaySeconds + ' seconds';
 
@@ -86,9 +86,9 @@ function initialize () {
 
   window.CLSP.utils.setDefaultStreamPort('clsp', 9001);
 
-  var urls = getTourList();
+  const urls = getTourList();
 
-  var tour = window.CLSP.TourController.factory(
+  const tour = window.CLSP.TourController.factory(
     window.CLSP.IovCollection.asSingleton(),
     videoElementId,
     {
@@ -114,5 +114,5 @@ function initialize () {
 }
 
 window.clspPlayerControls = {
-  initialize: initialize,
+  initialize,
 };

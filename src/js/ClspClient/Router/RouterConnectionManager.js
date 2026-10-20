@@ -27,7 +27,7 @@ export default class RouterConnectionManager extends RouterBaseManager {
     RECONNECT_FAILURE: 'reconnect-failure',
     DISCONNECT_SUCCESS: 'disconnect-success',
     DISCONNECT_FAILURE: 'disconnect-failure',
-  }
+  };
 
   /**
    * @static

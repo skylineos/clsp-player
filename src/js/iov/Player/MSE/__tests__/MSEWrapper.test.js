@@ -19,6 +19,10 @@ describe('MSEWrapper#onVideoSegmentShown()', () => {
     instance.sourceBuffer.emit('updateend');
     instance.sourceBuffer.emit('updateend');
     instance.sourceBuffer.emit('updateend');
+    instance.sourceBuffer.emit('updateend');
+    instance.sourceBuffer.emit('updateend');
+    instance.sourceBuffer.emit('updateend');
+    instance.sourceBuffer.emit('updateend');
 
     expect(emitSpy).toHaveBeenCalledTimes(2);
     expect(instance.emit).toHaveBeenCalledWith(MSEWrapper.events.STREAM_FROZEN);

@@ -208,6 +208,8 @@ export default class SourceBuffer extends EventEmitter {
         this.logger.warn('Source buffer is still updating! Cannot append!');
         return;
       }
+
+      this.lastSourceBufferOp = 'append';
       this.sourceBuffer.appendBuffer(byteArray);
     }
     catch (error) {
@@ -295,7 +297,7 @@ export default class SourceBuffer extends EventEmitter {
         });
       }
       const lastRange = bufferedRanges.length - 1;
-      this.timeBuffered = (bufferedRanges.end(lastRange) - bufferedRanges.start(lastRange));
+      this.timeBuffered = (bufferedRanges.end(lastRange) - bufferedRanges.start(0));
       this.logger.silly('getBufferTimes finished successfully...');
 
       return bufferTimesAry;
@@ -370,6 +372,7 @@ export default class SourceBuffer extends EventEmitter {
         const trimEndTime = firstTimeRange.bufferTimeStart + this.BUFFER_TRUNCATE_VALUE;
 
         this.logger.debug('Trimming buffer...');
+        this.lastSourceBufferOp = 'remove';
         this.sourceBuffer.remove(firstTimeRange.bufferTimeStart, trimEndTime);
         this.logger.debug('Successfully trimmed buffer...');
       }
@@ -411,6 +414,13 @@ export default class SourceBuffer extends EventEmitter {
   #onUpdateEnd = (event) => {
     if (this.isDestroyComplete) {
       throw new Error('Received `updateend` event while destroyed!');
+    }
+    // when the buffer is trimmed, we don't want to process the updateend event if
+    // no video was added to the buffer.  this should prevent unnecessary processing
+    // and reporting of a buffer which hasn't incremented.
+    if (this.lastSourceBufferOp === 'remove') {
+      this.logger.debug('onUpdateEnd ocurred as the result of a remove operation');
+      return;
     }
 
     if (this.shouldAbortOnNextUpdateEnd) {

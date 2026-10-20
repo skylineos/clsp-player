@@ -91,6 +91,8 @@ module.exports = {
     "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "<rootDir>/test/jest/__mocks__/fileMock.js",
     "\\.(css|less|sass|scss)$": "<rootDir>/test/jest/__mocks__/styleMock.js",
     "^MediaSource$": "<rootDir>/src/js/iov/Player/MSE/__mocks__/MediaSourceMock.js",
+    // Force module uuid to resolve with the CJS entry point, because Jest does not support package.json.exports. See https://github.com/uuidjs/uuid/issues/451
+    uuid: require.resolve('uuid'),
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
@@ -139,7 +141,7 @@ module.exports = {
 
   // A list of paths to modules that run some code to configure or set up the testing framework before each test
   setupFilesAfterEnv: [
-    'jest-extended',
+    'jest-extended/all',
   ],
 
   // A list of paths to snapshot serializer modules Jest should use for snapshot testing

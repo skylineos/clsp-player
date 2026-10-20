@@ -16,7 +16,7 @@ module.exports = function ({
 
         expect(router).not.toBeNil();
         expect(router.constructor).not.toBeNil();
-        expect(router.constructor.name).toEqual('Router');
+        expect(router.constructor.name).toBe('Router');
       });
     });
 

@@ -43,7 +43,7 @@ export default function () {
     onload: function (logId, clientId, Router, config) {
       try {
         // @todo - validate arguments
-        var router = Router.factory(
+        const router = Router.factory(
           config.logId,
           config.clientId,
           config.host,
@@ -66,7 +66,6 @@ export default function () {
         return router;
       }
       catch (error) {
-        /* eslint-disable-next-line no-console */
         console.error(logId + ' onload - Error while loading:');
         console.error(error);
 
@@ -100,7 +99,6 @@ export default function () {
       // @todo - validate arguments
 
       if (!router) {
-        /* eslint-disable-next-line no-console */
         console.warn(logId + ' onunload - Router not instantiated, exiting...');
         return;
       }

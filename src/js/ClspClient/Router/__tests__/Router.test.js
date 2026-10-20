@@ -32,7 +32,7 @@ describe('Router', () => {
         const Router = _Router.default(Paho.Paho);
 
         expect(Router).toBeFunction();
-        expect(Router.name).toEqual('Router');
+        expect(Router.name).toBe('Router');
       });
     });
   });
