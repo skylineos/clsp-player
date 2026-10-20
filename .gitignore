@@ -10,5 +10,5 @@
 
 # jest test coverage
 /test/jest/coverage/
-.env.local
-.plan.md.local
+*.local.artifacts
+
