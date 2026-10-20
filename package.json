@@ -77,7 +77,7 @@
     "jest-mock-console": "2.0.0",
     "jquery": "3.5.1",
     "mini-css-extract-plugin": "2.7.6",
-    "moment": "2.29.4",
+    "moment": "2.31.0",
     "progress-bar-webpack-plugin": "2.1.0",
     "standard": "14.3.4",
     "start-server-and-test": "^2.0.11",
