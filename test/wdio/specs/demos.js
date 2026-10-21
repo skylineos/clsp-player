@@ -1,3 +1,4 @@
+// Verify demo navigation: the root redirects to /demos
 describe('Demo Page', () => {
   describe('Base URL', async () => {
     it('Should redirect to "/demos"', async () => {
