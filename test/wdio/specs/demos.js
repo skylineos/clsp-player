@@ -2,7 +2,7 @@ describe('Demo Page', () => {
   describe('Base URL', async () => {
     it('Should redirect to "/demos"', async () => {
       await browser.url('/');
-      await expect(browser).toHaveUrlContaining('/demos');
+      await expect(browser).toHaveUrl(expect.stringContaining('/demos'));
     });
   });
 
@@ -19,7 +19,7 @@ describe('Demo Page', () => {
 
       const SinglePlayerDemoButton = await $('button=Single Player Demo');
       await SinglePlayerDemoButton.click();
-      await expect(browser).toHaveUrlContaining('/single-player');
+      await expect(browser).toHaveUrl(expect.stringContaining('/single-player'));
     });
   });
 });

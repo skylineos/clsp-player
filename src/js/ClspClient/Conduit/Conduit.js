@@ -29,7 +29,7 @@ export default class Conduit extends EventEmitter {
     VIDEO_SEGMENT_RECEIVED: RouterStreamManager.events.VIDEO_SEGMENT_RECEIVED,
     IFRAME_DESTROYED_EXTERNALLY: RouterIframeManager.events.IFRAME_DESTROYED_EXTERNALLY,
     JWT_AUTHORIZATION_FAILURE: RouterStreamManager.events.JWT_AUTHORIZATION_FAILURE,
-  }
+  };
 
   /**
    * @static

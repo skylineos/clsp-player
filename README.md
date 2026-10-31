@@ -23,7 +23,7 @@ An html5 CLSP video player.  CLSP is a proprietary near-real-time video streamin
     - [`<video>` tag](#video-tag)
   - [via `import` or `require`](#via-import-or-require)
     - [JS](#js)
-    - [Styles (SASS)](#styles-sass)
+    - [Styles](#styles)
     - [`<video>` tag](#video-tag-1)
 - [Known Issues](#known-issues)
   - [Videos appear to have a low framerate](#videos-appear-to-have-a-low-framerate)
@@ -140,8 +140,8 @@ A `CLSP` object is attached to `window`, which contains the classes and utils yo
 
 <!-- use CLSP Player at end of `body` -->
 <script>
-  var videoElementId = 'my-video';
-  var urls = [
+  let videoElementId = 'my-video';
+  let urls = [
     'clsps://bd-demo-sfs1.skyvdn.com/testpattern',
     'clsps://bd-demo-sfs1.skyvdn.com/testpattern',
   ];
@@ -152,10 +152,10 @@ A `CLSP` object is attached to `window`, which contains the classes and utils yo
   window.CLSP.utils.setDefaultStreamPort('clsp', 9001);
 
   // Construct the player collection
-  var iovCollection = window.CLSP.IovCollection.asSingleton();
+  let iovCollection = window.CLSP.IovCollection.asSingleton();
 
   // Instantiate the iov instance for the target video element
-  var iov = iovCollection.create({
+  let iov = iovCollection.create({
     videoElementId: videoElementId,
   })
 
@@ -221,12 +221,12 @@ catch (error) {
 }
 ```
 
-#### Styles (SASS)
+#### Styles
 
-```scss
+```css
 @import '/path/to/node_modules/@skylineos/clsp-player/dist/clsp-player.css';
 // or import it from src
-@import '/path/to/node_modules/@skylineos/clsp-player/src/styles/clsp-player.scss';
+@import '/path/to/node_modules/@skylineos/clsp-player/src/styles/clsp-player.css';
 ```
 
 #### `<video>` tag

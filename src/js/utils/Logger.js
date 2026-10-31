@@ -12,7 +12,7 @@
 module.exports = function (version, logLevel, disableLogging) {
   function Logger (prefix, prefixStyle) {
     if (logLevel === undefined && typeof window !== 'undefined') {
-      var storedVersion = window.localStorage.getItem('skylineos.clsp-player.version');
+      const storedVersion = window.localStorage.getItem('skylineos.clsp-player.version');
 
       // Always reset the log level when the version changes
       if (storedVersion !== version) {
@@ -20,7 +20,7 @@ module.exports = function (version, logLevel, disableLogging) {
         window.localStorage.setItem('skylineos.clsp-player.version', version);
       }
 
-      var storedLogLevel = Number(window.localStorage.getItem('skylineos.clsp-player.logLevel'));
+      const storedLogLevel = Number(window.localStorage.getItem('skylineos.clsp-player.logLevel'));
 
       // The logLevel may be set in localstorage
       // e.g. localStorage.setItem('skylineos.clsp-player.logLevel', 3), then refresh
@@ -50,7 +50,7 @@ module.exports = function (version, logLevel, disableLogging) {
   };
 
   Logger.prototype._constructMessage = function (type, message) {
-    var logMessage = '(' + type + ')' + ' --> ' + message;
+    const logMessage = '(' + type + ')' + ' --> ' + message;
 
     // @see - https://developers.google.com/web/tools/chrome-devtools/console/console-write#string_substitution_and_formatting
     if (this.prefix && this.prefixStyle && this.logLevel > 1) {
@@ -73,12 +73,12 @@ module.exports = function (version, logLevel, disableLogging) {
     ];
   };
 
-  var sillyIndex = 5;
-  var debugIndex = 4;
-  var infoIndex = 3;
-  var warnIndex = 2;
-  var errorIndex = 1;
-  var criticalIndex = 0;
+  const sillyIndex = 5;
+  const debugIndex = 4;
+  const infoIndex = 3;
+  const warnIndex = 2;
+  const errorIndex = 1;
+  const criticalIndex = 0;
 
   Logger.prototype.silly = function (message) {
     if (this.logLevel < sillyIndex || disableLogging) {

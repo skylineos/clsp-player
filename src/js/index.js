@@ -1,4 +1,4 @@
-import '../styles/clsp-player.scss';
+import '../styles/clsp-player.css';
 
 import 'srcdoc-polyfill';
 

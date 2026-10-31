@@ -1,4 +1,4 @@
-import './styles.scss';
+import './styles.css';
 
 // @todo - import fontawesome
 import $ from 'jquery';

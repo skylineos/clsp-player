@@ -355,7 +355,7 @@ export default function (Paho) {
       // the error written to the console here will still allow errors under
       // "normal" operations to be written to the console, but will suppress the
       // final unwanted error.
-      /* eslint-disable-next-line no-console */
+
       console.error(error);
     }
   };
@@ -382,7 +382,7 @@ export default function (Paho) {
     this.logger.debug('Received CLSP message...');
 
     try {
-      var payloadString = '';
+      let payloadString = '';
 
       try {
         payloadString = clspMessage.payloadString;
@@ -398,7 +398,7 @@ export default function (Paho) {
       this._sendToParentWindow({
         event: Router.events.MESSAGE_ARRIVED,
         destinationName: clspMessage.destinationName,
-        payloadString: payloadString, // @todo - why is this necessary when it doesn't exist?
+        payloadString, // @todo - why is this necessary when it doesn't exist?
         payloadBytes: clspMessage.payloadBytes || null,
       });
     }
@@ -438,7 +438,7 @@ export default function (Paho) {
         break;
       }
       case Router.commands.PUBLISH: {
-        var payload = null;
+        let payload = null;
 
         try {
           payload = JSON.stringify(message.data);
@@ -494,13 +494,13 @@ export default function (Paho) {
    * @returns {void}
    */
   Router.prototype._windowMessageEventHandler = function (event) {
-    var message = event.data;
+    const message = event.data;
 
     if (!message) {
       return;
     }
 
-    var method = message.method;
+    const method = message.method;
 
     if (!method) {
       return;
@@ -586,13 +586,13 @@ export default function (Paho) {
   Router.prototype._onConnectionLost = function (response, data = {}) {
     this.logger.debug('CLSP connection lost');
 
-    var errorCode = parseInt(response.errorCode);
+    const errorCode = parseInt(response.errorCode);
 
     if (errorCode === 0) {
       // The connection was "properly" terminated
       this._sendToParentWindow({
         event: Router.events.DISCONNECT_SUCCESS,
-        data: data,
+        data,
       });
 
       return;
@@ -603,7 +603,7 @@ export default function (Paho) {
     this._sendToParentWindow({
       event: Router.events.CONNECTION_LOST,
       reason: 'connection lost error code "' + errorCode + '" with message: ' + response.errorMessage,
-      data: data,
+      data,
     });
   };
 
@@ -616,7 +616,7 @@ export default function (Paho) {
     this.logger.debug('CLSP Connection was lost while trying to perform another action');
 
     // Spoof the clspClient response...
-    var response = {
+    const response = {
       errorCode: 0,
     };
 
@@ -713,8 +713,8 @@ export default function (Paho) {
 
     this._sendToParentWindow({
       event: Router.events.UNSUBSCRIBE_SUCCESS,
-      topic: topic,
-      response: response,
+      topic,
+      response,
     });
   };
 
@@ -777,8 +777,8 @@ export default function (Paho) {
 
     this._sendToParentWindow({
       event: Router.events.PUBLISH_SUCCESS,
-      publishId: publishId,
-      topic: topic,
+      publishId,
+      topic,
     });
   };
 
@@ -787,8 +787,8 @@ export default function (Paho) {
 
     this._sendToParentWindow({
       event: Router.events.PUBLISH_FAILURE,
-      publishId: publishId,
-      reason: reason,
+      publishId,
+      reason,
     });
   };
 
@@ -831,9 +831,9 @@ export default function (Paho) {
       return this._publish_onSuccess(publishId, topic);
     }
 
-    var self = this;
+    const self = this;
 
-    var clspMessage = new Paho.MQTT.Message(payload);
+    const clspMessage = new Paho.MQTT.Message(payload);
 
     clspMessage.destinationName = topic;
 
@@ -844,11 +844,11 @@ export default function (Paho) {
     // to mention the fact that local storage refuses additional writes.
     // clspMessage.qos = 2; // qos: exactly once
 
-    var publishTimeout = setTimeout(function () {
+    let publishTimeout = setTimeout(function () {
       clearTimeout(publishTimeout);
       publishTimeout = null;
 
-      var reason = 'publish operation for "' + topic + '" timed out after ' + self.PUBLISH_TIMEOUT + ' seconds.';
+      const reason = 'publish operation for "' + topic + '" timed out after ' + self.PUBLISH_TIMEOUT + ' seconds.';
 
       self._publish_onFailure(publishId, topic, reason);
     }, this.PUBLISH_TIMEOUT * 1000);
@@ -882,18 +882,18 @@ export default function (Paho) {
     this.logger.info('Connecting...');
 
     // last will message sent on disconnect
-    var willMessage = new Paho.MQTT.Message(JSON.stringify({
+    const willMessage = new Paho.MQTT.Message(JSON.stringify({
       clientId: this.clientId,
     }));
 
     willMessage.destinationName = 'iov/clientDisconnect';
 
-    var connectionOptions = {
+    const connectionOptions = {
       timeout: this.CONNECTION_TIMEOUT,
       keepAliveInterval: this.KEEP_ALIVE_INTERVAL,
       onSuccess: this._connect_onSuccess.bind(this),
       onFailure: this._connect_onFailure.bind(this),
-      willMessage: willMessage,
+      willMessage,
       // @todo - should `reconnect` be set here?
     };
 

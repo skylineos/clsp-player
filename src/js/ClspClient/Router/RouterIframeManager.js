@@ -25,7 +25,7 @@ export default class RouterIframeManager extends RouterBaseManager {
    */
   static events = {
     IFRAME_DESTROYED_EXTERNALLY: 'iframe-destroyed-externally',
-  }
+  };
 
   /**
    * @static

@@ -24,7 +24,7 @@ module.exports = function ({
 
       expect(router).not.toBeNil();
       expect(router.constructor).not.toBeNil();
-      expect(router.constructor.name).toEqual('Router');
+      expect(router.constructor.name).toBe('Router');
       expect(constructorArgumentsBouncerMock.mock.calls).toHaveLength(1);
       expect(constructorArgumentsBouncerMock.mock.calls[0][0]).toEqual(config.asArray[0]);
       expect(constructorArgumentsBouncerMock.mock.calls[0][1]).toEqual(config.asArray[1]);

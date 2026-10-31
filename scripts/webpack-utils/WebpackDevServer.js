@@ -64,23 +64,22 @@ module.exports = class WebpackDevServer {
     this.devServerConfig = {
       // when compression is enabled, things are served VERY slowly
       compress: false,
-      // when a build fails, show the failure in the browser
-      overlay: true,
       // do not hot reload the browser on change - breaks ie11 (maybe you can fix it)
-      hot: false,
+      // ie11 is retired and i don't care - hayden myers
+      hot: true,
+
       // The directory that will be served (in our case, project root)
-      contentBase: APPLICATION_DIR,
+      static: APPLICATION_DIR,
       // @todo - do we need this?  why or why not?
       // publicPath: webpackConfigDev[0].output.publicPath,
-      watchOptions: this.watchCompiler.watchOptions,
-      // The hooks will print the stats
-      stats: false,
+      // watchOptions: this.watchCompiler.watchOptions,
+      port: this.port,
 
       // Allow the caller to override or add devServerConfig properties
       ...(config.devServerConfig || {}),
     };
 
-    this.server = new _WebpackDevServer(this.watchCompiler.compiler, this.devServerConfig);
+    this.server = new _WebpackDevServer(this.devServerConfig, this.watchCompiler.compiler);
   }
 
   /**
@@ -88,20 +87,8 @@ module.exports = class WebpackDevServer {
    *
    * @returns {Promise}
    */
-  serve () {
-    // @todo - do we need to perform any error catching / handling here?
-    // I attempted to follow the steps at https://nodejs.org/api/net.html#net_server_listen
-    // for error handling, but it appears that this server is not the same as
-    // a stock node http server, and does not have the `on` method.
-    return new Promise((resolve, reject) => {
-      this.server.listen(
-        this.port,
-        this.host,
-        () => {
-          resolve();
-        },
-      );
-    });
+  async serve () {
+    await this.server.start();
   }
 
   /**

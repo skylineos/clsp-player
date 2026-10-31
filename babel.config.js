@@ -38,10 +38,8 @@ module.exports = (api) => {
       ],
     ],
     plugins: [
-      '@babel/plugin-syntax-dynamic-import',
-      '@babel/plugin-proposal-object-rest-spread',
-      '@babel/plugin-proposal-class-properties',
-      '@babel/plugin-proposal-private-methods',
+      '@babel/plugin-transform-object-rest-spread',
+      '@babel/plugin-transform-class-properties',
       [
         '@babel/plugin-transform-runtime',
         {

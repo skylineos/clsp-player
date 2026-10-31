@@ -91,7 +91,7 @@ function generateConfig (name, entry) {
       rules: [
         {
           test: /\.js$/,
-          loader: 'babel-loader?cacheDirectory=true',
+          loader: 'babel-loader',
           options: babelConfig,
           // @see - https://github.com/webpack/webpack/issues/2031
           include: [
@@ -118,21 +118,13 @@ function generateConfig (name, entry) {
         },
         {
           // @see - https://github.com/webpack-contrib/mini-css-extract-plugin
-          // @see - https://github.com/webpack-contrib/sass-loader
           test: /\.(sa|sc|c)ss$/,
           use: [
             {
               loader: MiniCssExtractPlugin.loader,
-              options: {
-                // set this to false to not interrupt ongoing tests until the
-                // developer is ready
-                hmr: false,
-              },
+              options: {},
             },
             'css-loader',
-            // @todo
-            // 'postcss-loader',
-            'sass-loader',
           ],
         },
       ],
