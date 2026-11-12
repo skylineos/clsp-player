@@ -68,6 +68,14 @@ Explicitly use GET for read-only API requests, especially when passing query fie
   overrides/resolutions, and migration work require explicit review and appropriate tests.
   Do not assume a Renovate label or semver classification guarantees compatibility.
 
+For a current vulnerability without a suitable Renovate MR, identify the owning direct
+dependency and smallest supported fixed upgrade. Propose it as a separate remediation
+candidate with advisory, affected paths, compatibility evidence, and validation gates.
+Within authorized local scope, use package-manager tooling to implement that fix as a
+separate conventional commit with advisory provenance. Do not silently add broad
+resolutions, replace libraries, or perform major migrations; ask before that expansion.
+If no supported fix exists, report the residual exposure rather than claiming resolution.
+
 Produce a decision table: MR/advisory, exact change and head SHA, evidence, CI status,
 validation needed, and eligible/deferred reason. Failed, absent, pending, or stale
 required CI is deferred by default. Local tests do not substitute for required remote CI.

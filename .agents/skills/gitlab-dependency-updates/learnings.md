@@ -10,3 +10,7 @@ of historic MRs, vulnerability counts, credentials, internal URLs, or old test r
   do not treat the developer notes as current compatibility certification.
 - 2026-11-12: Ignoring `.local.artifacts` does not establish that `.env.local` is ignored.
   Check credentials and report paths separately before reading or writing either.
+- 2026-11-12: A read-only CLSP discovery probe succeeded using existing `glab`
+  authentication, paginated MR/protected-branch APIs, and a dependency-finding API
+  sample. Test existing authentication before requesting env-file credentials. API
+  access alone does not establish scan freshness, finding counts, or MR eligibility.
