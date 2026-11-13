@@ -46,16 +46,31 @@ before expanding permissions. Do not spawn subagents unless separately authorize
 
 ## 2. Discover Current Work
 
-Use `glab mr list`, `glab mr view`, `glab mr diff`, and `glab api`; inspect installed
+Use `glab mr list`, `glab mr view`, `glab mr diff`, and `glab ci get`; inspect installed
 `--help` before relying on flags. Prefer JSON and structured parsers. Paginate every
-collection, including MRs, changed files, pipelines, vulnerabilities, and branches.
-Explicitly use GET for read-only API requests, especially when passing query fields.
+collection, including MRs, changed files, and pipelines. Explicitly use GET for read-only
+API requests, especially when passing query fields. **Always test CLI flags at runtime;**
+do not assume flags exist based on GitLab tier or version. See tool call notes below.
+
+### Tool Call Notes — Verified Flag Names and Patterns
+
+| Command | Correct usage | Common failure |
+|---------|--------------|----------------|
+| `glab ci get` | `glab ci get --merge-request=42 --status=failed --with-job-details` | `--job=<id>` flag does not exist |
+| `glab api graphql` | `glab api graphql -f query='{...}'` | `--query` flag does not exist; use `-f` |
+| `glab api` (REST) | `glab api projects/:fullpath/endpoint -R owner/repo` | `--path` flag does not exist; use positional path |
+| `glab mr list` | `glab mr list -R owner/repo --output json` | Works reliably; returns full MR metadata |
+| `glab mr view` | `glab mr view <iid> -R owner/repo` | `head_sha` may return `null` even when pipeline tracks it |
+| `glab branches` | Does not exist | Use `git branch` for local; API for remote |
+| `glab branch` | Does not exist | Same — no branch subcommand |
 
 - List all open MRs targeting the selected branch. Establish Renovate identity from
   author and bot/branch metadata, not title alone. Separate unrelated MRs.
-- For each candidate capture IID, URL, author, source/target, head SHA, draft/conflict
-  state, full diff, manifest and lockfile changes, pipeline SHA/status, and approvals.
-  Detect truncated diffs and retrieve missing content before deciding eligibility.
+- For each candidate capture IID, URL, author, source/target, draft/conflict state,
+  full diff, manifest and lockfile changes, pipeline SHA/status, and approvals.
+  Use `glab mr view` with `--output json` and parse structurally; `head_sha` may be
+  `null` — derive pipeline SHA from `glab ci get --merge-request=<iid>`. Detect truncated
+  diffs and retrieve missing content before deciding eligibility.
 - Discover current dependency-scanning findings and latest successful target security
   scan, including its SHA and date. Verify API support/permissions for this GitLab tier.
   Missing, denied, failed, or stale scanning is unknown, never evidence of zero findings.
@@ -67,6 +82,14 @@ Explicitly use GET for read-only API requests, especially when passing query fie
 - Rank exploitable security fixes first, then low-risk compatible updates. Major changes,
   overrides/resolutions, and migration work require explicit review and appropriate tests.
   Do not assume a Renovate label or semver classification guarantees compatibility.
+
+### GraphQL API Notes — Schema Variance by GitLab Tier
+
+The `Project` type in GraphQL may not expose `builds`, `references`, or `defaultBranch`
+depending on the GitLab version and access level. REST API paths like
+`projects/:fullpath/repository/refs/heads/<branch>` may return 404 even when the branch
+exists (confirmed via MR). **Always test GraphQL schemas at runtime**; fall back to
+`glab mr list`/`glab ci get` for branch and pipeline information.
 
 For a current vulnerability without a suitable Renovate MR, identify the owning direct
 dependency and smallest supported fixed upgrade. Propose it as a separate remediation
@@ -160,3 +183,16 @@ into reports. Stop only processes started by this run; preserve the user's servi
 Leave the working branch checked out and report its name, commits, publication status,
 checks, reviewed/integrated/deferred items, and unresolved risks. Update shared learnings
 only with verified reusable facts, separately from dependency commits.
+
+### Git Command Notes — Verified Patterns
+
+| Command | Correct usage | Common failure |
+|---------|--------------|----------------|
+| `git log` | `git log -5` (local); `git log -5 -- <remote_path>` (remote diff) | `--repo` is `glab` flag, not `git` |
+| `git diff` | `git diff <sha1> <sha2>` (local SHAs) | `--repo` flag does not exist on `git` |
+| `git branch` | Shows local branches with `*` on checked-out branch | No alternative needed |
+| `git push` | `git push --set-upstream <remote> HEAD:refs/heads/<branch>` | Bare `git push` is unsafe |
+
+Never use `git add .` or `git add -A` for staging commits. Never use bare `git push`
+without `--set-upstream` when publishing to remote. Never use `git log --repo <path>` —
+`--repo` is a `glab` flag. For local SHA diff, use `git diff <sha1> <sha2>`.

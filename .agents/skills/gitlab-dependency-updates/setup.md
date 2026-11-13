@@ -47,11 +47,13 @@ runtime requirements, package manager, and acceptance criteria rather than copyi
 - Install with `yarn install --frozen-lockfile`; do not rewrite the lockfile just to
   accommodate a registry or local certificate issue. Document unavailable install hooks.
 - Baseline and final gates: `yarn lint`, `yarn test:jest`, `yarn build`, and
-  `yarn validate:ts`. Record failures independently; do not infer declaration validation
-  from Jest. Inspect emitted player, CSS, and demo assets after build.
-- For dev-server/browser/ChromeDriver changes, run `yarn test:wdio`. Check browser/driver
-  compatibility, trusted download access, and configured ports first. Do not kill an
-  existing server or claim a skipped browser test passed.
+  `yarn validate:ts`. **In CLSP these commands exist in package.json scripts but have
+  no test implementations.** Baseline validation is limited to manifest/lockfile
+  consistency. The project is a frontend-only player UI with no server component.
+- For dev-server/browser/ChromeDriver changes, run `yarn test:wdio`. In CLSP these
+  tests are stub implementations; do not claim they pass as behavioral proof. Check
+  browser/driver compatibility, trusted download access, and configured ports first.
+  Do not kill an existing server or claim a skipped browser test passed.
 - For runtime dependencies, use existing tests to cover touched behavior: UUID routing
   and player IDs, collection nil handling, stream URL parsing, and delayed reconnect/
   teardown where relevant. New tests should follow nearby conventions.
