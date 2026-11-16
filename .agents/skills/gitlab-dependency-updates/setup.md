@@ -39,30 +39,25 @@ Ensure any raw CLI output is safe before displaying it or saving it to a report.
 This section is repository-specific. In another repository, rediscover commands,
 runtime requirements, package manager, and acceptance criteria rather than copying it.
 
+The **authoritative gate set is the product skill**
+[`clsp-player-verification`](../clsp-player-verification/SKILL.md) (G1-G7, with measured
+baselines in its `learnings.md`). This profile only records what a dependency-update run adds
+on top of those gates:
+
 - Read `package.json`, lockfile, CI configuration, developer notes, and test configuration.
-  The current manifest declares Yarn Classic 1.22.22. Confirm this each run.
-- Determine a supported Node version from current dependencies and CI. Historical
-  developer notes recommending Node 14/16 are not proof those runtimes support today's
-  dependency tree. Verify engines before selecting the runtime.
+  The current manifest declares Yarn Classic 1.22.22 and `.nvmrc` pins Node 22. Confirm both
+  each run; historical developer notes recommending Node 14/16 are not proof those runtimes
+  support today's dependency tree.
 - Install with `yarn install --frozen-lockfile`; do not rewrite the lockfile just to
   accommodate a registry or local certificate issue. Document unavailable install hooks.
-- Baseline and final gates: `yarn lint`, `yarn test:jest`, `yarn build`, and
-  `yarn validate:ts`. Record failures independently; do not infer declaration validation
-  from Jest. Inspect emitted player, CSS, and demo assets after build.
-- For dev-server/browser/ChromeDriver changes, run `yarn test:wdio`. Check browser/driver
-  compatibility, trusted download access, and configured ports first. Do not kill an
-  existing server or claim a skipped browser test passed.
+- Every gate in the product skill runs on the **target SHA before** the update and again on the
+  **resulting SHA after**; the comparison is the evidence, and any new failure blocks publishing.
 - For runtime dependencies, use existing tests to cover touched behavior: UUID routing
   and player IDs, collection nil handling, stream URL parsing, and delayed reconnect/
-  teardown where relevant. New tests should follow nearby conventions.
-- Launch `yarn serve` for an authorized manual runtime check. The single-player sample
-  is `/demos/single-player/index.html`. Inspect serving configuration before choosing a
-  free port. Report the actual URL and stop only this run's server afterward.
-- Obtain the test stream URL from current user input or local configuration, not this
-  shared skill or an old run report. Treat internal hostnames and stream IDs as local
-  test data. Allow up to 30 seconds for loading; inspect a screenshot and video playback
-  progression, console, and network errors. A rendered player shell is not proof of
-  playback. State exactly what was observed and what remains unverified.
+  teardown where relevant. New tests should follow nearby conventions and are committed back.
+- The browser gate (`yarn test:wdio`) and its stream-URL / driver / VPN prerequisites are defined
+  in the product skill — do not restate or weaken them here. A rendered player shell is never
+  evidence of playback.
 
 ## First Trial
 

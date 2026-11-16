@@ -12,6 +12,13 @@ Use current GitLab and checkout evidence, never historical MR lists, package ver
 pipeline results, or vulnerability counts as the work queue. Read [setup.md](./setup.md)
 before execution and [learnings.md](./learnings.md) for verified limitations.
 
+This skill is the **product-agnostic process** (queue discovery, risk triage, integration,
+publication). The **acceptance gates** a change must satisfy are defined by the repository's
+own verification skill — in this repository that is
+[`clsp-player-verification`](../clsp-player-verification/SKILL.md). Where a repository has no
+such skill, rediscover its gates from `package.json`, CI configuration, and test setup, and
+prefer committing them as a skill over re-deriving them per run.
+
 Choose a permission mode from the user's request; default to `discover`:
 
 | Mode | Allowed actions |
@@ -93,9 +100,10 @@ Stop here in discover mode and report the proposed next local trial.
 3. Install the existing frozen lockfile using the repository's declared package manager
    and a supported runtime. Keep TLS verification enabled. Assess lifecycle hooks before
    executing them; skipping hooks is a limitation, not a successful full install.
-4. Run baseline checks from setup. Record pre-existing failures. Do not weaken gates,
-   change unrelated code, or characterize a baseline failure as a passing gate. Defer
-   updates whose required validation cannot be established.
+4. Run the repository's full gate set (its verification skill, or the gates derived in
+   setup) against the **target SHA** as a baseline. Record pre-existing failures, the runtime
+   used, and the SHA. Do not weaken gates, change unrelated code, or characterize a baseline
+   failure as a passing gate. Defer updates whose required validation cannot be established.
 
 ## 4. Integrate and Validate Sequentially
 
@@ -128,8 +136,10 @@ For each eligible update:
 
 ## 5. Final Verification and Optional Publication
 
-- Run final lint, unit, build, and risk-appropriate runtime checks against the combined
-  tree. Distinguish passed, failed, skipped, and blocked. Capture visual evidence for
+- Run the same full gate set as the baseline against the combined tree so results are
+  comparable, and report the resulting SHA alongside the baseline SHA. Distinguish passed,
+  failed, skipped, and blocked. Any gate that passed at baseline must still pass; a new failure
+  blocks publication. Capture visual evidence for
   player changes, with URL, elapsed load time, browser errors, and playback state.
 - Report advisories as confirmed fixed by lockfile, still present, or unverified. Only a
   fresh security scan of the resulting SHA can establish GitLab finding resolution.
