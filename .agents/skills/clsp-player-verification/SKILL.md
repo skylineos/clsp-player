@@ -30,6 +30,10 @@ as a pass and is never silently waived.
 | G3 | Unit | `yarn test:jest` | always |
 | G4 | Build | `yarn build` | always |
 | G5 | Types | `yarn validate:ts` | always |
+
+`yarn validate:ts` (`tsc index.d.ts`) is known to pass clean on the current lockfile — see
+learnings on TypeScript 5.9.3 and the `@types/estree` dedupe — so a G5 failure is always new
+and must be explained, never classified as pre-existing.
 | G6 | Browser + playback | `yarn test:wdio` | any change that can affect the browser runtime, and before release |
 | G7 | Remote CI | `glab` pipeline status for the exact SHA | before publishing |
 
@@ -39,7 +43,9 @@ Rules that make the gates mean something:
    pre-existing failures and warnings in the report, and compare after the change. A
    pre-existing failure stays a known failure; it is never converted into a pass. Gates are
    never weakened (no `--fix` sweeps, no config edits, no added ignores, no `|| true`) to
-   manufacture green.
+   manufacture green. Repairing a dependency so a gate genuinely passes is different from
+   weakening it — that is a normal change with its own diff and its own gate run (that is how
+   G5 was fixed), and it must be reported as a change, not as a baseline.
 2. **G1 — use Node 22.** `.nvmrc` pins Node 22 and every local gate was verified green on it,
    so **run all gates on Node 22** (`nvm use`). Yarn is pinned by `packageManager`
    (`yarn@1.22.22`); record the runtime that actually executed each command. Node 22 is chosen

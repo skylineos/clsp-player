@@ -32,3 +32,19 @@ of historic MRs, vulnerability counts, credentials, internal URLs, or old test r
   authentication, paginated MR/protected-branch APIs, and a dependency-finding API
   sample. Test existing authentication before requesting env-file credentials. API
   access alone does not establish scan freshness, finding counts, or MR eligibility.
+- 2026-11-16: `yarn add`/`yarn install` defaults to `registry.yarnpkg.com`, which fails from
+  node on this machine with `SELF_SIGNED_CERT_IN_CHAIN` (corporate TLS interception; the CA is
+  in the macOS keychain, so curl and browsers are fine and `NODE_EXTRA_CA_CERTS` is unset).
+  `registry.npmjs.org` validates correctly, so pass `--registry https://registry.npmjs.org`.
+  Never disable TLS verification to make an install proceed.
+- 2026-11-16: A dependency bump made with `yarn add --dev`, or via a new `resolutions` entry,
+  re-indents existing `package.json` keys and re-resolves unrelated packages (95-110-line
+  lockfile diff for a one-package change). Hand-edit the one `package.json` line plus the one
+  lockfile block, verify the `resolved`/`integrity` pair against the registry independently,
+  then prove the result with `yarn install --frozen-lockfile`.
+- 2026-11-16: TypeScript was bumped 4.0.3 → 5.9.3 in this repository to clear `error TS1005` in
+  `yarn validate:ts`, with `@types/estree` deduplicated in the lockfile to clear the 17
+  `TS2416` that then surfaced. See
+  [clsp-player-verification learnings](../clsp-player-verification/learnings.md) for the
+  measured before/after; 5.9.3 was chosen over upstream 7.x deliberately (7.x is the native
+  rewrite). Treat the last 5.x as the conservative step and re-decide before crossing a major.

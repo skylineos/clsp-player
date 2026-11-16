@@ -9,7 +9,12 @@ measured, not recalled. No stream URLs, MR numbers, or throwaway counts live her
 element exists after the demo initialises the player, `currentTime` advances, `#player-error`
 stays hidden, and the in-page console/error capture is empty. Confirmed it self-reports as
 skipped/pending when no stream URL is supplied (so a missing URL is visible, not a false
-pass). The whole gate runs in about 12 s with the dev server already up.
+pass).
+
+Timing (measured, hot dev server): 39–45 s for the spec. The first attempt against a
+cold/just-started stream can exceed the `mochaOpts.timeout` of 60 s and fail with a bare
+`Error: Timeout`. **A timeout on first touch is not a player failure** — re-run once before
+reporting G6 as failed, and say which attempt produced which result.
 
 The two-step order the demo requires (measured in `demos/single-player/index.js`):
 1. pick the build under test — "Use /src files" selects the bundle the dev server just
@@ -61,14 +66,46 @@ runtime for reports** because that is what the repo pins and what was validated 
 skill). `package.json` has no `engines` field, so nothing enforces the pin — record the
 runtime that actually executed each command.
 
-## validate:ts fails for reasons unrelated to this change (measured)
+## G5 (validate:ts) — was broken, now passing (measured)
 
-`yarn validate:ts` (`tsc index.d.ts`) exits 2 with roughly 2,671 `error TS1005`-style errors,
-**all inside `node_modules/`** (parse5, undici-types). The pinned TypeScript is 4.0.3, older
-than the syntax those dependency `.d.ts` files use; `index.d.ts` itself is fine. Treat a G5
-failure as this pre-existing dependency/TS-version gap unless the reported paths are in the
-repo. Do not "fix" it by adding `skipLibCheck` or bumping TypeScript without a separate
-decision, because that would be an unrequested dependency change.
+`yarn validate:ts` is `tsc index.d.ts` with no `tsconfig.json`, so it type-checks the whole
+transitive `@types` graph. It used to exit 2 with ~2,671 `error TS1005`, all inside
+`node_modules/` (parse5, undici-types): the pinned TypeScript 4.0.3 predates syntax those
+dependency `.d.ts` files use. `index.d.ts` itself was always fine.
+
+Two changes made G5 pass, both measured on Node 22.23.3:
+
+1. **TypeScript 4.0.3 → 5.9.3** removed all 2,671 `TS1005`. 5.9.3 was chosen over current
+   upstream 7.x deliberately: 7.x is the native-port rewrite, so 5.9.3 is the conservative
+   step that keeps the same compiler behaviour. This unmasked a second, previously
+   unreachable failure — 17 × `TS2416` in `node_modules/@types/eslint-scope/index.d.ts`.
+2. **Deduplicating `@types/estree`** cleared those 17. The lock pinned two copies (1.0.9
+   hoisted, 1.0.6 nested under `eslint/`) because `@types/eslint-scope` asks for `*`, so
+   nominally-identical ESTree types came from two declarations and were considered
+   incompatible. One flat lockfile edit — merging `"@types/estree@^1.0.6"` into the existing
+   `1.0.9` entry — is exactly what a fresh resolve produces and leaves everything else alone.
+
+Do not use `skipLibCheck` as a substitute: it would hide real errors in the dependency graph
+rather than removing them. `yarn validate:ts` now exits 0 with no output, so **any** future
+G5 failure is new and must be investigated, not waved at as pre-existing.
+
+### Bumping a dependency in this repo without churn (measured)
+
+`yarn add --dev <pkg>` rewrites the whole lockfile here: it re-indents pre-existing
+badly-indented `package.json` keys and re-resolves unrelated packages (acorn, browserslist,
+debug, qs, schema-utils, caniuse-lite…) — a 95+ line diff for a one-package change. Adding a
+`resolutions` entry has the same effect (110 lines). The clean procedure is:
+
+```bash
+git checkout package.json yarn.lock      # undo yarn add's churn
+# then hand-edit: the one package.json line, and the one lockfile block
+yarn install --frozen-lockfile           # proves the hand-written lockfile is valid
+```
+
+Before hand-writing a `resolved`/`integrity` pair, verify it independently rather than
+trusting the editor:
+`npm view <pkg>@<ver> dist.integrity dist.tarball dist.shasum`, then download the tarball and
+recompute `shasum -a 1` and `openssl dgst -sha512 -binary | openssl base64 -A`.
 
 ## CI here is thinner than it looks (measured)
 
