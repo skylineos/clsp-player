@@ -18,9 +18,12 @@ of historic MRs, vulnerability counts, credentials, internal URLs, or old test r
   `glab api projects/:id/repository/branches/<branch>` when git auth fails. Resolve push
   authentication with the user rather than inventing credentials.
 - 2026-11-16: This repository's `.gitlab-ci.yml` includes only shared analysis and post stages
-  and disables `code_quality`, so a green pipeline is weak evidence of correctness. Do not
-  present remote CI as stronger than its configured jobs, and never substitute local results
-  for a pipeline that was not observed.
+  and disables `code_quality`. Measured on an MR pipeline: the analysis jobs are security
+  scanners (`secret_detection`, `semgrep-sast`, `gemnasium-dependency_scanning`) — there are no
+  build, lint, or test jobs. So CI proves nothing about the tests passing and a green pipeline is
+  weak evidence of correctness; the local gates carry the weight. Do not present remote CI as
+  stronger than its configured jobs, and never substitute local results for a pipeline that was
+  not observed.
 - 2026-11-12: Ignoring `.local.artifacts` does not establish that `.env.local` is ignored.
   Check credentials and report paths separately before reading or writing either.
 - 2026-11-16: Key names inside `.local.artifacts/.env.local` may carry trailing whitespace, so

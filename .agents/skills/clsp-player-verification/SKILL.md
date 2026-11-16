@@ -53,9 +53,10 @@ Rules that make the gates mean something:
    `node -e "for (const p of ['@wdio/cli','webdriverio','webpack-dev-server','eslint']) { try { const j=require(p+'/package.json'); console.log(p, j.version, JSON.stringify(j.engines||{})); } catch { console.log(p,'not installed'); } }"`.
 3. **Coverage is not a gate.** `yarn test:jest` writes coverage to `/test/jest/coverage/`
    (ignored). No threshold is configured — do not invent one.
-4. **Local passes never substitute for G7**, and G7 here is thin: see learnings on
-   `.gitlab-ci.yml`. Report the pipeline SHA and status; pending or unavailable CI is stated
-   as such.
+4. **Local passes never substitute for G7**, and G7 here proves less than it looks: the pipeline
+   runs security scanners (`secret_detection`, `semgrep-sast`, `gemnasium-dependency_scanning`)
+   and **no build, lint, or test jobs** — see learnings on `.gitlab-ci.yml`. Report the pipeline
+   SHA and status; pending or unavailable CI is stated as such.
 
 ## G6: proving playback (not a rendered shell)
 
