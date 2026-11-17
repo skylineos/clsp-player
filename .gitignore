@@ -12,3 +12,6 @@
 /test/jest/coverage/
 *.local.artifacts
 
+# local-only wdio test config (stream URLs etc.) - never commit
+test/wdio/local.yml
+

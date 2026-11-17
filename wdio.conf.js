@@ -1,3 +1,32 @@
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * The `chromedriver` npm package does not always ship a binary that matches the
+ * installed browser — its install hook can extract nothing at all, and corporate
+ * TLS interception blocks WebdriverIO's automatic driver download.  So resolve a
+ * driver locally: an explicit CLSP_CHROMEDRIVER_PATH, else one placed in the
+ * gitignored `.local.artifacts/chromedriver/` directory.  When found it is passed
+ * to WebdriverIO as `wdio:chromedriverOptions.binary`, which makes the runner use
+ * it instead of downloading one.  Otherwise WebdriverIO's default applies.
+ */
+function resolveChromedriverPath () {
+  const candidates = [
+    process.env.CLSP_CHROMEDRIVER_PATH,
+    path.resolve(__dirname, '.local.artifacts', 'chromedriver', 'chromedriver'),
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate && fs.existsSync(candidate)) {
+      return path.resolve(candidate);
+    }
+  }
+
+  return undefined;
+}
+
+const chromedriverPath = resolveChromedriverPath();
+
 exports.config = {
   //
   // ====================
@@ -57,6 +86,10 @@ exports.config = {
       //
       browserName: 'chrome',
       acceptInsecureCerts: true,
+      // @see resolveChromedriverPath() above
+      ...(chromedriverPath
+        ? { 'wdio:chromedriverOptions': { binary: chromedriverPath } }
+        : {}),
       // If outputDir is provided WebdriverIO can capture driver session logs
       // it is possible to configure which logTypes to include/exclude.
       // excludeDriverLogs: ['*'], // pass '*' to exclude all driver session logs
@@ -111,9 +144,10 @@ exports.config = {
   // Services take over a specific job you don't want to take care of. They enhance
   // your test setup with almost no effort. Unlike plugins, they don't add new
   // commands. Instead, they hook themselves up into the test process.
-  services: [
-    'chromedriver',
-  ],
+  // No chromedriver service: since WebdriverIO v9 the runner starts the driver
+  // itself, and `wdio:chromedriverOptions.binary` above decides which binary it
+  // uses.  Running the legacy service as well would spawn a second driver.
+  services: [],
 
   // Framework you want to run your specs with.
   // The following are supported: Mocha, Jasmine, and Cucumber
