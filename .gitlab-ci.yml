@@ -4,13 +4,41 @@ include:
     file: stages/analysis.yml
   - project: skyline-platform/devops/vp-pipeline
     ref: master
+    file: stages/test.yml
+  - project: skyline-platform/devops/vp-pipeline
+    ref: master
     file: stages/post.yml
 
 stages:
   - analysis
+  - test
   - post
 
 # DISABLE UNUSED JOBS
 code_quality:
   rules:
     - when: never
+
+# `vp-pipeline` ships `unit_tests` as a template that fails until a project gives
+# it a script, so this is the intended extension point rather than a new job.
+unit_tests:
+  extends: .unit_tests
+  image: node:22
+  cache:
+    key:
+      files:
+        - yarn.lock
+    paths:
+      - .yarn-cache/
+  script:
+    # The Jest suites exercise src/js directly, so unlike videojs-clsp there is no
+    # `yarn build` step to wait for.
+    - yarn install --frozen-lockfile --non-interactive --cache-folder .yarn-cache
+    - yarn test
+  coverage: '/All files[^|]*\|\s*([\d.]+)/'
+  artifacts:
+    # Kept on failure too, so a red run still leaves the coverage it produced.
+    when: always
+    expire_in: 1 week
+    paths:
+      - test/jest/coverage/
