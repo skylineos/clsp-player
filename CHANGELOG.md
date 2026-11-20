@@ -4,6 +4,7 @@
 ## Table of Contents <!-- omit in toc -->
 
 - [CLSP Player](#clsp-player)
+  - [v0.26.1 - 2026-11-19 - Recommended](#v0261---2026-11-19---recommended)
   - [v0.26.0 - 2026-10-22 - Recommended](#v0260---2026-10-22---recommended)
   - [v0.23.2 - 2023-10-07 Recommended](#v0232---2023-10-07-recommended)
   - [v0.23.0 - 2022-01-17 - Optional](#v0230---2022-01-17---optional)
@@ -35,6 +36,12 @@
   - [Status Definitions](#status-definitions)
 
 ## CLSP Player
+
+### v0.26.1 - 2026-11-19 - Recommended
+
+* restore TypeScript declaration validation by upgrading TypeScript to 5.9.3 and deduplicating `@types/estree`
+* add automated CLSP stream playback verification with local-only stream configuration and driver resolution
+* add dependency update and release verification guidance
 
 ### v0.26.0 - 2026-10-22 - Recommended
 
